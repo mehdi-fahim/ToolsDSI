@@ -1,0 +1,191 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}{{ entity.nom ?? entity.name ?? 'Détail' }} - Panel Admin{% endblock %}
+
+{% block content %}
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px;">
+        <div>
+            <h2 style="color: #2d3748; font-size: 1.8rem; margin-bottom: 5px;">
+                📋 {{ entity.nom ?? entity.name ?? 'Détail de l\'enregistrement' }}
+            </h2>
+            <p style="color: #718096;">
+                ID: {{ entity.id }} • {{ metadata.entityName }}
+            </p>
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <a href="{{ path('admin_entity_view', {entityName: entityName}) }}" class="btn btn-secondary">← Retour à la liste</a>
+            <a href="{{ path('admin_dashboard') }}" class="btn btn-secondary">🏠 Dashboard</a>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
+        <!-- Informations générales -->
+        <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+            <h3 style="color: #2d3748; margin-bottom: 20px; font-size: 1.3rem;">📊 Informations générales</h3>
+            
+            {% for column in metadata.columns %}
+                {% if column.name != 'description' and column.name != 'requete' and column.name != 'champs' %}
+                    <div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #e2e8f0;">
+                        <strong style="color: #4a5568; display: block; margin-bottom: 5px;">{{ column.label }}:</strong>
+                        {% if column.name == 'id' %}
+                            <span style="color: #2d3748; font-family: monospace; background: #f7fafc; padding: 4px 8px; border-radius: 4px;">{{ entity.id }}</span>
+                        {% elseif column.name == 'email' %}
+                            <span style="color: #3182ce;">{{ entity.email }}</span>
+                        {% elseif column.name == 'firstName' %}
+                            <span style="color: #2d3748;">{{ entity.firstName }}</span>
+                        {% elseif column.name == 'lastName' %}
+                            <span style="color: #2d3748;">{{ entity.lastName }}</span>
+                        {% elseif column.name == 'createdAt' %}
+                            <span style="color: #2d3748;">{{ entity.createdAt|date('d/m/Y H:i') }}</span>
+                        {% elseif column.name == 'isActive' %}
+                            <span style="color: {{ entity.isActive ? '#38a169' : '#e53e3e' }}; font-weight: bold;">
+                                {{ entity.isActive ? '✅ Actif' : '❌ Inactif' }}
+                            </span>
+                        {% elseif column.name == 'name' %}
+                            <span style="color: #2d3748; font-weight: 500;">{{ entity.name }}</span>
+                        {% elseif column.name == 'price' %}
+                            <span style="color: #38a169; font-weight: bold;">{{ entity.price }} €</span>
+                        {% elseif column.name == 'stock' %}
+                            <span style="color: {{ entity.stock > 10 ? '#38a169' : (entity.stock > 0 ? '#d69e2e' : '#e53e3e') }}; font-weight: bold;">
+                                {{ entity.stock }} unités
+                            </span>
+                        {% elseif column.name == 'isAvailable' %}
+                            <span style="color: {{ entity.isAvailable ? '#38a169' : '#e53e3e' }}; font-weight: bold;">
+                                {{ entity.isAvailable ? '✅ Disponible' : '❌ Indisponible' }}
+                            </span>
+                        {% elseif column.name == 'nom' %}
+                            <span style="color: #2d3748; font-weight: 500;">{{ entity.nom }}</span>
+                        {% elseif column.name == 'nomDocument' %}
+                            <span style="color: #3182ce; font-family: monospace;">{{ entity.nomDocument }}</span>
+                        {% elseif column.name == 'categorie' %}
+                            <span style="background: {{ entity.categorie == 'Users' ? '#3182ce' : '#38a169' }}; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.9rem;">
+                                {{ entity.categorie }}
+                            </span>
+                        {% else %}
+                            <span style="color: #2d3748;">{{ entity[column.name] ?? '-' }}</span>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <!-- Description et détails -->
+        <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+            {% if entity.description is defined %}
+                <h3 style="color: #2d3748; margin-bottom: 20px; font-size: 1.3rem;">📝 Description</h3>
+                <div style="background: #f7fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #4299e1; margin-bottom: 25px;">
+                    <p style="color: #4a5568; line-height: 1.6; margin: 0;">{{ entity.description }}</p>
+                </div>
+            {% endif %}
+
+            {% if entity.champs is defined %}
+                <h3 style="color: #2d3748; margin-bottom: 15px; font-size: 1.3rem;">📋 Champs inclus</h3>
+                <div style="background: #f0fff4; padding: 15px; border-radius: 8px; border-left: 4px solid #38a169; margin-bottom: 25px;">
+                    <p style="color: #2f855a; font-family: monospace; margin: 0; font-size: 0.9rem;">{{ entity.champs }}</p>
+                </div>
+            {% endif %}
+
+            {% if entity.description is defined and entity.description %}
+                <div style="margin-top: 20px;">
+                    <button onclick="copyToClipboard('{{ entity.description|replace({"'": "\\'", "\n": "\\n"}) }}')" class="btn btn-secondary" style="margin-right: 10px;">
+                        📋 Copier description
+                    </button>
+                    {% if entity.champs is defined %}
+                        <button onclick="copyToClipboard('{{ entity.champs|replace({"'": "\\'", "\n": "\\n"}) }}')" class="btn btn-secondary">
+                            📋 Copier champs
+                        </button>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Requête SQL -->
+    {% if entity.requete is defined and entity.requete %}
+        <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); margin-bottom: 30px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="color: #2d3748; font-size: 1.3rem; margin: 0;">🔍 Requête SQL</h3>
+                <button onclick="copyToClipboard('{{ entity.requete|replace({"'": "\\'", "\n": "\\n"}) }}')" class="btn btn-success">
+                    📋 Copier la requête
+                </button>
+            </div>
+            
+            <div style="background: #1a202c; color: #e2e8f0; padding: 20px; border-radius: 8px; overflow-x: auto; font-family: 'Courier New', monospace; font-size: 0.9rem; line-height: 1.5;">
+                <pre style="margin: 0; white-space: pre-wrap; word-wrap: break-word;">{{ entity.requete }}</pre>
+            </div>
+            
+            <div style="margin-top: 15px; padding: 15px; background: #fff5f5; border-radius: 8px; border-left: 4px solid #f56565;">
+                <p style="color: #c53030; margin: 0; font-size: 0.9rem;">
+                    <strong>⚠️ Attention :</strong> Cette requête est fournie à titre informatif. Assurez-vous de la tester dans un environnement de développement avant de l'utiliser en production.
+                </p>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Actions -->
+    <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+        <h3 style="color: #2d3748; margin-bottom: 20px; font-size: 1.3rem;">⚡ Actions</h3>
+        
+        <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+            <button onclick="exportSingleRecord('csv')" class="btn btn-success">
+                📄 Export CSV
+            </button>
+            <button onclick="exportSingleRecord('json')" class="btn btn-success">
+                📄 Export JSON
+            </button>
+            {% if entity.requete is defined and entity.requete %}
+                <button onclick="executeQuery()" class="btn btn-secondary">
+                    🔍 Tester la requête
+                </button>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascript %}
+<script>
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(function() {
+            // Afficher une notification de succès
+            showNotification('Texte copié dans le presse-papiers !', 'success');
+        }).catch(function(err) {
+            console.error('Erreur lors de la copie :', err);
+            showNotification('Erreur lors de la copie', 'error');
+        });
+    }
+
+    function exportSingleRecord(format) {
+        const url = window.location.origin + '/admin/entity/{{ entityName }}/export/' + format + '?id={{ entity.id }}';
+        window.location.href = url;
+    }
+
+    function executeQuery() {
+        showNotification('Fonctionnalité de test de requête à implémenter', 'info');
+    }
+
+    function showNotification(message, type = 'info') {
+        // Créer une notification temporaire
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            background: ${type === 'success' ? '#38a169' : type === 'error' ? '#e53e3e' : '#3182ce'};
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        `;
+        notification.textContent = message;
+        
+        document.body.appendChild(notification);
+        
+        // Supprimer la notification après 3 secondes
+        setTimeout(() => {
+            notification.remove();
+        }, 3000);
+    }
+</script>
+{% endblock %} 

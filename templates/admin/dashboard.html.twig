@@ -1,0 +1,46 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Dashboard - Panel Admin{% endblock %}
+
+{% block content %}
+    <div class="stats">
+        <div class="stat-card">
+            <h3>{{ availableEntities|length }}</h3>
+            <p>Entités disponibles</p>
+        </div>
+        <div class="stat-card">
+            <h3>📊</h3>
+            <p>Données en temps réel</p>
+        </div>
+        <div class="stat-card">
+            <h3>⚡</h3>
+            <p>Performance optimisée</p>
+        </div>
+    </div>
+
+    <h2 style="margin-bottom: 20px; color: #2d3748; font-size: 1.8rem;">📋 Entités disponibles</h2>
+    
+    <div class="entity-grid">
+        {% for entityKey, entity in availableEntities %}
+            <div class="entity-card">
+                <div class="icon">{{ entity.icon }}</div>
+                <h3>{{ entity.label }}</h3>
+                <p>Consultez et gérez les données de cette entité</p>
+                <a href="{{ path('admin_entity_view', {entityName: entityKey|lower}) }}" class="btn">
+                    📋 Voir les données
+                </a>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div style="margin-top: 40px; padding: 20px; background: #f7fafc; border-radius: 12px; border-left: 4px solid #4299e1;">
+        <h3 style="color: #2d3748; margin-bottom: 10px;">💡 Fonctionnalités disponibles</h3>
+        <ul style="color: #4a5568; line-height: 1.6;">
+            <li><strong>Recherche instantanée :</strong> Filtrez les données en temps réel</li>
+            <li><strong>Export CSV/JSON :</strong> Téléchargez les données filtrées</li>
+            <li><strong>Pagination :</strong> Navigation fluide dans les grandes listes</li>
+            <li><strong>Interface responsive :</strong> Compatible mobile et desktop</li>
+            <li><strong>Performance optimisée :</strong> Chargement rapide des données</li>
+        </ul>
+    </div>
+{% endblock %} 

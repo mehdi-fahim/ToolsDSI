@@ -1,0 +1,281 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}{{ metadata.entityName }} - Panel Admin{% endblock %}
+
+{% block content %}
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px;">
+        <div>
+            <h2 style="color: #2d3748; font-size: 1.8rem; margin-bottom: 5px;">📊 {{ metadata.entityName }}</h2>
+            <p style="color: #718096;">Table: {{ metadata.tableName }} • {{ pagination.total }} enregistrements</p>
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <a href="{{ path('admin_dashboard') }}" class="btn btn-secondary">← Retour</a>
+            <button onclick="exportData('csv')" class="btn btn-success">📄 Export CSV</button>
+            <button onclick="exportData('json')" class="btn btn-success">📄 Export JSON</button>
+        </div>
+    </div>
+
+    <div class="search-container">
+        <input type="text" 
+               id="searchInput" 
+               class="search-input" 
+               placeholder="🔍 Rechercher dans {{ metadata.entityName }}..." 
+               value="{{ search }}"
+               autocomplete="off">
+        <button onclick="performSearch()" class="btn">Rechercher</button>
+        <button onclick="clearSearch()" class="btn btn-secondary">Effacer</button>
+    </div>
+
+    <div class="loading" id="loading">
+        <p>🔄 Chargement en cours...</p>
+    </div>
+
+    <div class="table-container">
+        <table class="admin-table" id="dataTable">
+            <thead>
+                <tr>
+                    {% for column in metadata.columns %}
+                        {% if column.name != 'requete' %}
+                            <th>{{ column.label }}</th>
+                        {% endif %}
+                    {% endfor %}
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                {% for entity in data %}
+                    <tr>
+                        {% for column in metadata.columns %}
+                            {% if column.name != 'requete' %}
+                                <td>
+                                    {% if column.name == 'id' %}
+                                        {% set value = entity.id %}
+                                    {% elseif column.name == 'email' %}
+                                        {% set value = entity.email %}
+                                    {% elseif column.name == 'firstName' %}
+                                        {% set value = entity.firstName %}
+                                    {% elseif column.name == 'lastName' %}
+                                        {% set value = entity.lastName %}
+                                    {% elseif column.name == 'createdAt' %}
+                                        {% set value = entity.createdAt %}
+                                    {% elseif column.name == 'isActive' %}
+                                        {% set value = entity.isActive %}
+                                    {% elseif column.name == 'name' %}
+                                        {% set value = entity.name %}
+                                    {% elseif column.name == 'description' %}
+                                        {% set value = entity.description %}
+                                    {% elseif column.name == 'price' %}
+                                        {% set value = entity.price %}
+                                    {% elseif column.name == 'stock' %}
+                                        {% set value = entity.stock %}
+                                    {% elseif column.name == 'isAvailable' %}
+                                        {% set value = entity.isAvailable %}
+                                    {% elseif column.name == 'nom' %}
+                                        {% set value = entity.nom %}
+                                    {% elseif column.name == 'nomDocument' %}
+                                        {% set value = entity.nomDocument %}
+                                    {% elseif column.name == 'champs' %}
+                                        {% set value = entity.champs %}
+                                    {% elseif column.name == 'categorie' %}
+                                        {% set value = entity.categorie %}
+                                    {% else %}
+                                        {% set value = null %}
+                                    {% endif %}
+                                    
+                                    {% if value is not null %}
+                                        {% if column.type == 'datetime' and value %}
+                                            {{ value|date('d/m/Y H:i') }}
+                                        {% elseif column.type == 'date' and value %}
+                                            {{ value|date('d/m/Y') }}
+                                        {% elseif column.type == 'boolean' %}
+                                            {{ value ? 'Oui' : 'Non' }}
+                                        {% elseif column.type == 'text' and value|length > 100 %}
+                                            {{ value|slice(0, 100) }}...
+                                        {% elseif column.name == 'categorie' %}
+                                            <span style="background: {{ value == 'Users' ? '#3182ce' : '#38a169' }}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem;">
+                                                {{ value }}
+                                            </span>
+                                        {% elseif column.name == 'nomDocument' %}
+                                            <span style="color: #3182ce; font-family: monospace; font-size: 0.9rem;">{{ value }}</span>
+                                        {% else %}
+                                            {{ value }}
+                                        {% endif %}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                            {% endif %}
+                        {% endfor %}
+                        <td>
+                            <a href="{{ path('admin_entity_detail', {entityName: entityName, id: entity.id}) }}" 
+                               class="btn btn-secondary" 
+                               style="padding: 6px 12px; font-size: 0.8rem;">
+                                👁️ Détail
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if pagination.totalPages > 1 %}
+        <div class="pagination">
+            {% if pagination.page > 1 %}
+                <a href="?page=1{% if search %}&search={{ search }}{% endif %}" class="btn btn-secondary">« Première</a>
+                <a href="?page={{ pagination.page - 1 }}{% if search %}&search={{ search }}{% endif %}" class="btn btn-secondary">‹ Précédente</a>
+            {% endif %}
+
+            {% set start = max(1, pagination.page - 2) %}
+            {% set end = min(pagination.totalPages, pagination.page + 2) %}
+
+            {% for page in start..end %}
+                {% if page == pagination.page %}
+                    <span class="current">{{ page }}</span>
+                {% else %}
+                    <a href="?page={{ page }}{% if search %}&search={{ search }}{% endif %}">{{ page }}</a>
+                {% endif %}
+            {% endfor %}
+
+            {% if pagination.page < pagination.totalPages %}
+                <a href="?page={{ pagination.page + 1 }}{% if search %}&search={{ search }}{% endif %}" class="btn btn-secondary">Suivante ›</a>
+                <a href="?page={{ pagination.totalPages }}{% if search %}&search={{ search }}{% endif %}" class="btn btn-secondary">Dernière »</a>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    <div style="margin-top: 20px; text-align: center; color: #718096; font-size: 0.9rem;">
+        Affichage de {{ ((pagination.page - 1) * pagination.limit) + 1 }} à {{ min(pagination.page * pagination.limit, pagination.total) }} 
+        sur {{ pagination.total }} enregistrements
+    </div>
+{% endblock %}
+
+{% block javascript %}
+<script>
+    let searchTimeout;
+    const searchInput = document.getElementById('searchInput');
+    const tableBody = document.getElementById('tableBody');
+    const loading = document.getElementById('loading');
+    const entityName = '{{ entityName }}';
+
+    // Recherche en temps réel
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            performSearch();
+        }, 500);
+    });
+
+    // Recherche avec Enter
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            performSearch();
+        }
+    });
+
+    function performSearch() {
+        const searchTerm = searchInput.value.trim();
+        toggleLoading(true);
+
+        // Utiliser la route AJAX de recherche
+        const url = new URL(`/admin/entity/${entityName}/search`, window.location.origin);
+        url.searchParams.set('q', searchTerm);
+        url.searchParams.set('page', '1');
+
+        makeRequest(url.toString())
+            .then(data => {
+                updateTable(data.data);
+                updatePagination(data.pagination, searchTerm);
+                toggleLoading(false);
+            })
+            .catch(error => {
+                console.error('Erreur lors de la recherche:', error);
+                toggleLoading(false);
+            });
+    }
+
+    function clearSearch() {
+        searchInput.value = '';
+        window.location.href = '{{ path('admin_entity_view', {entityName: entityName}) }}';
+    }
+
+    function updateTable(data) {
+        tableBody.innerHTML = '';
+        
+        if (data.length === 0) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="{{ metadata.columns|length }}" style="text-align: center; padding: 40px; color: #718096;">
+                        Aucun résultat trouvé
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        data.forEach(row => {
+            const tr = document.createElement('tr');
+            {% for column in metadata.columns %}
+                {% if column.name != 'requete' %}
+                    const td_{{ loop.index }} = document.createElement('td');
+                    td_{{ loop.index }}.textContent = row['{{ column.name }}'] || '-';
+                    tr.appendChild(td_{{ loop.index }});
+                {% endif %}
+            {% endfor %}
+            // Ajouter la colonne Actions
+            const actionTd = document.createElement('td');
+            actionTd.innerHTML = `<a href="/admin/entity/${entityName}/detail/${row.id}" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">👁️ Détail</a>`;
+            tr.appendChild(actionTd);
+            tableBody.appendChild(tr);
+        });
+    }
+
+    function updatePagination(pagination, searchTerm) {
+        const paginationContainer = document.querySelector('.pagination');
+        if (!paginationContainer) return;
+
+        if (pagination.totalPages <= 1) {
+            paginationContainer.style.display = 'none';
+            return;
+        }
+
+        paginationContainer.style.display = 'flex';
+        let paginationHtml = '';
+
+        if (pagination.page > 1) {
+            paginationHtml += `<a href="?page=1${searchTerm ? '&search=' + searchTerm : ''}" class="btn btn-secondary">« Première</a>`;
+            paginationHtml += `<a href="?page=${pagination.page - 1}${searchTerm ? '&search=' + searchTerm : ''}" class="btn btn-secondary">‹ Précédente</a>`;
+        }
+
+        const start = Math.max(1, pagination.page - 2);
+        const end = Math.min(pagination.totalPages, pagination.page + 2);
+
+        for (let page = start; page <= end; page++) {
+            if (page === pagination.page) {
+                paginationHtml += `<span class="current">${page}</span>`;
+            } else {
+                paginationHtml += `<a href="?page=${page}${searchTerm ? '&search=' + searchTerm : ''}">${page}</a>`;
+            }
+        }
+
+        if (pagination.page < pagination.totalPages) {
+            paginationHtml += `<a href="?page=${pagination.page + 1}${searchTerm ? '&search=' + searchTerm : ''}" class="btn btn-secondary">Suivante ›</a>`;
+            paginationHtml += `<a href="?page=${pagination.totalPages}${searchTerm ? '&search=' + searchTerm : ''}" class="btn btn-secondary">Dernière »</a>`;
+        }
+
+        paginationContainer.innerHTML = paginationHtml;
+    }
+
+    function exportData(format) {
+        const searchTerm = searchInput.value.trim();
+        const baseUrl = window.location.origin + '/admin/entity/' + entityName + '/export/' + format;
+        const url = new URL(baseUrl);
+        
+        if (searchTerm) {
+            url.searchParams.set('search', searchTerm);
+        }
+
+        window.location.href = url.toString();
+    }
+</script>
+{% endblock %} 

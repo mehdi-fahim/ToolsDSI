@@ -1,0 +1,29 @@
+controllers:
+    resource:
+        path: ../src/Controller/
+        namespace: App\Controller
+    type: attribute
+
+# Routes du panel admin
+admin_dashboard:
+    path: /admin
+    controller: App\Controller\AdminController::dashboard
+
+admin_entity_view:
+    path: /admin/entity/{entityName}
+    controller: App\Controller\AdminController::viewEntity
+    requirements:
+        entityName: '[a-zA-Z0-9_-]+'
+
+admin_entity_search:
+    path: /admin/entity/{entityName}/search
+    controller: App\Controller\AdminController::searchEntity
+    requirements:
+        entityName: '[a-zA-Z0-9_-]+'
+
+admin_entity_export:
+    path: /admin/entity/{entityName}/export/{format}
+    controller: App\Controller\AdminController::exportEntity
+    requirements:
+        entityName: '[a-zA-Z0-9_-]+'
+        format: 'csv|json'
