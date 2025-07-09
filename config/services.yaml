@@ -40,5 +40,10 @@ services:
         resource: '../src/DataFixtures/'
         tags: ['doctrine.fixture.orm']
 
+    # Configuration pour le service EditionBureautiqueOracleService
+    App\Service\EditionBureautiqueOracleService:
+        arguments:
+            $defaultConnection: '@doctrine.dbal.default_connection'
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

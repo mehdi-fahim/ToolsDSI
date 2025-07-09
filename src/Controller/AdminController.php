@@ -2,10 +2,9 @@
 
 namespace App\Controller;
 
-use App\Entity\User;
-use App\Entity\Product;
 use App\Entity\EditionBureautique;
 use App\Service\AdminDataService;
+use App\Service\EditionBureautiqueOracleService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -17,7 +16,8 @@ use Symfony\Component\Routing\Annotation\Route;
 class AdminController extends AbstractController
 {
     public function __construct(
-        private AdminDataService $adminDataService
+        private AdminDataService $adminDataService,
+        private EditionBureautiqueOracleService $oracleService
     ) {}
 
     #[Route('', name: 'admin_dashboard', methods: ['GET'])]
@@ -25,16 +25,6 @@ class AdminController extends AbstractController
     {
         // Liste des entités disponibles
         $availableEntities = [
-            'User' => [
-                'class' => User::class,
-                'label' => 'Utilisateurs',
-                'icon' => '👥'
-            ],
-            'Product' => [
-                'class' => Product::class,
-                'label' => 'Produits',
-                'icon' => '📦'
-            ],
             'EditionBureautique' => [
                 'class' => EditionBureautique::class,
                 'label' => 'Éditions Bureautiques',
@@ -50,6 +40,38 @@ class AdminController extends AbstractController
     #[Route('/entity/{entityName}', name: 'admin_entity_view', methods: ['GET'])]
     public function viewEntity(string $entityName, Request $request): Response
     {
+        if (strtolower($entityName) === 'editionbureautique' || strtolower($entityName) === 'edition-bureautique') {
+            // Récupérer les données Oracle
+            $data = $this->oracleService->fetchEditions();
+            // Adapter les métadonnées pour la vue
+            $metadata = [
+                'entityName' => 'EditionBureautique',
+                'tableName' => 'Oracle',
+                'columns' => [
+                    ['name' => 'NOMBRE_UTILISATION', 'label' => 'Nombre Utilisation', 'type' => 'integer'],
+                    ['name' => 'ANNEE', 'label' => 'Année', 'type' => 'string'],
+                    ['name' => 'NOM_BI', 'label' => 'Code BI', 'type' => 'string'],
+                    ['name' => 'DESCRIPTION_BI', 'label' => 'Description BI', 'type' => 'string'],
+                    ['name' => 'UTILISATEUR', 'label' => 'Utilisateur', 'type' => 'string'],
+                    ['name' => 'DERNIERE_UTILISATION', 'label' => 'Dernière Utilisation', 'type' => 'string'],
+                ]
+            ];
+            // Pagination simple (tout d'un coup)
+            $pagination = [
+                'page' => 1,
+                'total' => count($data),
+                'limit' => count($data),
+                'totalPages' => 1
+            ];
+            return $this->render('admin/entity_view.html.twig', [
+                'entityName' => $entityName,
+                'metadata' => $metadata,
+                'data' => $data,
+                'pagination' => $pagination,
+                'search' => ''
+            ]);
+        }
+
         $entityClass = $this->getEntityClass($entityName);
         
         if (!$entityClass) {
@@ -200,10 +222,6 @@ class AdminController extends AbstractController
     private function getEntityClass(string $entityName): ?string
     {
         $entityMap = [
-            'user' => User::class,
-            'users' => User::class,
-            'product' => Product::class,
-            'products' => Product::class,
             'editionbureautique' => EditionBureautique::class,
             'edition-bureautique' => EditionBureautique::class,
         ];

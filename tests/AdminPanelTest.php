@@ -2,8 +2,6 @@
 
 namespace App\Tests;
 
-use App\Entity\User;
-use App\Entity\Product;
 use App\Service\AdminDataService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
