@@ -11,6 +11,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 
 #[Route('/admin')]
 class AdminController extends AbstractController
@@ -48,7 +49,7 @@ class AdminController extends AbstractController
                 'entityName' => 'EditionBureautique',
                 'tableName' => 'Oracle',
                 'columns' => [
-                    ['name' => 'NOMBRE_UTILISATION', 'label' => 'Nombre Utilisation', 'type' => 'integer'],
+                    ['name' => 'NOMBRE', 'label' => 'Nombre', 'type' => 'integer'],
                     ['name' => 'ANNEE', 'label' => 'Année', 'type' => 'string'],
                     ['name' => 'NOM_BI', 'label' => 'Code BI', 'type' => 'string'],
                     ['name' => 'DESCRIPTION_BI', 'label' => 'Description BI', 'type' => 'string'],
@@ -57,6 +58,50 @@ class AdminController extends AbstractController
                 ]
             ];
             // Pagination simple (tout d'un coup)
+            $pagination = [
+                'page' => 1,
+                'total' => count($data),
+                'limit' => count($data),
+                'totalPages' => 1
+            ];
+            return $this->render('admin/entity_view.html.twig', [
+                'entityName' => $entityName,
+                'metadata' => $metadata,
+                'data' => $data,
+                'pagination' => $pagination,
+                'search' => ''
+            ]);
+        }
+
+        if (strtolower($entityName) === 'utilisateur' || strtolower($entityName) === 'utilisateurs') {
+            // Données simulées (à remplacer par ta requête plus tard)
+            $data = [
+                [
+                    'NOM' => 'Dupont',
+                    'PRENOM' => 'Jean',
+                    'EMAIL' => 'jean.dupont@example.com',
+                    'POSTE' => 'Administrateur',
+                    'MODULE' => 'Facture, Logement',
+                ],
+                [
+                    'NOM' => 'Martin',
+                    'PRENOM' => 'Sophie',
+                    'EMAIL' => 'sophie.martin@example.com',
+                    'POSTE' => 'Utilisateur',
+                    'MODULE' => 'Logement',
+                ],
+            ];
+            $metadata = [
+                'entityName' => 'Utilisateur',
+                'tableName' => 'Utilisateurs',
+                'columns' => [
+                    ['name' => 'NOM', 'label' => 'Nom', 'type' => 'string'],
+                    ['name' => 'PRENOM', 'label' => 'Prénom', 'type' => 'string'],
+                    ['name' => 'EMAIL', 'label' => 'Email', 'type' => 'string'],
+                    ['name' => 'POSTE', 'label' => 'Poste occupé', 'type' => 'string'],
+                    ['name' => 'MODULE', 'label' => 'Module', 'type' => 'string'],
+                ]
+            ];
             $pagination = [
                 'page' => 1,
                 'total' => count($data),
@@ -214,6 +259,31 @@ class AdminController extends AbstractController
         $response->headers->set('Content-Disposition', $disposition);
 
         return $response;
+    }
+
+    #[Route('/login', name: 'login', methods: ['GET'])]
+    public function login(): Response
+    {
+        return $this->render('login.html.twig');
+    }
+
+    #[Route('/admin/administration', name: 'admin_user_access', methods: ['GET', 'POST'])]
+    public function userAccess(Request $request): Response
+    {
+        $userId = $request->get('user_id');
+        $access = null;
+        if ($userId) {
+            // Simulation des droits d'accès
+            $fakeAccess = [
+                'jdupont' => ['Document BI', 'Utilisateurs', 'Administration'],
+                'smartin' => ['Document BI'],
+            ];
+            $access = $fakeAccess[$userId] ?? [];
+        }
+        return $this->render('admin/user_access.html.twig', [
+            'userId' => $userId,
+            'access' => $access,
+        ]);
     }
 
     /**

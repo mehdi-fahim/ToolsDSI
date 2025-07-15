@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion - Plaine Commune Habitat</title>
+    <style>
+        body {
+            font-family: Bahnschrift, 'Segoe UI', Arial, sans-serif;
+            background: #f4f6fa;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-container {
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(35,41,70,0.07);
+            padding: 48px 38px 36px 38px;
+            max-width: 370px;
+            width: 100%;
+            text-align: center;
+        }
+        .login-logo {
+            margin-bottom: 24px;
+        }
+        .login-logo img {
+            max-width: 120px;
+            max-height: 90px;
+        }
+        .login-title {
+            font-size: 1.5rem;
+            color: #232946;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .login-desc {
+            color: #4a5568;
+            font-size: 1.05rem;
+            margin-bottom: 28px;
+        }
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+        .login-form input {
+            padding: 12px 14px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 7px;
+            font-size: 1.08rem;
+            background: #f7fafc;
+            transition: border 0.2s;
+        }
+        .login-form input:focus {
+            border-color: #ff6600;
+            outline: none;
+        }
+        .login-form button {
+            background: #ff6600;
+            color: #fff;
+            font-weight: 600;
+            padding: 12px 0;
+            border: none;
+            border-radius: 7px;
+            font-size: 1.08rem;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .login-form button:hover {
+            background: #e65c00;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-logo">
+            <img src="/images/logo-pch.png" alt="Plaine Commune Habitat">
+        </div>
+        <div class="login-title">Connexion</div>
+        <div class="login-desc">Bienvenue sur l’espace d’administration Plaine Commune Habitat.<br>Veuillez vous connecter pour accéder à la plateforme.</div>
+        <form class="login-form">
+            <input type="email" placeholder="Adresse email" required>
+            <input type="password" placeholder="Mot de passe" required>
+            <button type="submit">Se connecter</button>
+        </form>
+    </div>
+</body>
+</html> 

@@ -36,9 +36,9 @@ services:
         tags: ['doctrine.repository_service']
 
     # Configuration pour les fixtures
-    App\DataFixtures\:
-        resource: '../src/DataFixtures/'
-        tags: ['doctrine.fixture.orm']
+    #App\DataFixtures\:
+    #    resource: '../src/DataFixtures/'
+    #    tags: ['doctrine.fixture.orm']
 
     # Configuration pour le service EditionBureautiqueOracleService
     App\Service\EditionBureautiqueOracleService:

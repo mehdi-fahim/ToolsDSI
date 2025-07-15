@@ -48,70 +48,12 @@
                         {% for column in metadata.columns %}
                             {% if column.name != 'requete' %}
                                 <td>
-                                    {% if column.name == 'id' %}
-                                        {% set value = entity.id %}
-                                    {% elseif column.name == 'email' %}
-                                        {% set value = entity.email %}
-                                    {% elseif column.name == 'firstName' %}
-                                        {% set value = entity.firstName %}
-                                    {% elseif column.name == 'lastName' %}
-                                        {% set value = entity.lastName %}
-                                    {% elseif column.name == 'createdAt' %}
-                                        {% set value = entity.createdAt %}
-                                    {% elseif column.name == 'isActive' %}
-                                        {% set value = entity.isActive %}
-                                    {% elseif column.name == 'name' %}
-                                        {% set value = entity.name %}
-                                    {% elseif column.name == 'description' %}
-                                        {% set value = entity.description %}
-                                    {% elseif column.name == 'price' %}
-                                        {% set value = entity.price %}
-                                    {% elseif column.name == 'stock' %}
-                                        {% set value = entity.stock %}
-                                    {% elseif column.name == 'isAvailable' %}
-                                        {% set value = entity.isAvailable %}
-                                    {% elseif column.name == 'nom' %}
-                                        {% set value = entity.nom %}
-                                    {% elseif column.name == 'nomDocument' %}
-                                        {% set value = entity.nomDocument %}
-                                    {% elseif column.name == 'champs' %}
-                                        {% set value = entity.champs %}
-                                    {% elseif column.name == 'categorie' %}
-                                        {% set value = entity.categorie %}
-                                    {% else %}
-                                        {% set value = null %}
-                                    {% endif %}
-                                    
-                                    {% if value is not null %}
-                                        {% if column.type == 'datetime' and value %}
-                                            {{ value|date('d/m/Y H:i') }}
-                                        {% elseif column.type == 'date' and value %}
-                                            {{ value|date('d/m/Y') }}
-                                        {% elseif column.type == 'boolean' %}
-                                            {{ value ? 'Oui' : 'Non' }}
-                                        {% elseif column.type == 'text' and value|length > 100 %}
-                                            {{ value|slice(0, 100) }}...
-                                        {% elseif column.name == 'categorie' %}
-                                            <span style="background: {{ value == 'Users' ? '#3182ce' : '#38a169' }}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem;">
-                                                {{ value }}
-                                            </span>
-                                        {% elseif column.name == 'nomDocument' %}
-                                            <span style="color: #3182ce; font-family: monospace; font-size: 0.9rem;">{{ value }}</span>
-                                        {% else %}
-                                            {{ value }}
-                                        {% endif %}
-                                    {% else %}
-                                        -
-                                    {% endif %}
+                                    {{ entity[column.name] is defined and entity[column.name] is not null ? entity[column.name] : '-' }}
                                 </td>
                             {% endif %}
                         {% endfor %}
                         <td>
-                            <a href="{{ path('admin_entity_detail', {entityName: entityName, id: entity.id}) }}" 
-                               class="btn btn-secondary" 
-                               style="padding: 6px 12px; font-size: 0.8rem;">
-                                👁️ Détail
-                            </a>
+                            {# Pas d'action de détail pour les données Oracle #}
                         </td>
                     </tr>
                 {% endfor %}

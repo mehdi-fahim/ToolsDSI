@@ -12,8 +12,8 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: Bahnschrift, 'Segoe UI', Arial, sans-serif;
+            background: #f4f6fa;
             min-height: 100vh;
             color: #333;
         }
@@ -285,16 +285,30 @@
         }
     </style>
 </head>
-<body>
-    <div class="admin-container">
-        <div class="admin-header">
-            <h1>🔧 Panel Admin</h1>
-            <p>Gestion et consultation des données</p>
+<body style="display: flex; min-height: 100vh; background: #f4f6fa;">
+    <aside style="width: 240px; background: #232946; color: #fff; display: flex; flex-direction: column; align-items: stretch; padding: 32px 0 0 0; box-shadow: 2px 0 12px rgba(35,41,70,0.08);">
+        <div style="text-align: center; margin-bottom: 40px;">
+            <img src="/images/logo-pch.png" alt="Plaine Commune Habitat" style="max-width: 120px; max-height: 90px; display: block; margin: 0 auto; background: transparent;" />
         </div>
-
-        <div class="admin-content">
+        <nav style="flex: 1;">
+            <ul style="list-style: none; padding: 0; margin: 0;">
+                <li><a href="{{ path('admin_dashboard') }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">🏠 <span>Accueil</span></a></li>
+                <li><a href="{{ path('admin_entity_view', {entityName: 'EditionBureautique'}) }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">📄 <span>Document BI</span></a></li>
+                <li><a href="{{ path('admin_entity_view', {entityName: 'Utilisateur'}) }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">👥 <span>Utilisateurs</span></a></li>
+            </ul>
+        </nav>
+        <div style="text-align: center; margin-bottom: 18px;">
+            <a href="{{ path('admin_user_access') }}" style="color: #fff; font-weight: 600; text-decoration: none; font-size: 1.08rem; letter-spacing: 0.5px;">Administration</a>
+        </div>
+        <div style="margin: 40px 0 0 0; text-align: center; font-size: 0.9rem; color: #b8b8d1;">Copyright © Outil DSI</div>
+    </aside>
+    <div style="flex: 1; display: flex; flex-direction: column; min-height: 100vh;">
+        <header style="background: #fff; box-shadow: 0 2px 8px rgba(35,41,70,0.04); padding: 18px 36px; display: flex; align-items: center; justify-content: flex-end; gap: 24px;">
+            <a href="{{ path('login') }}" style="background: #ff6600; color: #fff; font-weight: 600; padding: 8px 22px; border-radius: 7px; text-decoration: none; font-size: 1.08rem; letter-spacing: 0.5px; transition: background 0.2s;">Connexion</a>
+        </header>
+        <main style="flex: 1; padding: 36px;">
             {% block content %}{% endblock %}
-        </div>
+        </main>
     </div>
 
     <script>
