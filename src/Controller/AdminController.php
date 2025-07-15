@@ -12,6 +12,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Session\SessionInterface;
 
 #[Route('/admin')]
 class AdminController extends AbstractController
@@ -261,17 +262,52 @@ class AdminController extends AbstractController
         return $response;
     }
 
-    #[Route('/login', name: 'login', methods: ['GET'])]
-    public function login(): Response
+    #[Route('/login', name: 'login', methods: ['GET', 'POST'])]
+    public function login(Request $request, SessionInterface $session): Response
     {
-        return $this->render('login.html.twig');
+        $error = null;
+        if ($request->isMethod('POST')) {
+            $id = $request->request->get('id');
+            $password = $request->request->get('password');
+            if ($id === 'PCH' && $password === 'Ulis93200') {
+                $session->set('is_admin', true);
+                return $this->redirectToRoute('admin_dashboard');
+            } else {
+                $error = 'Identifiants invalides';
+            }
+        }
+        return $this->render('login.html.twig', [
+            'error' => $error
+        ]);
+    }
+
+    #[Route('/logout', name: 'logout', methods: ['GET'])]
+    public function logout(SessionInterface $session): Response
+    {
+        $session->clear();
+        return $this->redirectToRoute('login');
+    }
+
+    private function getAllModules(): array
+    {
+        return [
+            'Accueil',
+            'Document BI',
+            'Utilisateurs',
+            'Débloquer MDP',
+            'Administration',
+        ];
     }
 
     #[Route('/admin/administration', name: 'admin_user_access', methods: ['GET', 'POST'])]
-    public function userAccess(Request $request): Response
+    public function userAccess(Request $request, SessionInterface $session): Response
     {
+        if (!$this->isAdmin($session)) {
+            return $this->redirectToRoute('login');
+        }
         $userId = $request->get('user_id');
         $access = null;
+        $allModules = $this->getAllModules();
         if ($userId) {
             // Simulation des droits d'accès
             $fakeAccess = [
@@ -283,6 +319,68 @@ class AdminController extends AbstractController
         return $this->render('admin/user_access.html.twig', [
             'userId' => $userId,
             'access' => $access,
+            'allModules' => $allModules,
+        ]);
+    }
+
+    #[Route('/admin/unlock-password', name: 'admin_user_unlock', methods: ['GET', 'POST'])]
+    public function unlockPassword(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAdmin($session)) {
+            return $this->redirectToRoute('login');
+        }
+        $userId = $request->get('user_id');
+        $newPassword = null;
+        $success = false;
+        $currentPassword = null;
+        // Simulation : mot de passe en dur pour jdupont et smartin
+        $fakePasswords = [
+            'jdupont' => 'azerty123',
+            'smartin' => 'motdepasse',
+        ];
+        if ($request->isMethod('POST')) {
+            $userId = $request->request->get('user_id');
+            $action = $request->request->get('action');
+            if ($userId && $action === 'unlock') {
+                $fakePasswords[$userId] = 'azerty123';
+                $success = true;
+                $currentPassword = 'azerty123';
+            } elseif ($userId && $action === 'modify') {
+                $newPassword = $request->request->get('new_password');
+                if ($newPassword) {
+                    $fakePasswords[$userId] = $newPassword;
+                    $success = true;
+                    $currentPassword = $newPassword;
+                }
+            }
+        } elseif ($userId && isset($fakePasswords[$userId])) {
+            $currentPassword = $fakePasswords[$userId];
+        }
+        return $this->render('admin/unlock_password.html.twig', [
+            'userId' => $userId,
+            'currentPassword' => $currentPassword,
+            'success' => $success
+        ]);
+    }
+
+    #[Route('/admin/show-password', name: 'admin_user_show_password', methods: ['GET'])]
+    public function showPassword(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAdmin($session)) {
+            return $this->redirectToRoute('login');
+        }
+        $userId = $request->get('user_id');
+        $password = null;
+        $fakePasswords = [
+            'jdupont' => 'azerty123',
+            'smartin' => 'motdepasse',
+        ];
+        if ($userId && isset($fakePasswords[$userId])) {
+            $password = $fakePasswords[$userId];
+        }
+        return $this->render('admin/show_password.html.twig', [
+            'userId' => $userId,
+            'password' => $password
         ]);
     }
 
@@ -315,5 +413,10 @@ class AdminController extends AbstractController
             'text' => strlen($value) > 100 ? substr($value, 0, 100) . '...' : $value,
             default => (string) $value
         };
+    }
+
+    private function isAdmin(SessionInterface $session): bool
+    {
+        return $session->get('is_admin', false) === true;
     }
 } 

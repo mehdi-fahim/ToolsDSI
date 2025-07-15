@@ -15,7 +15,6 @@
                 <div style="margin-top: 12px;">
                     <strong>Pages/modules accessibles :</strong>
                     <form method="post" style="margin-top: 8px; text-align: left;">
-                        {% set allModules = ['Document BI', 'Utilisateurs', 'Administration'] %}
                         {% for module in allModules %}
                             <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 1.08rem; color: #232946;">
                                 <input type="checkbox" name="modules[]" value="{{ module }}" {% if access is not null and module in access %}checked{% endif %}>

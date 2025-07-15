@@ -295,16 +295,25 @@
                 <li><a href="{{ path('admin_dashboard') }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">🏠 <span>Accueil</span></a></li>
                 <li><a href="{{ path('admin_entity_view', {entityName: 'EditionBureautique'}) }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">📄 <span>Document BI</span></a></li>
                 <li><a href="{{ path('admin_entity_view', {entityName: 'Utilisateur'}) }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">👥 <span>Utilisateurs</span></a></li>
+                {% if app.session and app.session.get('is_admin') %}
+                    <li><a href="{{ path('admin_user_unlock') }}" style="color: #fff; font-weight: 600; text-decoration: none; font-size: 1.08rem; letter-spacing: 0.5px; padding: 14px 32px; display: block;"><span style='font-size:1.1em;'>🔒</span> Débloquer MDP</a></li>
+                {% endif %}
             </ul>
         </nav>
+        {% if app.session and app.session.get('is_admin') %}
         <div style="text-align: center; margin-bottom: 18px;">
             <a href="{{ path('admin_user_access') }}" style="color: #fff; font-weight: 600; text-decoration: none; font-size: 1.08rem; letter-spacing: 0.5px;">Administration</a>
         </div>
+        {% endif %}
         <div style="margin: 40px 0 0 0; text-align: center; font-size: 0.9rem; color: #b8b8d1;">Copyright © Outil DSI</div>
     </aside>
     <div style="flex: 1; display: flex; flex-direction: column; min-height: 100vh;">
         <header style="background: #fff; box-shadow: 0 2px 8px rgba(35,41,70,0.04); padding: 18px 36px; display: flex; align-items: center; justify-content: flex-end; gap: 24px;">
-            <a href="{{ path('login') }}" style="background: #ff6600; color: #fff; font-weight: 600; padding: 8px 22px; border-radius: 7px; text-decoration: none; font-size: 1.08rem; letter-spacing: 0.5px; transition: background 0.2s;">Connexion</a>
+            {% if app.session and app.session.get('is_admin') %}
+                <a href="{{ path('logout') }}" style="background: #ff6600; color: #fff; font-weight: 600; padding: 8px 22px; border-radius: 7px; text-decoration: none; font-size: 1.08rem; letter-spacing: 0.5px; transition: background 0.2s;">Déconnexion</a>
+            {% else %}
+                <a href="{{ path('login') }}" style="background: #ff6600; color: #fff; font-weight: 600; padding: 8px 22px; border-radius: 7px; text-decoration: none; font-size: 1.08rem; letter-spacing: 0.5px; transition: background 0.2s;">Connexion</a>
+            {% endif %}
         </header>
         <main style="flex: 1; padding: 36px;">
             {% block content %}{% endblock %}

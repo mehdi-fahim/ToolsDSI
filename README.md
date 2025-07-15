@@ -1,6 +1,68 @@
-# 🚀 Panel Admin Symfony - Guide d'Installation
+# 🛠️ Outil DSI - Panel Admin Symfony
 
-Ce guide explique comment installer et configurer ce panel admin Symfony sur une machine vierge.
+## 📚 Documentation complète
+
+La documentation détaillée du projet est organisée dans le dossier `docs/` :
+
+- **README_ADMIN_PANEL.md** : Guide complet d’utilisation, d’installation et d’architecture du panel admin.
+- **README_AJOUT_PAGE.md** : Tutoriel pas à pas pour ajouter une nouvelle page/module, la rendre visible dans la navigation et la page d’administration, et gérer les droits d’accès.
+
+Seul ce fichier `README.md` principal reste à la racine du projet pour un affichage rapide sur GitHub ou dans l’explorateur de projet.
+
+---
+
+Ce projet est un outil d’administration moderne pour Symfony, pensé pour la gestion bureautique et la visualisation de données, avec une interface personnalisée Plaine Commune Habitat.
+
+---
+
+## Fonctionnalités principales
+
+- **Sidebar moderne** avec logo Plaine Commune Habitat, navigation Accueil, Document BI, Utilisateurs, Administration
+- **Dashboard d’accueil** : description du site, fonctionnalités illustrées
+- **Tableaux dynamiques** pour Document BI (données Oracle) et Utilisateurs (nom, prénom, email, poste, modules)
+- **Page de connexion** design (logo, police Bahnschrift, responsive)
+- **Page Administration** : saisie d’un ID utilisateur, gestion des droits d’accès par module via cases à cocher
+- **Design responsive** et personnalisable (couleurs, police, logo)
+
+---
+
+## Installation
+
+Voir instructions détaillées plus bas (prérequis, installation, configuration BDD, etc.).
+
+---
+
+## Navigation & Pages
+
+- **Accueil** : Présentation de l’outil, fonctionnalités principales
+- **Document BI** : Consultation des éditions bureautiques (requête Oracle), export CSV/JSON
+- **Utilisateurs** : Liste des utilisateurs (nom, prénom, email, poste, modules)
+- **Administration** : Saisie d’un ID utilisateur, gestion des droits d’accès (checkbox par module)
+- **Connexion** : Page de login moderne (logo, Bahnschrift)
+
+---
+
+## Personnalisation graphique
+
+- **Logo** : modifiable dans `public/images/logo-pch.png` (affiché en haut de la sidebar)
+- **Police** : Bahnschrift (avec fallback), modifiable dans `templates/admin/base.html.twig`
+- **Couleurs** : thème principal bleu nuit et orange, modifiable dans les styles inline ou CSS
+- **Sidebar** : liens et copyright personnalisables dans `templates/admin/base.html.twig`
+
+---
+
+## Gestion des droits utilisateurs
+
+- Accès via le lien “Administration” dans la sidebar
+- Saisie de l’ID utilisateur (ex : `jdupont`)
+- Affichage et modification des modules/pages accessibles via cases à cocher (Document BI, Utilisateurs, Administration)
+- (Simulation, à brancher sur la base réelle selon vos besoins)
+
+---
+
+## Installation & utilisation
+
+(Instructions d’installation, configuration, démarrage, ajout d’entités, dépannage : voir sections existantes ci-dessous)
 
 ---
 

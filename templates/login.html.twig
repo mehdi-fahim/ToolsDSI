@@ -80,12 +80,15 @@
             <img src="/images/logo-pch.png" alt="Plaine Commune Habitat">
         </div>
         <div class="login-title">Connexion</div>
-        <div class="login-desc">Bienvenue sur l’espace d’administration Plaine Commune Habitat.<br>Veuillez vous connecter pour accéder à la plateforme.</div>
-        <form class="login-form">
-            <input type="email" placeholder="Adresse email" required>
-            <input type="password" placeholder="Mot de passe" required>
+        <div class="login-desc">Bienvenue sur l'Outil DSI.<br>Retourner à la page <a href="{{ path('admin_dashboard') }}">d'accueil</a></div>
+        <form class="login-form" method="post">
+            <input type="text" name="id" placeholder="Identifiant" required>
+            <input type="password" name="password" placeholder="Mot de passe" required>
             <button type="submit">Se connecter</button>
         </form>
+        {% if error %}
+            <div style="color: #f56565; margin-top: 18px; font-weight: 600;">{{ error }}</div>
+        {% endif %}
     </div>
 </body>
 </html> 
