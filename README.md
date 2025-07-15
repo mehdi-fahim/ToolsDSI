@@ -4,8 +4,8 @@
 
 La documentation détaillée du projet est organisée dans le dossier `docs/` :
 
-- **README_ADMIN_PANEL.md** : Guide complet d’utilisation, d’installation et d’architecture du panel admin.
-- **README_AJOUT_PAGE.md** : Tutoriel pas à pas pour ajouter une nouvelle page/module, la rendre visible dans la navigation et la page d’administration, et gérer les droits d’accès.
+- [**README_ADMIN_PANEL.md**](docs/README_ADMIN_PANEL.md) : Guide complet d’utilisation, d’installation et d’architecture du panel admin.
+- [**README_AJOUT_PAGE.md**](docs/README_AJOUT_PAGE.md) : Tutoriel pas à pas pour ajouter une nouvelle page/module, la rendre visible dans la navigation et la page d’administration, et gérer les droits d’accès.
 
 Seul ce fichier `README.md` principal reste à la racine du projet pour un affichage rapide sur GitHub ou dans l’explorateur de projet.
 
