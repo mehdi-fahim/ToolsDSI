@@ -1,7 +1,8 @@
 doctrine:
     dbal:
         url: '%env(resolve:DATABASE_URL)%'
-        
+        driver: 'oci8'
+        charset: AL32UTF8
         # Configuration générique - sera détectée automatiquement selon l'URL
         profiling_collect_backtrace: '%kernel.debug%'
         use_savepoints: true
