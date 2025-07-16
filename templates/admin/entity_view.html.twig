@@ -53,7 +53,25 @@
                             {% endif %}
                         {% endfor %}
                         <td>
-                            {# Pas d'action de détail pour les données Oracle #}
+                            {% if entityName|lower == 'editionbureautique' or entityName|lower == 'edition-bureautique' %}
+                                <a href="{{ path('admin_entity_detail', {entityName: entityName, id: entity.NOM_BI}) }}" 
+                                   class="btn btn-secondary" 
+                                   style="padding: 6px 12px; font-size: 0.8rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                                    👁️ Détail
+                                </a>
+                            {% elseif entityName|lower == 'utilisateur' or entityName|lower == 'utilisateurs' %}
+                                <a href="{{ path('admin_entity_detail', {entityName: entityName, id: entity.CODE_UTILISATEUR}) }}" 
+                                   class="btn btn-secondary" 
+                                   style="padding: 6px 12px; font-size: 0.8rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                                    👁️ Détail
+                                </a>
+                            {% else %}
+                                <a href="{{ path('admin_entity_detail', {entityName: entityName, id: entity.id}) }}" 
+                                   class="btn btn-secondary" 
+                                   style="padding: 6px 12px; font-size: 0.8rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                                    👁️ Détail
+                                </a>
+                            {% endif %}
                         </td>
                     </tr>
                 {% endfor %}
@@ -119,7 +137,17 @@
         const searchTerm = searchInput.value.trim();
         toggleLoading(true);
 
-        // Utiliser la route AJAX de recherche
+        // Pour EditionBureautique et Utilisateur, utiliser la recherche directe via URL
+        if (entityName.toLowerCase() === 'editionbureautique' || entityName.toLowerCase() === 'edition-bureautique' ||
+            entityName.toLowerCase() === 'utilisateur' || entityName.toLowerCase() === 'utilisateurs') {
+            const url = new URL(window.location.href);
+            url.searchParams.set('search', searchTerm);
+            url.searchParams.set('page', '1');
+            window.location.href = url.toString();
+            return;
+        }
+
+        // Pour les autres entités, utiliser la route AJAX de recherche
         const url = new URL(`/admin/entity/${entityName}/search`, window.location.origin);
         url.searchParams.set('q', searchTerm);
         url.searchParams.set('page', '1');

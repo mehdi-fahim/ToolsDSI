@@ -57,6 +57,34 @@
                             <span style="color: #2d3748; font-weight: 500;">{{ entity.nom }}</span>
                         {% elseif column.name == 'nomDocument' %}
                             <span style="color: #3182ce; font-family: monospace;">{{ entity.nomDocument }}</span>
+                        {% elseif column.name == 'NOM_DOCUMENT' %}
+                            <span style="color: #3182ce; font-family: monospace;">{{ entity.NOM_DOCUMENT }}</span>
+                        {% elseif column.name == 'NOM_BI' %}
+                            <span style="color: #2d3748; font-weight: 500; font-family: monospace;">{{ entity.NOM_BI }}</span>
+                        {% elseif column.name == 'DOCUMENT_TYPE' %}
+                            <span style="background: #4299e1; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.9rem;">
+                                {{ entity.DOCUMENT_TYPE }}
+                            </span>
+                        {% elseif column.name == 'DESCRIPTION_BI' %}
+                            <span style="color: #2d3748;">{{ entity.DESCRIPTION_BI }}</span>
+                        {% elseif column.name == 'NUM_TIERS' %}
+                            <span style="color: #2d3748; font-weight: 500; font-family: monospace;">{{ entity.NUM_TIERS }}</span>
+                        {% elseif column.name == 'CODE_UTILISATEUR' %}
+                            <span style="color: #3182ce; font-weight: 500; font-family: monospace;">{{ entity.CODE_UTILISATEUR }}</span>
+                        {% elseif column.name == 'GROUPE' %}
+                            <span style="background: #4299e1; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.9rem;">
+                                {{ entity.GROUPE }}
+                            </span>
+                        {% elseif column.name == 'ETAT' %}
+                            <span style="background: {{ entity.ETAT == 'A' ? '#38a169' : '#e53e3e' }}; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.9rem;">
+                                {{ entity.ETAT == 'A' ? '✅ Actif' : '❌ Inactif' }}
+                            </span>
+                        {% elseif column.name == 'CODE_WEB' %}
+                            <span style="color: #2d3748; font-family: monospace;">{{ entity.CODE_WEB }}</span>
+                        {% elseif column.name == 'CODE_ULIS' %}
+                            <span style="color: #2d3748; font-family: monospace;">{{ entity.CODE_ULIS }}</span>
+                        {% elseif column.name == 'DERNIERE_CONNEXION' %}
+                            <span style="color: #2d3748;">{{ entity.DERNIERE_CONNEXION ? entity.DERNIERE_CONNEXION|date('d/m/Y H:i') : 'Jamais connecté' }}</span>
                         {% elseif column.name == 'categorie' %}
                             <span style="background: {{ entity.categorie == 'Users' ? '#3182ce' : '#38a169' }}; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.9rem;">
                                 {{ entity.categorie }}
@@ -77,6 +105,41 @@
                     <p style="color: #4a5568; line-height: 1.6; margin: 0;">{{ entity.description }}</p>
                 </div>
             {% endif %}
+            
+            {% if entity.DESCRIPTION_PLUS is defined and entity.DESCRIPTION_PLUS %}
+                <h3 style="color: #2d3748; margin-bottom: 20px; font-size: 1.3rem;">📋 Description détaillée</h3>
+                <div style="background: #f0fff4; padding: 20px; border-radius: 8px; border-left: 4px solid #38a169; margin-bottom: 25px;">
+                    <p style="color: #2f855a; line-height: 1.6; margin: 0; white-space: pre-wrap;">{{ entity.DESCRIPTION_PLUS }}</p>
+                </div>
+            {% endif %}
+            
+            {% if entity.DERNIERE_CONNEXION is defined %}
+                <h3 style="color: #2d3748; margin-bottom: 20px; font-size: 1.3rem;">🕒 Informations de connexion</h3>
+                <div style="background: #fff5f5; padding: 20px; border-radius: 8px; border-left: 4px solid #f56565; margin-bottom: 25px;">
+                    <div style="margin-bottom: 15px;">
+                        <strong style="color: #c53030; display: block; margin-bottom: 5px;">Dernière connexion:</strong>
+                        <span style="color: #2d3748; font-weight: 500;">
+                            {% if entity.DERNIERE_CONNEXION %}
+                                {{ entity.DERNIERE_CONNEXION|date('d/m/Y à H:i:s') }}
+                            {% else %}
+                                <span style="color: #e53e3e; font-style: italic;">Jamais connecté</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    {% if entity.CODE_WEB is defined and entity.CODE_WEB %}
+                        <div style="margin-bottom: 15px;">
+                            <strong style="color: #c53030; display: block; margin-bottom: 5px;">Code Web:</strong>
+                            <span style="color: #2d3748; font-family: monospace;">{{ entity.CODE_WEB }}</span>
+                        </div>
+                    {% endif %}
+                    {% if entity.CODE_ULIS is defined and entity.CODE_ULIS %}
+                        <div>
+                            <strong style="color: #c53030; display: block; margin-bottom: 5px;">Code ULIS:</strong>
+                            <span style="color: #2d3748; font-family: monospace;">{{ entity.CODE_ULIS }}</span>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
 
             {% if entity.champs is defined %}
                 <h3 style="color: #2d3748; margin-bottom: 15px; font-size: 1.3rem;">📋 Champs inclus</h3>
@@ -91,8 +154,13 @@
                         📋 Copier description
                     </button>
                     {% if entity.champs is defined %}
-                        <button onclick="copyToClipboard('{{ entity.champs|replace({"'": "\\'", "\n": "\\n"}) }}')" class="btn btn-secondary">
+                        <button onclick="copyToClipboard('{{ entity.champs|replace({"'": "\\'", "\n": "\\n"}) }}')" class="btn btn-secondary" style="margin-right: 10px;">
                             📋 Copier champs
+                        </button>
+                    {% endif %}
+                    {% if entity.DESCRIPTION_PLUS is defined and entity.DESCRIPTION_PLUS %}
+                        <button onclick="copyToClipboard('{{ entity.DESCRIPTION_PLUS|replace({"'": "\\'", "\n": "\\n"}) }}')" class="btn btn-secondary">
+                            📋 Copier description détaillée
                         </button>
                     {% endif %}
                 </div>
