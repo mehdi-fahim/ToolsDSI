@@ -318,9 +318,9 @@
                                 <span style="background: #ff6600; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; margin-left: 8px;">ADMIN</span>
                             {% endif %}
                         </div>
-                        <div style="color: #718096; font-size: 0.9rem;">
+                        {# <div style="color: #718096; font-size: 0.9rem;">
                             {{ app.session.get('user_groupe') }} • {{ app.session.get('user_id') }}
-                        </div>
+                        </div> #}
                     </div>
                     <div style="width: 40px; height: 40px; background: {% if app.session.get('is_super_admin') %}#ff6600{% else %}#4299e1{% endif %}; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 1.1rem;">
                         {{ app.session.get('user_prenom')|first|upper }}{{ app.session.get('user_nom')|first|upper }}
