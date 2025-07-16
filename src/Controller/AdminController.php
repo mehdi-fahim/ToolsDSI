@@ -50,12 +50,10 @@ class AdminController extends AbstractController
                 'entityName' => 'EditionBureautique',
                 'tableName' => 'Oracle',
                 'columns' => [
-                    ['name' => 'NOMBRE', 'label' => 'Nombre', 'type' => 'integer'],
-                    ['name' => 'ANNEE', 'label' => 'Année', 'type' => 'string'],
                     ['name' => 'NOM_BI', 'label' => 'Code BI', 'type' => 'string'],
+                    ['name' => 'DOCUMENT_TYPE', 'label' => 'Type de document', 'type' => 'string'],
                     ['name' => 'DESCRIPTION_BI', 'label' => 'Description BI', 'type' => 'string'],
-                    ['name' => 'UTILISATEUR', 'label' => 'Utilisateur', 'type' => 'string'],
-                    ['name' => 'DERNIERE_UTILISATION', 'label' => 'Dernière Utilisation', 'type' => 'string'],
+                    ['name' => 'NOM_DOCUMENT', 'label' => 'Nom du document', 'type' => 'string'],
                 ]
             ];
             // Pagination simple (tout d'un coup)
