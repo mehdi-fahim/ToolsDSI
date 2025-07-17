@@ -54,13 +54,13 @@
                         {% endfor %}
                         <td>
                             {% if entityName|lower == 'editionbureautique' or entityName|lower == 'edition-bureautique' %}
-                                <a href="{{ path('admin_entity_detail', {entityName: entityName, id: entity.NOM_BI}) }}" 
+                                <a href="{{ path('admin_edition_bureautique_detail', {id: entity.NOM_BI}) }}" 
                                    class="btn btn-secondary" 
                                    style="padding: 6px 12px; font-size: 0.8rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
                                     Détail
                                 </a>
                             {% elseif entityName|lower == 'utilisateur' or entityName|lower == 'utilisateurs' %}
-                                <a href="{{ path('admin_entity_detail', {entityName: entityName, id: entity.CODE_UTILISATEUR}) }}" 
+                                <a href="{{ path('admin_user_detail', {id: entity.CODE_UTILISATEUR}) }}" 
                                    class="btn btn-secondary" 
                                    style="padding: 6px 12px; font-size: 0.8rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
                                     Détail

@@ -3,7 +3,6 @@
 namespace App\Controller;
 
 use App\Entity\EditionBureautique;
-use App\Service\AdminDataService;
 use App\Service\EditionBureautiqueOracleService;
 use App\Service\UtilisateurOracleService;
 use App\Service\MotDePasseOracleService;
@@ -20,7 +19,6 @@ use Symfony\Component\HttpFoundation\Session\SessionInterface;
 class AdminController extends AbstractController
 {
     public function __construct(
-        private AdminDataService $adminDataService,
         private EditionBureautiqueOracleService $oracleService,
         private UtilisateurOracleService $utilisateurOracleService,
         private MotDePasseOracleService $motDePasseOracleService
@@ -157,88 +155,33 @@ class AdminController extends AbstractController
         ]);
     }
 
-    #[Route('/entity/{entityName}/detail/{id}', name: 'admin_entity_detail', methods: ['GET'])]
-    public function viewEntityDetail(string $entityName, $id, SessionInterface $session): Response
+    #[Route('/entity/utilisateur/detail/{id}', name: 'admin_user_detail', methods: ['GET'])]
+    public function viewUserDetail($id, SessionInterface $session): Response
     {
         if (!$this->isAuthenticated($session)) {
             return $this->redirectToRoute('login');
         }
-        
-        // Gestion spéciale pour EditionBureautique (Oracle)
-        if (strtolower($entityName) === 'editionbureautique' || strtolower($entityName) === 'edition-bureautique') {
-            $entity = $this->oracleService->fetchEditionById($id);
-            
-            if (!$entity) {
-                throw $this->createNotFoundException('Document BI non trouvé');
-            }
-
-            $metadata = [
-                'entityName' => 'EditionBureautique',
-                'tableName' => 'Oracle',
-                'columns' => [
-                    ['name' => 'NOM_BI', 'label' => 'Code BI', 'type' => 'string'],
-                    ['name' => 'DOCUMENT_TYPE', 'label' => 'Type de document', 'type' => 'string'],
-                    ['name' => 'DESCRIPTION_BI', 'label' => 'Description BI', 'type' => 'string'],
-                    ['name' => 'NOM_DOCUMENT', 'label' => 'Nom du document', 'type' => 'string'],
-                    ['name' => 'DESCRIPTION_PLUS', 'label' => 'Description détaillée', 'type' => 'text'],
-                ]
-            ];
-
-            return $this->render('admin/entity_detail.html.twig', [
-                'entityName' => $entityName,
-                'entity' => $entity,
-                'metadata' => $metadata
-            ]);
-        }
-
-        // Gestion spéciale pour Utilisateur (Oracle)
-        if (strtolower($entityName) === 'utilisateur' || strtolower($entityName) === 'utilisateurs') {
-            $entity = $this->utilisateurOracleService->fetchUtilisateurById($id);
-            
-            if (!$entity) {
-                throw $this->createNotFoundException('Utilisateur non trouvé');
-            }
-
-            $metadata = [
-                'entityName' => 'Utilisateur',
-                'tableName' => 'Oracle',
-                'columns' => [
-                    ['name' => 'NUM_TIERS', 'label' => 'Numéro Tiers', 'type' => 'string'],
-                    ['name' => 'CODE_UTILISATEUR', 'label' => 'Code Utilisateur', 'type' => 'string'],
-                    ['name' => 'GROUPE', 'label' => 'Groupe', 'type' => 'string'],
-                    ['name' => 'NOM', 'label' => 'Nom', 'type' => 'string'],
-                    ['name' => 'PRENOM', 'label' => 'Prénom', 'type' => 'string'],
-                    ['name' => 'ETAT', 'label' => 'État', 'type' => 'string'],
-                    ['name' => 'CODE_WEB', 'label' => 'Code Web', 'type' => 'string'],
-                    ['name' => 'CODE_ULIS', 'label' => 'Code ULIS', 'type' => 'string'],
-                    ['name' => 'DERNIERE_CONNEXION', 'label' => 'Dernière Connexion', 'type' => 'datetime'],
-                ]
-            ];
-
-            return $this->render('admin/entity_detail.html.twig', [
-                'entityName' => $entityName,
-                'entity' => $entity,
-                'metadata' => $metadata
-            ]);
-        }
-
-        // Gestion pour les autres entités (Doctrine)
-        $entityClass = $this->getEntityClass($entityName);
-        
-        if (!$entityClass) {
-            throw $this->createNotFoundException('Entité non trouvée');
-        }
-
-        $entity = $this->adminDataService->getEntityById($entityClass, $id);
-        
+        $entity = $this->utilisateurOracleService->fetchUtilisateurById($id);
         if (!$entity) {
-            throw $this->createNotFoundException('Enregistrement non trouvé');
+            throw $this->createNotFoundException('Utilisateur non trouvé');
         }
+        return $this->render('admin/user_detail.html.twig', [
+            'entity' => $entity
+        ]);
+    }
 
-        return $this->render('admin/entity_detail.html.twig', [
-            'entityName' => $entityName,
-            'entity' => $entity,
-            'metadata' => $this->adminDataService->getEntityMetadata($entityClass)
+    #[Route('/entity/editionbureautique/detail/{id}', name: 'admin_edition_bureautique_detail', methods: ['GET'])]
+    public function viewEditionBureautiqueDetail($id, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+        $entity = $this->oracleService->fetchEditionById($id);
+        if (!$entity) {
+            throw $this->createNotFoundException('Document BI non trouvé');
+        }
+        return $this->render('admin/edition_bureautique_detail.html.twig', [
+            'entity' => $entity
         ]);
     }
 

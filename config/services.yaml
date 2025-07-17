@@ -17,13 +17,13 @@ services:
         resource: '../src/'
         exclude:
             - '../src/DependencyInjection/'
-            - '../src/Entity/'
+            #- '../src/Entity/'
             - '../src/Kernel.php'
 
     # Configuration spécifique pour le panel admin
-    App\Service\AdminDataService:
-        arguments:
-            $entityManager: '@doctrine.orm.entity_manager'
+    #App\Service\AdminDataService:
+    #    arguments:
+    #        $entityManager: '@doctrine.orm.entity_manager'
 
     # Configuration pour les contrôleurs
     App\Controller\:
