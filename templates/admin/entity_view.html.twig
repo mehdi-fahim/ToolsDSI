@@ -57,19 +57,19 @@
                                 <a href="{{ path('admin_entity_detail', {entityName: entityName, id: entity.NOM_BI}) }}" 
                                    class="btn btn-secondary" 
                                    style="padding: 6px 12px; font-size: 0.8rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
-                                    👁️ Détail
+                                    Détail
                                 </a>
                             {% elseif entityName|lower == 'utilisateur' or entityName|lower == 'utilisateurs' %}
                                 <a href="{{ path('admin_entity_detail', {entityName: entityName, id: entity.CODE_UTILISATEUR}) }}" 
                                    class="btn btn-secondary" 
                                    style="padding: 6px 12px; font-size: 0.8rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
-                                    👁️ Détail
+                                    Détail
                                 </a>
                             {% else %}
                                 <a href="{{ path('admin_entity_detail', {entityName: entityName, id: entity.id}) }}" 
                                    class="btn btn-secondary" 
                                    style="padding: 6px 12px; font-size: 0.8rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
-                                    👁️ Détail
+                                    Détail
                                 </a>
                             {% endif %}
                         </td>
