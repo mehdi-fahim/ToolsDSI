@@ -1,49 +1,95 @@
 {% extends 'admin/base.html.twig' %}
+
+{% block title %}Détail utilisateur - Panel Admin{% endblock %}
+
 {% block body %}
-    <h1>Détail de l'utilisateur</h1>
-    {% if entity %}
-        <table class="table table-bordered">
-            <tbody>
-                <tr>
-                    <th>Numéro Tiers</th>
-                    <td>{{ entity.NUM_TIERS }}</td>
-                </tr>
-                <tr>
-                    <th>Code Utilisateur</th>
-                    <td>{{ entity.CODE_UTILISATEUR }}</td>
-                </tr>
-                <tr>
-                    <th>Groupe</th>
-                    <td>{{ entity.GROUPE }}</td>
-                </tr>
-                <tr>
-                    <th>Nom</th>
-                    <td>{{ entity.NOM }}</td>
-                </tr>
-                <tr>
-                    <th>Prénom</th>
-                    <td>{{ entity.PRENOM }}</td>
-                </tr>
-                <tr>
-                    <th>État</th>
-                    <td>{{ entity.ETAT }}</td>
-                </tr>
-                <tr>
-                    <th>Code Web</th>
-                    <td>{{ entity.CODE_WEB }}</td>
-                </tr>
-                <tr>
-                    <th>Code ULIS</th>
-                    <td>{{ entity.CODE_ULIS }}</td>
-                </tr>
-                <tr>
-                    <th>Dernière connexion</th>
-                    <td>{{ entity.DERNIERE_CONNEXION }}</td>
-                </tr>
-            </tbody>
-        </table>
-    {% else %}
-        <div class="alert alert-warning">Aucune donnée trouvée pour cet utilisateur.</div>
-    {% endif %}
-    <a href="{{ path('admin_entity_view', {'entityName': 'utilisateur'}) }}" class="btn btn-secondary">Retour à la liste</a>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px;">
+        <div>
+            <h2 style="color: #2d3748; font-size: 1.8rem; margin-bottom: 5px;">
+                👤 {{ entity.NOM ?? entity.CODE_UTILISATEUR ?? 'Détail de l\'utilisateur' }}
+            </h2>
+            <p style="color: #718096;">
+                Code Utilisateur: {{ entity.CODE_UTILISATEUR }} • Utilisateur
+            </p>
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <a href="{{ path('admin_entity_view', {'entityName': 'utilisateur'}) }}" class="btn btn-secondary">← Retour à la liste</a>
+            <a href="{{ path('admin_dashboard') }}" class="btn btn-secondary">🏠 Dashboard</a>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
+        <!-- Informations générales -->
+        <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+            <h3 style="color: #2d3748; margin-bottom: 20px; font-size: 1.3rem;">📊 Informations générales</h3>
+            {% if metadata is defined and metadata.columns is defined %}
+                {% for column in metadata.columns %}
+                    <div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #e2e8f0;">
+                        <strong style="color: #4a5568; display: block; margin-bottom: 5px;">{{ column.label }}:</strong>
+                        {% if entity[column.name] is defined %}
+                            <span style="color: #2d3748;">{{ entity[column.name] }}</span>
+                        {% else %}
+                            <span style="color: #a0aec0;">-</span>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-warning">Aucune métadonnée de colonne disponible.</div>
+            {% endif %}
+        </div>
+
+        <!-- Informations de connexion -->
+        <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+            {% if entity.DERNIERE_CONNEXION is defined %}
+                <h3 style="color: #2d3748; margin-bottom: 20px; font-size: 1.3rem;">🕒 Informations de connexion</h3>
+                <div style="background: #fff5f5; padding: 20px; border-radius: 8px; border-left: 4px solid #f56565; margin-bottom: 25px;">
+                    <div style="margin-bottom: 15px;">
+                        <strong style="color: #c53030; display: block; margin-bottom: 5px;">Dernière connexion:</strong>
+                        <span style="color: #2d3748; font-weight: 500;">
+                            {% if entity.DERNIERE_CONNEXION %}
+                                {{ entity.DERNIERE_CONNEXION|date('d/m/Y à H:i:s') }}
+                            {% else %}
+                                <span style="color: #e53e3e; font-style: italic;">Jamais connecté</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    {% if entity.CODE_WEB is defined and entity.CODE_WEB %}
+                        <div style="margin-bottom: 15px;">
+                            <strong style="color: #c53030; display: block; margin-bottom: 5px;">Code Web:</strong>
+                            <span style="color: #2d3748; font-family: monospace;">{{ entity.CODE_WEB }}</span>
+                        </div>
+                    {% endif %}
+                    {% if entity.CODE_ULIS is defined and entity.CODE_ULIS %}
+                        <div>
+                            <strong style="color: #c53030; display: block; margin-bottom: 5px;">Code ULIS:</strong>
+                            <span style="color: #2d3748; font-family: monospace;">{{ entity.CODE_ULIS }}</span>
+                        </div>
+                    {% endif %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">Aucune information de connexion disponible.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+        <h3 style="color: #2d3748; margin-bottom: 20px; font-size: 1.3rem;">⚡ Actions</h3>
+        <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+            <button onclick="exportSingleRecord('csv')" class="btn btn-success">
+                📄 Export CSV
+            </button>
+            <button onclick="exportSingleRecord('json')" class="btn btn-success">
+                📄 Export JSON
+            </button>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascript %}
+<script>
+    function exportSingleRecord(format) {
+        const url = window.location.origin + '/admin/entity/utilisateur/export/' + format + '?id={{ entity.CODE_UTILISATEUR }}';
+        window.location.href = url;
+    }
+</script>
 {% endblock %} 

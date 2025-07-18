@@ -1,33 +1,74 @@
 {% extends 'admin/base.html.twig' %}
+
+{% block title %}Détail édition bureautique - Panel Admin{% endblock %}
+
 {% block body %}
-    <h1>Détail de l'édition bureautique</h1>
-    {% if entity %}
-        <table class="table table-bordered">
-            <tbody>
-                <tr>
-                    <th>Code BI</th>
-                    <td>{{ entity.NOM_BI }}</td>
-                </tr>
-                <tr>
-                    <th>Type de document</th>
-                    <td>{{ entity.DOCUMENT_TYPE }}</td>
-                </tr>
-                <tr>
-                    <th>Description BI</th>
-                    <td>{{ entity.DESCRIPTION_BI }}</td>
-                </tr>
-                <tr>
-                    <th>Nom du document</th>
-                    <td>{{ entity.NOM_DOCUMENT }}</td>
-                </tr>
-                <tr>
-                    <th>Description complémentaire</th>
-                    <td>{{ entity.DESCRIPTION_PLUS }}</td>
-                </tr>
-            </tbody>
-        </table>
-    {% else %}
-        <div class="alert alert-warning">Aucune donnée trouvée pour cette édition bureautique.</div>
-    {% endif %}
-    <a href="{{ path('admin_entity_view', {'entityName': 'EditionBureautique'}) }}" class="btn btn-secondary">Retour à la liste</a>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px;">
+        <div>
+            <h2 style="color: #2d3748; font-size: 1.8rem; margin-bottom: 5px;">
+                📋 {{ entity.NOM_DOCUMENT ?? entity.NOM_BI ?? 'Détail de l\'édition bureautique' }}
+            </h2>
+            <p style="color: #718096;">
+                Code BI: {{ entity.NOM_BI }} • EditionBureautique
+            </p>
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <a href="{{ path('admin_entity_view', {'entityName': 'EditionBureautique'}) }}" class="btn btn-secondary">← Retour à la liste</a>
+            <a href="{{ path('admin_dashboard') }}" class="btn btn-secondary">🏠 Dashboard</a>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
+        <!-- Informations générales -->
+        <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+            <h3 style="color: #2d3748; margin-bottom: 20px; font-size: 1.3rem;">📊 Informations générales</h3>
+            {% if metadata is defined and metadata.columns is defined %}
+                {% for column in metadata.columns %}
+                    <div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #e2e8f0;">
+                        <strong style="color: #4a5568; display: block; margin-bottom: 5px;">{{ column.label }}:</strong>
+                        {% if entity[column.name] is defined %}
+                            <span style="color: #2d3748;">{{ entity[column.name] }}</span>
+                        {% else %}
+                            <span style="color: #a0aec0;">-</span>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-warning">Aucune métadonnée de colonne disponible.</div>
+            {% endif %}
+        </div>
+
+        <!-- Description détaillée -->
+        <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+            {% if entity.DESCRIPTION_PLUS is defined and entity.DESCRIPTION_PLUS %}
+                <h3 style="color: #2d3748; margin-bottom: 20px; font-size: 1.3rem;">📋 Description détaillée</h3>
+                <div style="background: #f0fff4; padding: 20px; border-radius: 8px; border-left: 4px solid #38a169; margin-bottom: 25px;">
+                    <p style="color: #2f855a; line-height: 1.6; margin: 0; white-space: pre-wrap;">{{ entity.DESCRIPTION_PLUS }}</p>
+                </div>
+            {% else %}
+                <div class="alert alert-info">Aucune description détaillée disponible.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+        <h3 style="color: #2d3748; margin-bottom: 20px; font-size: 1.3rem;">⚡ Actions</h3>
+        <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+            <button onclick="exportSingleRecord('csv')" class="btn btn-success">
+                📄 Export CSV
+            </button>
+            <button onclick="exportSingleRecord('json')" class="btn btn-success">
+                📄 Export JSON
+            </button>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascript %}
+<script>
+    function exportSingleRecord(format) {
+        const url = window.location.origin + '/admin/entity/EditionBureautique/export/' + format + '?id={{ entity.NOM_BI }}';
+        window.location.href = url;
+    }
+</script>
 {% endblock %} 
