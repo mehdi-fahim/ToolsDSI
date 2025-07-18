@@ -165,8 +165,24 @@ class AdminController extends AbstractController
         if (!$entity) {
             throw $this->createNotFoundException('Utilisateur non trouvé');
         }
+        $metadata = [
+            'entityName' => 'Utilisateur',
+            'columns' => [
+                ['name' => 'NUM_TIERS', 'label' => 'Numéro Tiers'],
+                ['name' => 'CODE_UTILISATEUR', 'label' => 'Code Utilisateur'],
+                ['name' => 'GROUPE', 'label' => 'Groupe'],
+                ['name' => 'NOM', 'label' => 'Nom'],
+                ['name' => 'PRENOM', 'label' => 'Prénom'],
+                ['name' => 'ETAT', 'label' => 'État'],
+                ['name' => 'CODE_WEB', 'label' => 'Code Web'],
+                ['name' => 'CODE_ULIS', 'label' => 'Code ULIS'],
+                ['name' => 'DERNIERE_CONNEXION', 'label' => 'Dernière connexion'],
+            ]
+        ];
         return $this->render('admin/user_detail.html.twig', [
-            'entity' => $entity
+            'entity' => $entity,
+            'entityName' => 'utilisateur',
+            'metadata' => $metadata
         ]);
     }
 
@@ -180,8 +196,20 @@ class AdminController extends AbstractController
         if (!$entity) {
             throw $this->createNotFoundException('Document BI non trouvé');
         }
+        $metadata = [
+            'entityName' => 'EditionBureautique',
+            'columns' => [
+                ['name' => 'NOM_BI', 'label' => 'Code BI'],
+                ['name' => 'DOCUMENT_TYPE', 'label' => 'Type de document'],
+                ['name' => 'DESCRIPTION_BI', 'label' => 'Description BI'],
+                ['name' => 'NOM_DOCUMENT', 'label' => 'Nom du document'],
+                ['name' => 'DESCRIPTION_PLUS', 'label' => 'Description complémentaire'],
+            ]
+        ];
         return $this->render('admin/edition_bureautique_detail.html.twig', [
-            'entity' => $entity
+            'entity' => $entity,
+            'entityName' => 'EditionBureautique',
+            'metadata' => $metadata
         ]);
     }
 
