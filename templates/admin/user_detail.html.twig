@@ -1,15 +1,49 @@
 {% extends 'admin/base.html.twig' %}
 {% block body %}
     <h1>Détail de l'utilisateur</h1>
-    <table class="table table-bordered">
-        <tbody>
-        {% for key, value in entity %}
-            <tr>
-                <th>{{ key }}</th>
-                <td>{{ value }}</td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+    {% if entity %}
+        <table class="table table-bordered">
+            <tbody>
+                <tr>
+                    <th>Numéro Tiers</th>
+                    <td>{{ entity.NUM_TIERS }}</td>
+                </tr>
+                <tr>
+                    <th>Code Utilisateur</th>
+                    <td>{{ entity.CODE_UTILISATEUR }}</td>
+                </tr>
+                <tr>
+                    <th>Groupe</th>
+                    <td>{{ entity.GROUPE }}</td>
+                </tr>
+                <tr>
+                    <th>Nom</th>
+                    <td>{{ entity.NOM }}</td>
+                </tr>
+                <tr>
+                    <th>Prénom</th>
+                    <td>{{ entity.PRENOM }}</td>
+                </tr>
+                <tr>
+                    <th>État</th>
+                    <td>{{ entity.ETAT }}</td>
+                </tr>
+                <tr>
+                    <th>Code Web</th>
+                    <td>{{ entity.CODE_WEB }}</td>
+                </tr>
+                <tr>
+                    <th>Code ULIS</th>
+                    <td>{{ entity.CODE_ULIS }}</td>
+                </tr>
+                <tr>
+                    <th>Dernière connexion</th>
+                    <td>{{ entity.DERNIERE_CONNEXION }}</td>
+                </tr>
+            </tbody>
+        </table>
+    {% else %}
+        <div class="alert alert-warning">Aucune donnée trouvée pour cet utilisateur.</div>
+    {% endif %}
     <a href="{{ path('admin_entity_view', {'entityName': 'utilisateur'}) }}" class="btn btn-secondary">Retour à la liste</a>
 {% endblock %} 

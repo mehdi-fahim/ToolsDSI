@@ -1,15 +1,33 @@
 {% extends 'admin/base.html.twig' %}
 {% block body %}
     <h1>Détail de l'édition bureautique</h1>
-    <table class="table table-bordered">
-        <tbody>
-        {% for key, value in entity %}
-            <tr>
-                <th>{{ key }}</th>
-                <td>{{ value }}</td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+    {% if entity %}
+        <table class="table table-bordered">
+            <tbody>
+                <tr>
+                    <th>Code BI</th>
+                    <td>{{ entity.NOM_BI }}</td>
+                </tr>
+                <tr>
+                    <th>Type de document</th>
+                    <td>{{ entity.DOCUMENT_TYPE }}</td>
+                </tr>
+                <tr>
+                    <th>Description BI</th>
+                    <td>{{ entity.DESCRIPTION_BI }}</td>
+                </tr>
+                <tr>
+                    <th>Nom du document</th>
+                    <td>{{ entity.NOM_DOCUMENT }}</td>
+                </tr>
+                <tr>
+                    <th>Description complémentaire</th>
+                    <td>{{ entity.DESCRIPTION_PLUS }}</td>
+                </tr>
+            </tbody>
+        </table>
+    {% else %}
+        <div class="alert alert-warning">Aucune donnée trouvée pour cette édition bureautique.</div>
+    {% endif %}
     <a href="{{ path('admin_entity_view', {'entityName': 'EditionBureautique'}) }}" class="btn btn-secondary">Retour à la liste</a>
 {% endblock %} 
