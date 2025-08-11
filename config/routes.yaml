@@ -27,3 +27,58 @@ admin_entity_export:
     requirements:
         entityName: '[a-zA-Z0-9_-]+'
         format: 'csv|json'
+
+# Routes pour les pages de détail
+admin_user_detail:
+    path: /admin/entity/utilisateur/detail/{id}
+    controller: App\Controller\AdminController::viewUserDetail
+    requirements:
+        id: '[a-zA-Z0-9_-]+'
+
+admin_edition_bureautique_detail:
+    path: /admin/entity/editionbureautique/detail/{id}
+    controller: App\Controller\AdminController::viewEditionBureautiqueDetail
+    requirements:
+        id: '[a-zA-Z0-9_-]+'
+
+# Routes pour la page locataire
+admin_locataire:
+    path: /admin/locataire
+    controller: App\Controller\AdminController::locataire
+
+admin_locataire_detail:
+    path: /admin/locataire/detail/{esi}
+    controller: App\Controller\AdminController::locataireDetail
+    requirements:
+        esi: '[a-zA-Z0-9_-]+'
+
+# Routes pour la page d'extraction CSV
+admin_extraction:
+    path: /admin/extraction
+    controller: App\Controller\AdminController::extraction
+
+admin_extraction_query:
+    path: /admin/extraction/query
+    controller: App\Controller\AdminController::extractionQuery
+
+# Routes pour l'authentification
+login:
+    path: /login
+    controller: App\Controller\AdminController::login
+
+logout:
+    path: /logout
+    controller: App\Controller\AdminController::logout
+
+# Routes pour les fonctionnalités admin
+admin_user_unlock:
+    path: /admin/user/unlock
+    controller: App\Controller\AdminController::unlockPassword
+
+admin_user_access:
+    path: /admin/administration
+    controller: App\Controller\AdminController::userAccess
+
+admin_user_show_password:
+    path: /admin/show-password
+    controller: App\Controller\AdminController::showPassword

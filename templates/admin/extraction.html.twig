@@ -1,0 +1,295 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Extracteur fichier .CSV par Groupe - Panel Admin{% endblock %}
+
+{% block content %}
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px;">
+        <div>
+            <h2 style="color: #2d3748; font-size: 1.8rem; margin-bottom: 5px;">📊 Extracteur fichier .CSV par Groupe</h2>
+            <p style="color: #718096;">Générez des fichiers CSV personnalisés par groupe SI</p>
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <a href="{{ path('admin_dashboard') }}" class="btn btn-secondary">🏠 Dashboard</a>
+        </div>
+    </div>
+
+    {% if error is defined and error %}
+        <div style="background: #fed7d7; border: 1px solid #f56565; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
+            <h3 style="color: #c53030; margin-bottom: 10px;">⚠️ Erreur</h3>
+            <p style="color: #742a2a; margin: 0;">{{ error }}</p>
+        </div>
+    {% endif %}
+
+    <form method="POST" action="{{ path('admin_extraction') }}" style="background: white; border-radius: 12px; padding: 30px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+        
+        <!-- Champ de recherche Groupe SI -->
+        <div style="margin-bottom: 30px;">
+            <label for="groupe_si" style="display: block; margin-bottom: 10px; color: #4a5568; font-weight: 600; font-size: 1.1rem;">
+                Extracteur fichier .CSV par Groupe (ex: SD3400):
+            </label>
+            <input type="text" 
+                   id="groupe_si" 
+                   name="groupe_si" 
+                   value="{{ groupeSi }}"
+                   placeholder="Ex: SD3400"
+                   style="width: 100%; max-width: 400px; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 16px;">
+        </div>
+
+        <!-- Label Données disponibles -->
+        <div style="margin-bottom: 20px;">
+            <h3 style="color: #2d3748; font-size: 1.2rem; margin-bottom: 15px;">Données disponibles:</h3>
+        </div>
+
+        <!-- Section Patrimoine -->
+        <div style="margin-bottom: 30px;">
+            <h4 style="color: #4a5568; font-size: 1.1rem; margin-bottom: 15px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">
+                Patrimoine :
+            </h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="fields[]" value="esi" {{ 'esi' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
+                    <span>Esi</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="fields[]" value="etage" {{ 'etage' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
+                    <span>Etage</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="fields[]" value="typologie" {{ 'typologie' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
+                    <span>Typologie</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="fields[]" value="nature" {{ 'nature' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
+                    <span>Nature</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="fields[]" value="adresse" {{ 'adresse' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
+                    <span>Adresse</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="fields[]" value="groupe" {{ 'groupe' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
+                    <span>Groupe</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="fields[]" value="agence" {{ 'agence' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
+                    <span>Agence</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="fields[]" value="statut" {{ 'statut' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
+                    <span>Statut</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="fields[]" value="surface_habitable" {{ 'surface_habitable' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
+                    <span>Surface Habitable</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="fields[]" value="surface_utile" {{ 'surface_utile' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
+                    <span>Surface Utile</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="fields[]" value="numero_rpls" {{ 'numero_rpls' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
+                    <span>Numéro RPLS</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="fields[]" value="cat_financement" {{ 'cat_financement' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
+                    <span>Cat. Financement</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="fields[]" value="reservataire" {{ 'reservataire' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
+                    <span>Réservataire</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Section Locataire -->
+        <div style="margin-bottom: 30px;">
+            <h4 style="color: #4a5568; font-size: 1.1rem; margin-bottom: 15px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">
+                Locataire:
+            </h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="fields[]" value="contrat" {{ 'contrat' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
+                    <span>Contrat</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="fields[]" value="intitule" {{ 'intitule' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
+                    <span>Intitulé</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="fields[]" value="tiers" {{ 'tiers' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
+                    <span>Tiers</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="fields[]" value="libelle_intitule" {{ 'libelle_intitule' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
+                    <span>Libelle Intitulé</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="fields[]" value="telephone" {{ 'telephone' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
+                    <span>Téléphone</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="fields[]" value="age" {{ 'age' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
+                    <span>Age</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="fields[]" value="assurance_jour" {{ 'assurance_jour' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
+                    <span>Assurance à jour</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="fields[]" value="prelevement" {{ 'prelevement' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
+                    <span>Prélèvement</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="fields[]" value="date_debut_contrat" {{ 'date_debut_contrat' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
+                    <span>Date Début Contrat</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="fields[]" value="date_fin_contrat" {{ 'date_fin_contrat' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
+                    <span>Date Fin Contrat</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="fields[]" value="adresse_regroupement" {{ 'adresse_regroupement' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
+                    <span>Adresse de regroupement</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="fields[]" value="immatriculation" {{ 'immatriculation' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
+                    <span>Immatriculation</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="fields[]" value="marque_vehicule" {{ 'marque_vehicule' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
+                    <span>Marque Véhicule</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Section Ménage -->
+        <div style="margin-bottom: 30px;">
+            <h4 style="color: #4a5568; font-size: 1.1rem; margin-bottom: 15px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">
+                Ménage:
+            </h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="fields[]" value="nombre_occupants" {{ 'nombre_occupants' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
+                    <span>Nombre d'occupants</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="fields[]" value="nb_adultes" {{ 'nb_adultes' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
+                    <span>NB. Adultes</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="fields[]" value="nb_enfants" {{ 'nb_enfants' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
+                    <span>NB. Enfants</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="fields[]" value="revenu_imposable" {{ 'revenu_imposable' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
+                    <span>Revenu Imposable</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Section Loyer -->
+        <div style="margin-bottom: 30px;">
+            <h4 style="color: #4a5568; font-size: 1.1rem; margin-bottom: 15px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">
+                Loyer:
+            </h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="fields[]" value="loyer" {{ 'loyer' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
+                    <span>Loyer</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="fields[]" value="charges" {{ 'charges' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
+                    <span>Charges</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="fields[]" value="dette" {{ 'dette' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
+                    <span>Dette</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="fields[]" value="apl" {{ 'apl' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
+                    <span>APL</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="fields[]" value="rls" {{ 'rls' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
+                    <span>RLS</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="fields[]" value="loyer_plafond" {{ 'loyer_plafond' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
+                    <span>Loyer Plafond</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Boutons d'action -->
+        <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-top: 30px;">
+            <button type="submit" class="btn btn-primary" style="padding: 12px 24px; font-size: 1rem;">
+                📄 Générer le fichier Excel (format csv)
+            </button>
+            
+            {% if isSuperAdmin %}
+                <button type="button" onclick="showQuery()" class="btn btn-secondary" style="padding: 12px 24px; font-size: 1rem;">
+                    [Voir la requete]
+                </button>
+            {% endif %}
+        </div>
+    </form>
+
+    <!-- Modal pour afficher la requête (admin seulement) -->
+    {% if isSuperAdmin %}
+        <div id="queryModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 12px; max-width: 800px; width: 90%; max-height: 80vh; overflow-y: auto;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="color: #2d3748; margin: 0;">🔍 Requête SQL générée</h3>
+                    <button onclick="closeQueryModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #718096;">&times;</button>
+                </div>
+                <pre id="queryContent" style="background: #f7fafc; padding: 20px; border-radius: 8px; overflow-x: auto; white-space: pre-wrap; font-family: monospace; font-size: 14px; line-height: 1.5;"></pre>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block javascript %}
+<script>
+    function showQuery() {
+        const form = document.querySelector('form');
+        const selectedFields = form.querySelectorAll('input[name="fields[]"]:checked');
+        
+        // Vérifier qu'au moins un champ est sélectionné
+        if (selectedFields.length === 0) {
+            alert('Veuillez sélectionner au moins un champ à extraire pour voir la requête.');
+            return;
+        }
+        
+        const formData = new FormData(form);
+        
+        fetch('{{ path('admin_extraction_query') }}', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('Erreur: ' + data.error);
+            } else {
+                document.getElementById('queryContent').textContent = data.query;
+                document.getElementById('queryModal').style.display = 'block';
+            }
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            alert('Erreur lors de la récupération de la requête');
+        });
+    }
+
+    function closeQueryModal() {
+        document.getElementById('queryModal').style.display = 'none';
+    }
+
+    // Fermer le modal en cliquant à l'extérieur
+    document.getElementById('queryModal')?.addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeQueryModal();
+        }
+    });
+</script>
+{% endblock %} 

@@ -6,6 +6,8 @@ use App\Entity\EditionBureautique;
 use App\Service\EditionBureautiqueOracleService;
 use App\Service\UtilisateurOracleService;
 use App\Service\MotDePasseOracleService;
+use App\Service\LocataireOracleService;
+use App\Service\ExtractionOracleService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -21,7 +23,9 @@ class AdminController extends AbstractController
     public function __construct(
         private EditionBureautiqueOracleService $oracleService,
         private UtilisateurOracleService $utilisateurOracleService,
-        private MotDePasseOracleService $motDePasseOracleService
+        private MotDePasseOracleService $motDePasseOracleService,
+        private LocataireOracleService $locataireOracleService,
+        private ExtractionOracleService $extractionOracleService
     ) {}
 
     #[Route('', name: 'admin_dashboard', methods: ['GET'])]
@@ -431,6 +435,160 @@ class AdminController extends AbstractController
             'message' => $message,
             'error' => $error
         ]);
+    }
+
+    #[Route('/admin/locataire', name: 'admin_locataire', methods: ['GET'])]
+    public function locataire(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        $searchType = $request->query->get('search_type', '');
+        $searchValue = $request->query->get('search_value', '');
+        $page = (int) $request->query->get('page', 1);
+        $limit = 20;
+
+        $data = [];
+        $pagination = [];
+        $error = null;
+
+        if ($searchType && $searchValue) {
+            try {
+                switch ($searchType) {
+                    case 'esi':
+                        $result = $this->locataireOracleService->searchByEsi($searchValue, $page, $limit);
+                        break;
+                    case 'contrat':
+                        $result = $this->locataireOracleService->searchByContrat($searchValue, $page, $limit);
+                        break;
+                    case 'intitule':
+                        $result = $this->locataireOracleService->searchByIntitule($searchValue, $page, $limit);
+                        break;
+                    default:
+                        $error = 'Type de recherche non valide';
+                        $result = ['data' => [], 'total' => 0, 'page' => 1, 'limit' => $limit, 'totalPages' => 0];
+                }
+                
+                $data = $result['data'];
+                $pagination = [
+                    'page' => $result['page'],
+                    'total' => $result['total'],
+                    'limit' => $result['limit'],
+                    'totalPages' => $result['totalPages']
+                ];
+            } catch (\Exception $e) {
+                $error = 'Erreur de connexion à la base de données Oracle. Veuillez vérifier la configuration de la connexion.';
+                $data = [];
+                $pagination = ['page' => 1, 'total' => 0, 'limit' => $limit, 'totalPages' => 0];
+            }
+        }
+
+        return $this->render('admin/locataire.html.twig', [
+            'searchType' => $searchType,
+            'searchValue' => $searchValue,
+            'data' => $data,
+            'pagination' => $pagination,
+            'error' => $error
+        ]);
+    }
+
+    #[Route('/admin/locataire/detail/{esi}', name: 'admin_locataire_detail', methods: ['GET'])]
+    public function locataireDetail(string $esi, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        try {
+            $locataire = $this->locataireOracleService->getLocataireByEsi($esi);
+            if (!$locataire) {
+                throw $this->createNotFoundException('Locataire non trouvé');
+            }
+        } catch (\Exception $e) {
+            return $this->render('admin/locataire_detail.html.twig', [
+                'locataire' => null,
+                'esi' => $esi,
+                'error' => 'Erreur de connexion à la base de données Oracle. Veuillez vérifier la configuration de la connexion.'
+            ]);
+        }
+
+        return $this->render('admin/locataire_detail.html.twig', [
+            'locataire' => $locataire,
+            'esi' => $esi,
+            'error' => null
+        ]);
+    }
+
+    #[Route('/admin/extraction', name: 'admin_extraction', methods: ['GET', 'POST'])]
+    public function extraction(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        $groupeSi = $request->request->get('groupe_si', '');
+        $selectedFields = $request->request->all('fields') ?? [];
+        $error = null;
+        $success = null;
+        $query = null;
+
+        if ($request->isMethod('POST')) {
+            if (empty($groupeSi)) {
+                $error = 'Veuillez saisir un groupe SI.';
+            } elseif (empty($selectedFields)) {
+                $error = 'Veuillez sélectionner au moins un champ à extraire.';
+            } else {
+                try {
+                    $csv = $this->extractionOracleService->generateCsvForGroup($groupeSi, $selectedFields);
+                    
+                    if ($this->isSuperAdmin($session)) {
+                        $query = $this->extractionOracleService->getQueryForDisplay($groupeSi, $selectedFields);
+                    }
+                    
+                    $response = new Response($csv);
+                    $response->headers->set('Content-Type', 'text/csv; charset=utf-8');
+                    $response->headers->set('Content-Disposition', 'attachment; filename="extraction_' . $groupeSi . '_' . date('Y-m-d_H-i-s') . '.csv"');
+                    
+                    return $response;
+                } catch (\Exception $e) {
+                    $error = 'Erreur lors de la génération du CSV: ' . $e->getMessage();
+                }
+            }
+        }
+
+        return $this->render('admin/extraction.html.twig', [
+            'groupeSi' => $groupeSi,
+            'selectedFields' => $selectedFields,
+            'error' => $error,
+            'success' => $success,
+            'query' => $query,
+            'isSuperAdmin' => $this->isSuperAdmin($session)
+        ]);
+    }
+
+    #[Route('/admin/extraction/query', name: 'admin_extraction_query', methods: ['POST'])]
+    public function extractionQuery(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isSuperAdmin($session)) {
+            return new JsonResponse(['error' => 'Accès non autorisé'], 403);
+        }
+
+        $groupeSi = $request->request->get('groupe_si', '');
+        $selectedFields = $request->request->all('fields') ?? [];
+
+        // Permettre l'affichage de la requête même si le groupe SI est vide
+        // Mais on garde la vérification pour les champs sélectionnés
+        if (empty($selectedFields)) {
+            return new JsonResponse(['error' => 'Veuillez sélectionner au moins un champ à extraire.'], 400);
+        }
+
+        try {
+            $query = $this->extractionOracleService->getQueryForDisplay($groupeSi, $selectedFields);
+            return new JsonResponse(['query' => $query]);
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => $e->getMessage()], 500);
+        }
     }
 
     private function isAuthenticated(SessionInterface $session): bool
