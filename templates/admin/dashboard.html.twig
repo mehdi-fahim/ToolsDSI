@@ -15,6 +15,37 @@
             <li style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;"><span style="font-size: 1.5rem;">⬇️</span> <b>Export</b> des résultats en CSV ou JSON</li>
             <li style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;"><span style="font-size: 1.5rem;">🔐</span> <b>Interface sécurisée</b> et navigation simple via la barre latérale</li>
         </ul>
+        
+        <!-- Liens rapides vers les fonctionnalités -->
+        <div style="margin-top: 32px; padding: 25px; background: #f7fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
+            <h3 style="color: #2d3748; font-size: 1.2rem; margin-bottom: 20px;">🚀 Accès rapide aux fonctionnalités</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                <a href="{{ path('admin_entity_view', {'entityName': 'EditionBureautique'}) }}" style="display: flex; align-items: center; gap: 12px; padding: 15px; background: white; border-radius: 8px; text-decoration: none; color: #2d3748; border: 1px solid #e2e8f0; transition: all 0.2s;">
+                    <span style="font-size: 1.5rem;">📋</span>
+                    <div>
+                        <strong>Éditions Bureautiques</strong>
+                        <div style="font-size: 0.9rem; color: #718096;">Consulter et gérer les documents BI</div>
+                    </div>
+                </a>
+                
+                <a href="{{ path('admin_extraction') }}" style="display: flex; align-items: center; gap: 12px; padding: 15px; background: white; border-radius: 8px; text-decoration: none; color: #2d3748; border: 1px solid #e2e8f0; transition: all 0.2s;">
+                    <span style="font-size: 1.5rem;">📊</span>
+                    <div>
+                        <strong>Extraction CSV</strong>
+                        <div style="font-size: 0.9rem; color: #718096;">Générer des fichiers par groupe SI</div>
+                    </div>
+                </a>
+                
+                <a href="{{ path('admin_engagement') }}" style="display: flex; align-items: center; gap: 12px; padding: 15px; background: white; border-radius: 8px; text-decoration: none; color: #2d3748; border: 1px solid #e2e8f0; transition: all 0.2s;">
+                    <span style="font-size: 1.5rem;">📋</span>
+                    <div>
+                        <strong>Gestion des Engagements</strong>
+                        <div style="font-size: 0.9rem; color: #718096;">Administrer les engagements financiers</div>
+                    </div>
+                </a>
+            </div>
+        </div>
+        
         <div style="margin-top: 32px; color: #718096; font-size: 1rem;">
             Utilisez le menu à gauche pour accéder aux différentes sections.<br>
             D'autres fonctionnalités arriveront prochainement !

@@ -16,6 +16,7 @@ use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
+use App\Service\EngagementOracleService;
 
 #[Route('/admin')]
 class AdminController extends AbstractController
@@ -25,7 +26,8 @@ class AdminController extends AbstractController
         private UtilisateurOracleService $utilisateurOracleService,
         private MotDePasseOracleService $motDePasseOracleService,
         private LocataireOracleService $locataireOracleService,
-        private ExtractionOracleService $extractionOracleService
+        private ExtractionOracleService $extractionOracleService,
+        private EngagementOracleService $engagementOracleService
     ) {}
 
     #[Route('', name: 'admin_dashboard', methods: ['GET'])]
@@ -265,6 +267,101 @@ class AdminController extends AbstractController
             'query' => $query,
             'entityName' => 'EditionBureautique'
         ]);
+    }
+
+    #[Route('/admin/engagement', name: 'admin_engagement', methods: ['GET', 'POST'])]
+    public function engagement(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        $error = null;
+        $success = null;
+        
+        // Initialiser les données avec des valeurs par défaut
+        $engagementData = [
+            'societe' => '1',
+            'exercice' => '2025',
+            'numero_engagement' => '',
+            'type_engagement' => '',
+            'eso_administratif' => '',
+            'responsable_engagement' => '',
+            'marche_rattache' => '',
+            'lot_reference' => ''
+        ];
+
+        if ($request->isMethod('POST')) {
+            // Traitement des données du formulaire
+            $engagementData = [
+                'societe' => $request->request->get('societe', '1'),
+                'exercice' => $request->request->get('exercice', '2025'),
+                'numero_engagement' => $request->request->get('numero_engagement', ''),
+                'type_engagement' => $request->request->get('type_engagement', ''),
+                'eso_administratif' => $request->request->get('eso_administratif', ''),
+                'responsable_engagement' => $request->request->get('responsable_engagement', ''),
+                'marche_rattache' => $request->request->get('marche_rattache', ''),
+                'lot_reference' => $request->request->get('lot_reference', '')
+            ];
+
+            // Validation des données
+            if (empty($engagementData['societe']) || empty($engagementData['exercice'])) {
+                $error = 'La société et l\'exercice sont obligatoires.';
+            } else {
+                $success = 'Les données d\'engagement ont été enregistrées avec succès.';
+                // Ici vous pourriez ajouter la logique pour sauvegarder en base de données
+            }
+        }
+
+        return $this->render('admin/engagement.html.twig', [
+            'engagementData' => $engagementData,
+            'error' => $error,
+            'success' => $success
+        ]);
+    }
+
+    #[Route('/admin/engagement/check', name: 'admin_engagement_check', methods: ['POST'])]
+    public function checkEngagement(Request $request, SessionInterface $session): JsonResponse
+    {
+        if (!$this->isAuthenticated($session)) {
+            return new JsonResponse(['error' => 'Non autorisé'], 401);
+        }
+
+        $societe = $request->request->get('societe');
+        $exercice = $request->request->get('exercice');
+        $numeroEngagement = $request->request->get('numero_engagement');
+
+        if (empty($societe) || empty($exercice) || empty($numeroEngagement)) {
+            return new JsonResponse(['error' => 'Tous les champs sont obligatoires pour la vérification'], 400);
+        }
+
+        try {
+            // Récupérer les informations de l'engagement
+            $engagementInfo = $this->engagementOracleService->getEngagementInfo(
+                (int)$exercice,
+                (int)$numeroEngagement,
+                $societe
+            );
+
+            if (!$engagementInfo['found']) {
+                return new JsonResponse([
+                    'error' => 'Aucun engagement trouvé avec ces paramètres',
+                    'found' => false
+                ], 404);
+            }
+
+            return new JsonResponse([
+                'success' => true,
+                'found' => true,
+                'data' => $engagementInfo
+            ]);
+
+        } catch (\Exception $e) {
+            return new JsonResponse([
+                'error' => 'Erreur lors de la récupération des données: ' . $e->getMessage(),
+                'found' => false
+            ], 500);
+        }
     }
 
     #[Route('/entity/{entityName}/search', name: 'admin_entity_search', methods: ['GET'])]

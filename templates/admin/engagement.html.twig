@@ -1,0 +1,350 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Gestion des Engagements - Panel Admin{% endblock %}
+
+{% block content %}
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px;">
+        <div>
+            <h2 style="color: #2d3748; font-size: 1.8rem; margin-bottom: 5px;">📋 Gestion des Engagements</h2>
+            <p style="color: #718096;">Gérez les engagements administratifs et financiers</p>
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <a href="{{ path('admin_dashboard') }}" class="btn btn-secondary">🏠 Dashboard</a>
+        </div>
+    </div>
+
+    {% if error is defined and error %}
+        <div style="background: #fed7d7; border: 1px solid #f56565; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
+            <h3 style="color: #c53030; margin-bottom: 10px;">⚠️ Erreur</h3>
+            <p style="color: #742a2a; margin: 0;">{{ error }}</p>
+        </div>
+    {% endif %}
+
+    {% if success is defined and success %}
+        <div style="background: #c6f6d5; border: 1px solid #68d391; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
+            <h3 style="color: #38a169; margin-bottom: 10px;">✅ Succès</h3>
+            <p style="color: #2f855a; margin: 0;">{{ success }}</p>
+        </div>
+    {% endif %}
+
+    <form method="POST" action="{{ path('admin_engagement') }}" style="background: white; border-radius: 12px; padding: 30px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+        
+        <!-- Section Engagement -->
+        <div style="margin-bottom: 30px;">
+            <h3 style="color: #2d3748; font-size: 1.2rem; margin-bottom: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">
+                Engagement
+            </h3>
+            
+            <!-- Indicateur pluriannuel -->
+            <div id="pluriannuel-info" style="display: none; margin-bottom: 15px; padding: 10px 15px; background: #e6fffa; border: 1px solid #38b2ac; border-radius: 6px; color: #2c7a7b;">
+                <span style="font-weight: 600;">🔄 Engagement pluriannuel détecté</span>
+                <span style="margin-left: 10px; font-size: 0.9rem;">Cet engagement s'étend sur plusieurs exercices.</span>
+            </div>
+            
+            <!-- Première ligne -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 20px; margin-bottom: 20px; align-items: end;">
+                <div>
+                    <label for="societe" style="display: block; margin-bottom: 8px; color: #4a5568; font-weight: 600;">
+                        Société
+                    </label>
+                    <select id="societe" name="societe" style="width: 100%; padding: 10px 12px; border: 2px solid #e2e8f0; border-radius: 6px; font-size: 14px;">
+                        <option value="1" {{ (engagementData.societe ?? '1') == '1' ? 'selected' : '' }}>1</option>
+                        <option value="2" {{ (engagementData.societe ?? '1') == '2' ? 'selected' : '' }}>2</option>
+                        <option value="3" {{ (engagementData.societe ?? '1') == '3' ? 'selected' : '' }}>3</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label for="exercice" style="display: block; margin-bottom: 8px; color: #4a5568; font-weight: 600;">
+                        Exercice
+                    </label>
+                    <input type="text" 
+                           id="exercice" 
+                           name="exercice" 
+                           value="{{ engagementData.exercice ?? '2025' }}"
+                           style="width: 100%; padding: 10px 12px; border: 2px solid #e2e8f0; border-radius: 6px; font-size: 14px;">
+                </div>
+                
+                <div>
+                    <label for="numero_engagement" style="display: block; margin-bottom: 8px; color: #4a5568; font-weight: 600;">
+                        n° engagement
+                    </label>
+                    <input type="text" 
+                           id="numero_engagement" 
+                           name="numero_engagement" 
+                           value="{{ engagementData.numero_engagement ?? '' }}"
+                           placeholder="Numéro d'engagement"
+                           style="width: 100%; padding: 10px 12px; border: 2px solid #e2e8f0; border-radius: 6px; font-size: 14px;">
+                </div>
+                
+                <div style="display: flex; align-items: end; height: 100%;">
+                    <button type="button" onclick="checkEngagement()" class="btn btn-secondary">
+                        🔍 Check
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Lignes suivantes avec liens "Modifier" -->
+            <div style="margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <label for="type_engagement" style="color: #4a5568; font-weight: 600; min-width: 200px;">
+                        Type d'engagement :
+                    </label>
+                    <input type="text" 
+                           id="type_engagement" 
+                           name="type_engagement" 
+                           value="{{ engagementData.type_engagement ?? '' }}"
+                           placeholder="Type d'engagement"
+                           style="flex: 1; margin: 0 15px; padding: 10px 12px; border: 2px solid #e2e8f0; border-radius: 6px; font-size: 14px;">
+                    <button type="button" onclick="modifierChamp('type_engagement')" class="btn btn-secondary">
+                        ✏️ Modifier
+                    </button>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <label for="eso_administratif" style="color: #4a5568; font-weight: 600; min-width: 200px;">
+                        ESO administratif :
+                    </label>
+                    <input type="text" 
+                           id="eso_administratif" 
+                           name="eso_administratif" 
+                           value="{{ engagementData.eso_administratif ?? '' }}"
+                           placeholder="ESO administratif"
+                           style="flex: 1; margin: 0 15px; padding: 10px 12px; border: 2px solid #e2e8f0; border-radius: 6px; font-size: 14px;">
+                    <button type="button" onclick="modifierChamp('eso_administratif')" class="btn btn-secondary">
+                        ✏️ Modifier
+                    </button>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <label for="responsable_engagement" style="color: #4a5568; font-weight: 600; min-width: 200px;">
+                        Responsable engagement :
+                    </label>
+                    <input type="text" 
+                           id="responsable_engagement" 
+                           name="responsable_engagement" 
+                           value="{{ engagementData.responsable_engagement ?? '' }}"
+                           placeholder="Responsable de l'engagement"
+                           style="flex: 1; margin: 0 15px; padding: 10px 12px; border: 2px solid #e2e8f0; border-radius: 6px; font-size: 14px;">
+                    <button type="button" onclick="modifierChamp('responsable_engagement')" class="btn btn-secondary">
+                        ✏️ Modifier
+                    </button>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <div style="display: flex; align-items: center; gap: 15px; flex: 1;">
+                        <label for="marche_rattache" style="color: #4a5568; font-weight: 600; min-width: 150px;">
+                            Marché rattaché :
+                        </label>
+                        <input type="text" 
+                               id="marche_rattache" 
+                               name="marche_rattache" 
+                               value="{{ engagementData.marche_rattache ?? '' }}"
+                               placeholder="Marché rattaché"
+                               style="flex: 1; padding: 10px 12px; border: 2px solid #e2e8f0; border-radius: 6px; font-size: 14px;">
+                    </div>
+                    
+                    <div style="display: flex; align-items: center; gap: 15px; margin: 0 15px;">
+                        <label for="lot_reference" style="color: #4a5568; font-weight: 600; min-width: 150px;">
+                            Lot (Référence ex:U17) :
+                        </label>
+                        <input type="text" 
+                               id="lot_reference" 
+                               name="lot_reference" 
+                               value="{{ engagementData.lot_reference ?? '' }}"
+                               placeholder="Référence du lot"
+                               style="width: 120px; padding: 10px 12px; border: 2px solid #e2e8f0; border-radius: 6px; font-size: 14px;">
+                    </div>
+                    
+                    <button type="button" onclick="modifierChamp('marche_lot')" class="btn btn-secondary">
+                        ✏️ Modifier
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Boutons d'action -->
+        <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-top: 30px;">
+            <button type="submit" class="btn btn-primary" style="padding: 12px 24px; font-size: 1rem;">
+                💾 Enregistrer l'engagement
+            </button>
+            
+            <button type="button" onclick="resetForm()" class="btn btn-secondary" style="padding: 12px 24px; font-size: 1rem;">
+                🔄 Réinitialiser
+            </button>
+        </div>
+    </form>
+{% endblock %}
+
+{% block javascript %}
+<script>
+    function checkEngagement() {
+        const societe = document.getElementById('societe').value;
+        const exercice = document.getElementById('exercice').value;
+        const numeroEngagement = document.getElementById('numero_engagement').value;
+        
+        if (!societe || !exercice || !numeroEngagement) {
+            showNotification('Veuillez remplir tous les champs obligatoires (Société, Exercice, n° engagement)', 'error');
+            return;
+        }
+        
+        // Afficher un indicateur de chargement
+        const checkButton = event.target;
+        const originalText = checkButton.innerHTML;
+        checkButton.innerHTML = '⏳ Vérification...';
+        checkButton.disabled = true;
+        
+        // Appel AJAX pour récupérer les informations
+        fetch('{{ path('admin_engagement_check') }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                'societe': societe,
+                'exercice': exercice,
+                'numero_engagement': numeroEngagement
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.found) {
+                // Pré-remplir les champs avec les données récupérées
+                fillEngagementFields(data.data);
+                
+                // Afficher un message de succès
+                showNotification('Engagement trouvé ! Les champs ont été pré-remplis.', 'success');
+                
+                // Afficher l'indicateur pluriannuel si applicable
+                if (data.data.is_pluriannuel) {
+                    showPluriannuelIndicator();
+                }
+                
+            } else {
+                showNotification(data.error || 'Aucun engagement trouvé avec ces paramètres.', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            showNotification('Erreur lors de la vérification de l\'engagement.', 'error');
+        })
+        .finally(() => {
+            // Restaurer le bouton
+            checkButton.innerHTML = originalText;
+            checkButton.disabled = false;
+        });
+    }
+    
+    function fillEngagementFields(data) {
+        // Pré-remplir tous les champs
+        if (data.type_engagement) {
+            document.getElementById('type_engagement').value = data.type_engagement;
+        }
+        
+        if (data.eso_administratif) {
+            document.getElementById('eso_administratif').value = data.eso_administratif;
+        }
+        
+        if (data.responsable_engagement) {
+            document.getElementById('responsable_engagement').value = data.responsable_engagement;
+        }
+        
+        if (data.marche_rattache) {
+            document.getElementById('marche_rattache').value = data.marche_rattache;
+        }
+        
+        if (data.lot_reference) {
+            document.getElementById('lot_reference').value = data.lot_reference;
+        }
+    }
+    
+    function showPluriannuelIndicator() {
+        // Afficher l'indicateur pluriannuel
+        const pluriannuelInfo = document.getElementById('pluriannuel-info');
+        if (pluriannuelInfo) {
+            pluriannuelInfo.style.display = 'block';
+        }
+    }
+    
+    function showNotification(message, type = 'info') {
+        // Créer une notification temporaire
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            z-index: 1000;
+            max-width: 400px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        `;
+        
+        if (type === 'success') {
+            notification.style.background = '#48bb78';
+        } else if (type === 'error') {
+            notification.style.background = '#f56565';
+        } else {
+            notification.style.background = '#4299e1';
+        }
+        
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        // Supprimer la notification après 5 secondes
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 5000);
+    }
+    
+    function modifierChamp(champId) {
+        const champ = document.getElementById(champId);
+        if (champ) {
+            champ.focus();
+            champ.select();
+        }
+        
+        // Si c'est le champ marché/lot, on gère les deux champs
+        if (champId === 'marche_lot') {
+            const marcheRattache = document.getElementById('marche_rattache');
+            const lotReference = document.getElementById('lot_reference');
+            if (marcheRattache) marcheRattache.focus();
+        }
+    }
+    
+    function resetForm() {
+        if (confirm('Êtes-vous sûr de vouloir réinitialiser tous les champs ?')) {
+            document.querySelector('form').reset();
+            // Remettre l'exercice par défaut
+            document.getElementById('exercice').value = '2025';
+            
+            // Masquer l'indicateur pluriannuel
+            const pluriannuelInfo = document.getElementById('pluriannuel-info');
+            if (pluriannuelInfo) {
+                pluriannuelInfo.style.display = 'none';
+            }
+        }
+    }
+    
+    // Validation en temps réel
+    document.addEventListener('DOMContentLoaded', function() {
+        const exerciceInput = document.getElementById('exercice');
+        if (exerciceInput) {
+            exerciceInput.addEventListener('input', function() {
+                const value = this.value;
+                if (value && !/^\d{4}$/.test(value)) {
+                    this.style.borderColor = '#f56565';
+                    this.title = 'L\'exercice doit être une année à 4 chiffres (ex: 2025)';
+                } else {
+                    this.style.borderColor = '#e2e8f0';
+                    this.title = '';
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}
