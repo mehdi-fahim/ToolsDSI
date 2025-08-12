@@ -344,6 +344,8 @@
                 tiers.checked = true;
                 tiers.disabled = true; // Désactiver pour éviter la décoche
                 tiers.parentElement.classList.add('auto-checked-field');
+                // Ajouter un champ caché pour s'assurer que la valeur est envoyée
+                addHiddenField('tiers');
             }
         }
         
@@ -371,11 +373,13 @@
                 contrat.checked = true;
                 contrat.disabled = true;
                 contrat.parentElement.classList.add('auto-checked-field');
+                addHiddenField('contrat');
             }
             if (intitule) {
                 intitule.checked = true;
                 intitule.disabled = true;
                 intitule.parentElement.classList.add('auto-checked-field');
+                addHiddenField('intitule');
             }
         }
         
@@ -394,11 +398,13 @@
                 contrat.checked = true;
                 contrat.disabled = true;
                 contrat.parentElement.classList.add('auto-checked-field');
+                addHiddenField('contrat');
             }
             if (intitule) {
                 intitule.checked = true;
                 intitule.disabled = true;
                 intitule.parentElement.classList.add('auto-checked-field');
+                addHiddenField('intitule');
             }
         }
         
@@ -417,12 +423,26 @@
                 contrat.checked = true;
                 contrat.disabled = true;
                 contrat.parentElement.classList.add('auto-checked-field');
+                addHiddenField('contrat');
             }
             if (intitule) {
                 intitule.checked = true;
                 intitule.disabled = true;
                 intitule.parentElement.classList.add('auto-checked-field');
+                addHiddenField('intitule');
             }
+        }
+    }
+    
+    // Fonction pour ajouter un champ caché pour les valeurs cochées automatiquement
+    function addHiddenField(fieldName) {
+        // Vérifier si le champ caché existe déjà
+        if (!document.querySelector(`input[name="fields[]"][value="${fieldName}"][type="hidden"]`)) {
+            const hiddenField = document.createElement('input');
+            hiddenField.type = 'hidden';
+            hiddenField.name = 'fields[]';
+            hiddenField.value = fieldName;
+            document.querySelector('form').appendChild(hiddenField);
         }
     }
     
@@ -435,6 +455,10 @@
             checkbox.disabled = false;
             checkbox.parentElement.classList.remove('auto-checked-field');
         });
+        
+        // Supprimer tous les champs cachés
+        const hiddenFields = document.querySelectorAll('input[name="fields[]"][type="hidden"]');
+        hiddenFields.forEach(field => field.remove());
         
         // Réappliquer les règles
         applyAutoCheckRules();
@@ -454,6 +478,19 @@
                     resetAutoCheckRules();
                 }, 100);
             });
+        });
+        
+        // S'assurer que les champs cochés automatiquement sont inclus dans la soumission
+        // même s'ils sont désactivés visuellement
+        document.querySelector('form').addEventListener('submit', function(e) {
+            // Activer temporairement tous les checkboxes désactivés pour la soumission
+            const disabledCheckboxes = document.querySelectorAll('input[name="fields[]"]:disabled');
+            disabledCheckboxes.forEach(checkbox => {
+                checkbox.disabled = false;
+            });
+            
+            // Laisser le formulaire se soumettre normalement
+            // Les checkboxes seront automatiquement réactivés après la soumission
         });
     });
 
