@@ -2,6 +2,63 @@
 
 {% block title %}Extracteur fichier .CSV par Groupe - Panel Admin{% endblock %}
 
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .checkbox-container {
+            position: relative;
+        }
+        
+        .checkbox-container input[type="checkbox"]:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .checkbox-container input[type="checkbox"]:disabled + span {
+            color: #718096;
+            font-style: italic;
+        }
+        
+        .auto-checked {
+            background-color: #f0fff4;
+            border: 1px solid #68d391;
+            border-radius: 4px;
+            padding: 2px 6px;
+            margin-left: 8px;
+            font-size: 0.75rem;
+            color: #38a169;
+        }
+        
+        .auto-checked-field {
+            background-color: #f0fff4;
+            border: 1px solid #68d391;
+            border-radius: 6px;
+            padding: 8px;
+        }
+        
+        .auto-checked-field input[type="checkbox"]:disabled {
+            opacity: 0.8;
+        }
+        
+        .auto-checked-field span {
+            color: #38a169;
+            font-weight: 500;
+        }
+        
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-info {
+            font-size: 0.8rem;
+            color: #718096;
+            font-style: italic;
+        }
+    </style>
+{% endblock %}
+
 {% block content %}
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px;">
         <div>
@@ -10,6 +67,16 @@
         </div>
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
             <a href="{{ path('admin_dashboard') }}" class="btn btn-secondary">🏠 Dashboard</a>
+        </div>
+    </div>
+
+    <!-- Informations sur les règles automatiques -->
+    <div style="background: #e6fffa; border: 1px solid #38b2ac; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
+        <h3 style="color: #2c7a7b; margin-bottom: 15px;">ℹ️ Règles de sélection automatique</h3>
+        <div style="color: #2c7a7b; font-size: 0.9rem; line-height: 1.6;">
+            <p><strong>Locataire :</strong> Si vous sélectionnez Libellé Intitulé, Téléphone, Age ou Adresse de regroupement, le champ Tiers sera automatiquement coché.</p>
+            <p><strong>Locataire/Ménage/Loyer :</strong> Si vous sélectionnez certains champs spécifiques, les champs Contrat et Intitulé seront automatiquement cochés (champs obligatoires).</p>
+            <p style="margin-top: 10px; font-style: italic;">Les champs cochés automatiquement sont désactivés pour éviter les erreurs de sélection.</p>
         </div>
     </div>
 
@@ -46,55 +113,55 @@
                 Patrimoine :
             </h4>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" name="fields[]" value="esi" {{ 'esi' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
                     <span>Esi</span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" name="fields[]" value="etage" {{ 'etage' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
                     <span>Etage</span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" name="fields[]" value="typologie" {{ 'typologie' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
                     <span>Typologie</span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" name="fields[]" value="nature" {{ 'nature' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
                     <span>Nature</span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" name="fields[]" value="adresse" {{ 'adresse' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
                     <span>Adresse</span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" name="fields[]" value="groupe" {{ 'groupe' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
                     <span>Groupe</span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" name="fields[]" value="agence" {{ 'agence' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
                     <span>Agence</span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" name="fields[]" value="statut" {{ 'statut' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
                     <span>Statut</span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" name="fields[]" value="surface_habitable" {{ 'surface_habitable' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
                     <span>Surface Habitable</span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" name="fields[]" value="surface_utile" {{ 'surface_utile' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
                     <span>Surface Utile</span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" name="fields[]" value="numero_rpls" {{ 'numero_rpls' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
                     <span>Numéro RPLS</span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" name="fields[]" value="cat_financement" {{ 'cat_financement' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
                     <span>Cat. Financement</span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" name="fields[]" value="reservataire" {{ 'reservataire' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
                     <span>Réservataire</span>
                 </label>
@@ -103,59 +170,61 @@
 
         <!-- Section Locataire -->
         <div style="margin-bottom: 30px;">
-            <h4 style="color: #4a5568; font-size: 1.1rem; margin-bottom: 15px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">
-                Locataire:
-            </h4>
+            <div class="section-header">
+                <h4 style="color: #4a5568; font-size: 1.1rem; margin-bottom: 15px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">
+                    Locataire:
+                </h4>
+            </div>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" name="fields[]" value="contrat" {{ 'contrat' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
-                    <span>Contrat</span>
+                    <span>Contrat <span class="auto-checked"></span></span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" name="fields[]" value="intitule" {{ 'intitule' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
-                    <span>Intitulé</span>
+                    <span>Intitulé <span class="auto-checked"></span></span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" name="fields[]" value="tiers" {{ 'tiers' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
-                    <span>Tiers</span>
+                    <span>Tiers <span class="auto-checked"></span></span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" name="fields[]" value="libelle_intitule" {{ 'libelle_intitule' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
                     <span>Libelle Intitulé</span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" name="fields[]" value="telephone" {{ 'telephone' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
                     <span>Téléphone</span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" name="fields[]" value="age" {{ 'age' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
                     <span>Age</span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" name="fields[]" value="assurance_jour" {{ 'assurance_jour' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
                     <span>Assurance à jour</span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" name="fields[]" value="prelevement" {{ 'prelevement' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
                     <span>Prélèvement</span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" name="fields[]" value="date_debut_contrat" {{ 'date_debut_contrat' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
                     <span>Date Début Contrat</span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" name="fields[]" value="date_fin_contrat" {{ 'date_fin_contrat' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
                     <span>Date Fin Contrat</span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" name="fields[]" value="adresse_regroupement" {{ 'adresse_regroupement' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
                     <span>Adresse de regroupement</span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" name="fields[]" value="immatriculation" {{ 'immatriculation' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
                     <span>Immatriculation</span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" name="fields[]" value="marque_vehicule" {{ 'marque_vehicule' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
                     <span>Marque Véhicule</span>
                 </label>
@@ -164,23 +233,25 @@
 
         <!-- Section Ménage -->
         <div style="margin-bottom: 30px;">
-            <h4 style="color: #4a5568; font-size: 1.1rem; margin-bottom: 15px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">
-                Ménage:
-            </h4>
+            <div class="section-header">
+                <h4 style="color: #4a5568; font-size: 1.1rem; margin-bottom: 15px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">
+                    Ménage:
+                </h4>
+            </div>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" name="fields[]" value="nombre_occupants" {{ 'nombre_occupants' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
                     <span>Nombre d'occupants</span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" name="fields[]" value="nb_adultes" {{ 'nb_adultes' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
                     <span>NB. Adultes</span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" name="fields[]" value="nb_enfants" {{ 'nb_enfants' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
                     <span>NB. Enfants</span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" name="fields[]" value="revenu_imposable" {{ 'revenu_imposable' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
                     <span>Revenu Imposable</span>
                 </label>
@@ -189,31 +260,33 @@
 
         <!-- Section Loyer -->
         <div style="margin-bottom: 30px;">
-            <h4 style="color: #4a5568; font-size: 1.1rem; margin-bottom: 15px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">
-                Loyer:
-            </h4>
+            <div class="section-header">
+                <h4 style="color: #4a5568; font-size: 1.1rem; margin-bottom: 15px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px;">
+                    Loyer:
+                </h4>
+            </div>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" name="fields[]" value="loyer" {{ 'loyer' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
                     <span>Loyer</span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" name="fields[]" value="charges" {{ 'charges' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
                     <span>Charges</span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" name="fields[]" value="dette" {{ 'dette' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
                     <span>Dette</span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" name="fields[]" value="apl" {{ 'apl' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
                     <span>APL</span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" name="fields[]" value="rls" {{ 'rls' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
                     <span>RLS</span>
                 </label>
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <label class="checkbox-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" name="fields[]" value="loyer_plafond" {{ 'loyer_plafond' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
                     <span>Loyer Plafond</span>
                 </label>
@@ -250,6 +323,140 @@
 
 {% block javascript %}
 <script>
+    // Fonction pour forcer la coche automatique selon les règles métier
+    function applyAutoCheckRules() {
+        // Récupérer tous les checkboxes
+        const checkboxes = document.querySelectorAll('input[name="fields[]"]');
+        
+        // Règle 1: Locataire - Si Libellé Intitulé (3) OU Téléphone (4) OU Age (5) OU Adresse de regroupement (10) est coché
+        // ⇒ coche Tiers (2)
+        const libelleIntitule = document.querySelector('input[value="libelle_intitule"]');
+        const telephone = document.querySelector('input[value="telephone"]');
+        const age = document.querySelector('input[value="age"]');
+        const adresseRegroupement = document.querySelector('input[value="adresse_regroupement"]');
+        const tiers = document.querySelector('input[value="tiers"]');
+        
+        if ((libelleIntitule && libelleIntitule.checked) || 
+            (telephone && telephone.checked) || 
+            (age && age.checked) || 
+            (adresseRegroupement && adresseRegroupement.checked)) {
+            if (tiers) {
+                tiers.checked = true;
+                tiers.disabled = true; // Désactiver pour éviter la décoche
+                tiers.parentElement.classList.add('auto-checked-field');
+            }
+        }
+        
+        // Règle 2: Locataire - Si Tiers (2) OU Libellé Intitulé (3) OU Téléphone (4) OU Age (5) OU Assurance à jour (6) 
+        // OU Prélèvement (7) OU Date Début Contrat (8) OU Date Fin Contrat (9) OU Immatriculation (11) est coché
+        // ⇒ coche Contrat (0) ET Intitulé (1)
+        const assuranceJour = document.querySelector('input[value="assurance_jour"]');
+        const prelevement = document.querySelector('input[value="prelevement"]');
+        const dateDebutContrat = document.querySelector('input[value="date_debut_contrat"]');
+        const dateFinContrat = document.querySelector('input[value="date_fin_contrat"]');
+        const immatriculation = document.querySelector('input[value="immatriculation"]');
+        const contrat = document.querySelector('input[value="contrat"]');
+        const intitule = document.querySelector('input[value="intitule"]');
+        
+        if ((tiers && tiers.checked) || 
+            (libelleIntitule && libelleIntitule.checked) || 
+            (telephone && telephone.checked) || 
+            (age && age.checked) || 
+            (assuranceJour && assuranceJour.checked) || 
+            (prelevement && prelevement.checked) || 
+            (dateDebutContrat && dateDebutContrat.checked) || 
+            (dateFinContrat && dateFinContrat.checked) || 
+            (immatriculation && immatriculation.checked)) {
+            if (contrat) {
+                contrat.checked = true;
+                contrat.disabled = true;
+                contrat.parentElement.classList.add('auto-checked-field');
+            }
+            if (intitule) {
+                intitule.checked = true;
+                intitule.disabled = true;
+                intitule.parentElement.classList.add('auto-checked-field');
+            }
+        }
+        
+        // Règle 3: Ménage - Si Nombre d'occupants (0) OU NB. Adultes (1) OU NB. Enfants (2) OU Revenu Imposable (3) est coché
+        // ⇒ coche Contrat (0) ET Intitulé (1) dans Locataire
+        const nombreOccupants = document.querySelector('input[value="nombre_occupants"]');
+        const nbAdultes = document.querySelector('input[value="nb_adultes"]');
+        const nbEnfants = document.querySelector('input[value="nb_enfants"]');
+        const revenuImposable = document.querySelector('input[value="revenu_imposable"]');
+        
+        if ((nombreOccupants && nombreOccupants.checked) || 
+            (nbAdultes && nbAdultes.checked) || 
+            (nbEnfants && nbEnfants.checked) || 
+            (revenuImposable && revenuImposable.checked)) {
+            if (contrat) {
+                contrat.checked = true;
+                contrat.disabled = true;
+                contrat.parentElement.classList.add('auto-checked-field');
+            }
+            if (intitule) {
+                intitule.checked = true;
+                intitule.disabled = true;
+                intitule.parentElement.classList.add('auto-checked-field');
+            }
+        }
+        
+        // Règle 4: Loyer - Si Loyer (0) OU Charges (1) OU Dette (2) OU APL (3) est coché
+        // ⇒ coche Contrat (0) ET Intitulé (1) dans Locataire
+        const loyer = document.querySelector('input[value="loyer"]');
+        const charges = document.querySelector('input[value="charges"]');
+        const dette = document.querySelector('input[value="dette"]');
+        const apl = document.querySelector('input[value="apl"]');
+        
+        if ((loyer && loyer.checked) || 
+            (charges && charges.checked) || 
+            (dette && dette.checked) || 
+            (apl && apl.checked)) {
+            if (contrat) {
+                contrat.checked = true;
+                contrat.disabled = true;
+                contrat.parentElement.classList.add('auto-checked-field');
+            }
+            if (intitule) {
+                intitule.checked = true;
+                intitule.disabled = true;
+                intitule.parentElement.classList.add('auto-checked-field');
+            }
+        }
+    }
+    
+    // Fonction pour réinitialiser les règles (quand on décoche)
+    function resetAutoCheckRules() {
+        const checkboxes = document.querySelectorAll('input[name="fields[]"]');
+        
+        // Réactiver tous les checkboxes et retirer les classes
+        checkboxes.forEach(checkbox => {
+            checkbox.disabled = false;
+            checkbox.parentElement.classList.remove('auto-checked-field');
+        });
+        
+        // Réappliquer les règles
+        applyAutoCheckRules();
+    }
+    
+    // Appliquer les règles au chargement de la page
+    document.addEventListener('DOMContentLoaded', function() {
+        // Appliquer les règles une première fois
+        applyAutoCheckRules();
+        
+        // Ajouter des écouteurs d'événements sur tous les checkboxes
+        const checkboxes = document.querySelectorAll('input[name="fields[]"]');
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                // Attendre un peu pour laisser le DOM se mettre à jour
+                setTimeout(() => {
+                    resetAutoCheckRules();
+                }, 100);
+            });
+        });
+    });
+
     function showQuery() {
         const form = document.querySelector('form');
         const selectedFields = form.querySelectorAll('input[name="fields[]"]:checked');

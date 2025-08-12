@@ -54,21 +54,17 @@
     <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
         <h3 style="color: #2d3748; margin-bottom: 20px; font-size: 1.3rem;">⚡ Actions</h3>
         <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-            <button onclick="exportSingleRecord('csv')" class="btn btn-success">
-                📄 Export CSV
-            </button>
-            <button onclick="exportSingleRecord('json')" class="btn btn-success">
-                📄 Export JSON
-            </button>
+            <a href="{{ path('admin_edition_bureautique_download', {'id': entity.NOM_BI}) }}" class="btn btn-primary">
+                📥 Télécharger le modèle
+            </a>
+            <a href="{{ path('admin_edition_bureautique_query', {'id': entity.NOM_BI}) }}" class="btn btn-info">
+                🔍 Voir la requête SQL
+            </a>
+        </div>
+        <div style="margin-top: 15px; padding: 15px; background: #f7fafc; border-radius: 8px; border-left: 4px solid #4299e1;">
+            <p style="color: #2d3748; margin: 0; font-size: 0.9rem;">
+                <strong>📁 Emplacement du modèle :</strong> \\172.22.0.34\Conteneur\OPULISE\bureautique\{{ entity.NOM_DOCUMENT ?? entity.NOM_BI }}
+            </p>
         </div>
     </div>
-{% endblock %}
-
-{% block javascript %}
-<script>
-    function exportSingleRecord(format) {
-        const url = window.location.origin + '/admin/entity/EditionBureautique/export/' + format + '?id={{ entity.NOM_BI }}';
-        window.location.href = url;
-    }
-</script>
 {% endblock %} 

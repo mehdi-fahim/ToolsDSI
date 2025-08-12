@@ -1,0 +1,102 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Requête SQL - {{ entity.NOM_DOCUMENT ?? entity.NOM_BI }} - Panel Admin{% endblock %}
+
+{% block content %}
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px;">
+        <div>
+            <h2 style="color: #2d3748; font-size: 1.8rem; margin-bottom: 5px;">
+                🔍 Requête SQL - {{ entity.NOM_DOCUMENT ?? entity.NOM_BI }}
+            </h2>
+            <p style="color: #718096;">
+                Code BI: {{ entity.NOM_BI }} • EditionBureautique
+            </p>
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <a href="{{ path('admin_edition_bureautique_detail', {'id': entity.NOM_BI}) }}" class="btn btn-secondary">← Retour au détail</a>
+            <a href="{{ path('admin_entity_view', {'entityName': 'EditionBureautique'}) }}" class="btn btn-secondary">📋 Liste des éditions</a>
+            <a href="{{ path('admin_dashboard') }}" class="btn btn-secondary">🏠 Dashboard</a>
+        </div>
+    </div>
+
+    <div style="background: white; border-radius: 12px; padding: 30px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+        <h3 style="color: #2d3748; margin-bottom: 20px; font-size: 1.3rem;">📊 Informations de l'édition</h3>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+            <div>
+                <strong style="color: #4a5568;">Code BI:</strong>
+                <span style="color: #2d3748; margin-left: 10px;">{{ entity.NOM_BI }}</span>
+            </div>
+            <div>
+                <strong style="color: #4a5568;">Type de document:</strong>
+                <span style="color: #2d3748; margin-left: 10px;">{{ entity.DOCUMENT_TYPE ?? '-' }}</span>
+            </div>
+            <div>
+                <strong style="color: #4a5568;">Nom du document:</strong>
+                <span style="color: #2d3748; margin-left: 10px;">{{ entity.NOM_DOCUMENT ?? '-' }}</span>
+            </div>
+            <div>
+                <strong style="color: #4a5568;">Description:</strong>
+                <span style="color: #2d3748; margin-left: 10px;">{{ entity.DESCRIPTION_BI ?? '-' }}</span>
+            </div>
+        </div>
+
+        <h3 style="color: #2d3748; margin-bottom: 20px; font-size: 1.3rem;">🔍 Requête SQL générée</h3>
+        
+        {% if query %}
+            <div style="background: #1a202c; color: #e2e8f0; padding: 25px; border-radius: 8px; overflow-x: auto; margin-bottom: 20px;">
+                <pre style="margin: 0; font-family: 'Courier New', monospace; font-size: 14px; line-height: 1.5; white-space: pre-wrap;">{{ query }}</pre>
+            </div>
+            
+            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                <button onclick="copyQueryToClipboard()" class="btn btn-success">
+                    📋 Copier la requête
+                </button>
+                <button onclick="downloadQueryAsFile()" class="btn btn-primary">
+                    💾 Télécharger en .sql
+                </button>
+            </div>
+        {% else %}
+            <div style="background: #fed7d7; border: 1px solid #f56565; border-radius: 8px; padding: 20px; text-align: center;">
+                <h4 style="color: #c53030; margin-bottom: 10px;">⚠️ Aucune requête disponible</h4>
+                <p style="color: #742a2a; margin: 0;">La requête SQL n'a pas pu être récupérée pour cette édition bureautique.</p>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block javascript %}
+<script>
+    function copyQueryToClipboard() {
+        const queryText = `{{ query|raw }}`;
+        navigator.clipboard.writeText(queryText).then(function() {
+            // Changer temporairement le texte du bouton
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.innerHTML = '✅ Copié !';
+            button.style.backgroundColor = '#38a169';
+            
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.style.backgroundColor = '';
+            }, 2000);
+        }).catch(function(err) {
+            console.error('Erreur lors de la copie:', err);
+            alert('Erreur lors de la copie dans le presse-papiers');
+        });
+    }
+    
+    function downloadQueryAsFile() {
+        const queryText = `{{ query|raw }}`;
+        const blob = new Blob([queryText], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'requete_{{ entity.NOM_BI }}.sql';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+    }
+</script>
+{% endblock %}

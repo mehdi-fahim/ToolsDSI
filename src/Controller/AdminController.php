@@ -217,6 +217,56 @@ class AdminController extends AbstractController
         ]);
     }
 
+    #[Route('/entity/editionbureautique/download/{id}', name: 'admin_edition_bureautique_download', methods: ['GET'])]
+    public function downloadEditionBureautiqueModel($id, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+        
+        $entity = $this->oracleService->fetchEditionById($id);
+        if (!$entity) {
+            throw $this->createNotFoundException('Document BI non trouvé');
+        }
+        
+        $nomDocument = $entity['NOM_DOCUMENT'] ?? $entity['NOM_BI'] ?? $id;
+        $cheminFichier = "\\\\172.22.0.34\\Conteneur\\OPULISE\\bureautique\\" . $nomDocument;
+        
+        // Vérifier si le fichier existe
+        if (!file_exists($cheminFichier)) {
+            throw $this->createNotFoundException('Fichier modèle non trouvé sur le serveur');
+        }
+        
+        // Créer la réponse de téléchargement
+        $response = new Response(file_get_contents($cheminFichier));
+        $response->headers->set('Content-Type', 'application/octet-stream');
+        $response->headers->set('Content-Disposition', 'attachment; filename="' . basename($nomDocument) . '"');
+        
+        return $response;
+    }
+
+    #[Route('/entity/editionbureautique/query/{id}', name: 'admin_edition_bureautique_query', methods: ['GET'])]
+    public function viewEditionBureautiqueQuery($id, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+        
+        $entity = $this->oracleService->fetchEditionById($id);
+        if (!$entity) {
+            throw $this->createNotFoundException('Document BI non trouvé');
+        }
+        
+        // Récupérer la requête SQL depuis le service Oracle
+        $query = $this->oracleService->getQueryForEdition($id);
+        
+        return $this->render('admin/edition_bureautique_query.html.twig', [
+            'entity' => $entity,
+            'query' => $query,
+            'entityName' => 'EditionBureautique'
+        ]);
+    }
+
     #[Route('/entity/{entityName}/search', name: 'admin_entity_search', methods: ['GET'])]
     public function searchEntity(string $entityName, Request $request, SessionInterface $session): JsonResponse
     {
