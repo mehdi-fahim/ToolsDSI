@@ -323,7 +323,7 @@
     </aside>
     <div style="flex: 1; display: flex; flex-direction: column; min-height: 100vh;">
         <header style="background: #fff; box-shadow: 0 2px 8px rgba(35,41,70,0.04); padding: 18px 36px; display: flex; align-items: center; justify-content: space-between; gap: 24px;">
-            {% if app.session and app.session.get('is_admin') %}
+            {% if app.session and app.session.get('user_id') %}
                 <div style="display: flex; align-items: center; gap: 15px;">
                     <div style="text-align: right;">
                         <div style="color: #2d3748; font-weight: 600; font-size: 1rem;">

