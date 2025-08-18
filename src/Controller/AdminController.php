@@ -776,9 +776,10 @@ class AdminController extends AbstractController
         }
         $userId = strtoupper((string) $request->get('user_id', ''));
         $allPages = [
-            // code_page => label
+            // code_page => label (codes logiques, pas forcément les routes exactes)
             'admin_dashboard' => 'Dashboard',
             'admin_entity_view' => 'Document BI',
+            'admin_users' => 'Utilisateurs',
             'admin_locataire' => 'Locataire',
             'admin_extraction' => 'Extraction CSV',
             'admin_engagement' => 'Engagements',
@@ -806,6 +807,18 @@ class AdminController extends AbstractController
                 }
                 $this->accessControlOracleService->replaceUserPageAccess($formUser, $codeToLabel);
                 $userId = $formUser;
+
+                // Si on modifie ses propres droits, mettre à jour la session pour reflet immédiat
+                $currentUserId = strtoupper((string) $session->get('user_id', ''));
+                if ($currentUserId === $formUser) {
+                    $session->set('is_admin', $isAdminChecked);
+                    $session->set('page_access', array_keys($codeToLabel));
+                }
+
+                // PRG: rediriger vers GET pour recharger proprement l'état (et éviter re-submit)
+                return $this->redirectToRoute('admin_user_access', [
+                    'user_id' => $userId,
+                ]);
             }
         }
 
