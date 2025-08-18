@@ -498,6 +498,9 @@ class AdminController extends AbstractController
                 $session->set('user_nom', $user['NOM']);
                 $session->set('user_prenom', $user['PRENOM']);
                 $session->set('user_groupe', $user['GROUPE']);
+                // Charger les accès pages en session pour éviter des requêtes à chaque affichage
+                $userAccessMap = $this->accessControlOracleService->getUserPageAccess($user['CODE_UTILISATEUR']);
+                $session->set('page_access', array_keys($userAccessMap));
                 
                 return $this->redirectToRoute('admin_dashboard');
             } else {
@@ -519,6 +522,7 @@ class AdminController extends AbstractController
         $session->remove('user_nom');
         $session->remove('user_prenom');
         $session->remove('user_groupe');
+        $session->remove('page_access');
         
         return $this->redirectToRoute('login');
     }
@@ -808,6 +812,7 @@ class AdminController extends AbstractController
         if ($userId !== '') {
             $isAdminFlag = $this->accessControlOracleService->isAdmin($userId);
             $userPageAccess = $this->accessControlOracleService->getUserPageAccess($userId); // code => label
+            // Pré-cocher dans la vue, pageAccess est un tableau de codes
         }
 
         return $this->render('admin/user_access.html.twig', [

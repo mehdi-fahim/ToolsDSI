@@ -293,10 +293,19 @@
         <nav style="flex: 1;">
             <ul style="list-style: none; padding: 0; margin: 0;">
                 <li><a href="{{ path('admin_dashboard') }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">🏠 <span>Accueil</span></a></li>
+                {% set access = app.session and app.session.get('page_access') ? app.session.get('page_access') : [] %}
+                {% if 'admin_entity_view' in access %}
                 <li><a href="{{ path('admin_entity_view', {entityName: 'EditionBureautique'}) }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">📄 <span>Document BI</span></a></li>
+                {% endif %}
+                {% if 'admin_locataire' in access %}
                 <li><a href="{{ path('admin_locataire') }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">🏠 <span>Locataire</span></a></li>
+                {% endif %}
+                {% if 'admin_extraction' in access %}
                 <li><a href="{{ path('admin_extraction') }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">📊 <span>Extraction CSV</span></a></li>
+                {% endif %}
+                {% if 'admin_engagement' in access %}
                 <li><a href="{{ path('admin_engagement') }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">📋 <span>Engagements</span></a></li>
+                {% endif %}
                 {% if app.session and app.session.get('is_admin') %}
                 <li><a href="{{ path('admin_entity_view', {entityName: 'Utilisateur'}) }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">👥 <span>Utilisateurs</span></a></li>
                     <li><a href="{{ path('admin_user_unlock') }}" style="color: #fff; font-weight: 600; text-decoration: none; font-size: 1.08rem; letter-spacing: 0.5px; padding: 14px 32px; display: block;"><span style='font-size:1.1em;'>🔒</span> Débloquer MDP</a></li>
