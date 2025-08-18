@@ -17,6 +17,7 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use App\Service\EngagementOracleService;
+use App\Service\AccessControlOracleService;
 
 #[Route('/admin')]
 class AdminController extends AbstractController
@@ -27,7 +28,8 @@ class AdminController extends AbstractController
         private MotDePasseOracleService $motDePasseOracleService,
         private LocataireOracleService $locataireOracleService,
         private ExtractionOracleService $extractionOracleService,
-        private EngagementOracleService $engagementOracleService
+        private EngagementOracleService $engagementOracleService,
+        private AccessControlOracleService $accessControlOracleService
     ) {}
 
     #[Route('', name: 'admin_dashboard', methods: ['GET'])]
@@ -467,11 +469,11 @@ class AdminController extends AbstractController
     {
         $error = null;
         if ($request->isMethod('POST')) {
-            $userId = $request->request->get('id');
-            $password = $request->request->get('password');
+            $userId = strtoupper(trim((string) $request->request->get('id', '')));
+            $password = strtoupper(trim((string) $request->request->get('password', '')));
             
             // Vérifier d'abord le compte admin PCH
-            if ($userId === 'PCH' && $password === 'Ulis93200') {
+            if ($userId === 'PCH' && $password === 'ULIS93200') {
                 // Connexion admin réussie
                 $session->set('is_admin', true);
                 $session->set('is_super_admin', true);
@@ -488,7 +490,9 @@ class AdminController extends AbstractController
             
             if ($user) {
                 // Connexion utilisateur Oracle réussie
-                $session->set('is_admin', true);
+                // Déterminer les droits admin via base (ADM_ADMIN)
+                $isAdmin = $this->accessControlOracleService->isAdmin($user['CODE_UTILISATEUR']);
+                $session->set('is_admin', $isAdmin);
                 $session->set('is_super_admin', false);
                 $session->set('user_id', $user['CODE_UTILISATEUR']);
                 $session->set('user_nom', $user['NOM']);
@@ -740,7 +744,8 @@ class AdminController extends AbstractController
 
     private function isAuthenticated(SessionInterface $session): bool
     {
-        return $session->get('is_admin') === true && $session->get('user_id');
+        // Est considéré connecté si un user_id est présent
+        return (bool) $session->get('user_id');
     }
 
     private function isSuperAdmin(SessionInterface $session): bool
@@ -762,24 +767,54 @@ class AdminController extends AbstractController
     #[Route('/admin/administration', name: 'admin_user_access', methods: ['GET', 'POST'])]
     public function userAccess(Request $request, SessionInterface $session): Response
     {
-        if (!$this->isSuperAdmin($session)) {
+        if (!$this->isAdmin($session)) {
             return $this->redirectToRoute('login');
         }
-        $userId = $request->get('user_id');
-        $access = null;
-        $allModules = $this->getAllModules();
-        if ($userId) {
-            // Simulation des droits d'accès
-            $fakeAccess = [
-                'jdupont' => ['Document BI', 'Utilisateurs', 'Administration'],
-                'smartin' => ['Document BI'],
-            ];
-            $access = $fakeAccess[$userId] ?? [];
+        $userId = strtoupper((string) $request->get('user_id', ''));
+        $allPages = [
+            // code_page => label
+            'admin_dashboard' => 'Dashboard',
+            'admin_entity_view' => 'Document BI',
+            'admin_locataire' => 'Locataire',
+            'admin_extraction' => 'Extraction CSV',
+            'admin_engagement' => 'Engagements',
+            'admin_user_unlock' => 'Débloquer MDP',
+            'admin_user_access' => 'Administration',
+        ];
+
+        $isAdminFlag = null;
+        $userPageAccess = [];
+
+        if ($request->isMethod('POST')) {
+            $formUser = strtoupper((string) $request->request->get('form_user_id', ''));
+            $checkedPages = $request->request->all('pages'); // array of code_page
+            $isAdminChecked = $request->request->get('is_admin') === 'on';
+
+            if ($formUser !== '') {
+                // Maj flag admin
+                $this->accessControlOracleService->setAdminFlag($formUser, $isAdminChecked);
+                // Remplacement complet des pages
+                $codeToLabel = [];
+                foreach ($checkedPages as $code) {
+                    if (isset($allPages[$code])) {
+                        $codeToLabel[$code] = $allPages[$code];
+                    }
+                }
+                $this->accessControlOracleService->replaceUserPageAccess($formUser, $codeToLabel);
+                $userId = $formUser;
+            }
         }
+
+        if ($userId !== '') {
+            $isAdminFlag = $this->accessControlOracleService->isAdmin($userId);
+            $userPageAccess = $this->accessControlOracleService->getUserPageAccess($userId); // code => label
+        }
+
         return $this->render('admin/user_access.html.twig', [
             'userId' => $userId,
-            'access' => $access,
-            'allModules' => $allModules,
+            'isAdmin' => $isAdminFlag,
+            'allPages' => $allPages,
+            'pageAccess' => array_keys($userPageAccess),
         ]);
     }
 
@@ -839,6 +874,6 @@ class AdminController extends AbstractController
 
     private function isAdmin(SessionInterface $session): bool
     {
-        return $session->get('is_admin', false) === true;
+        return $this->isAuthenticated($session) && $session->get('is_admin', false) === true;
     }
 } 

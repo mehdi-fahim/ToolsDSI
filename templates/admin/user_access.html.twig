@@ -6,24 +6,32 @@
     <div style="background: #fff; border-radius: 18px; box-shadow: 0 4px 24px rgba(35,41,70,0.07); padding: 56px 56px; max-width: 900px; margin: 0 auto;">
         <h2 style="font-size: 1.5rem; color: #232946; font-weight: bold; margin-bottom: 18px;">Accès utilisateur</h2>
         <form method="get" style="display: flex; gap: 16px; align-items: center; margin-bottom: 24px;">
-            <input type="text" name="user_id" placeholder="ID utilisateur (ex: jdupont)" value="{{ userId|default('') }}" required style="flex:1; padding: 12px 14px; border: 1.5px solid #e2e8f0; border-radius: 7px; font-size: 1.08rem; background: #f7fafc;">
+            <input type="text" name="user_id" placeholder="ID utilisateur (ex: JDUPONT)" value="{{ userId|default('') }}" required style="flex:1; padding: 12px 14px; border: 1.5px solid #e2e8f0; border-radius: 7px; font-size: 1.08rem; background: #f7fafc; text-transform: uppercase;">
             <button type="submit" style="background: #ff6600; color: #fff; font-weight: 600; padding: 12px 22px; border-radius: 7px; border: none; font-size: 1.08rem; letter-spacing: 0.5px; cursor: pointer; transition: background 0.2s;">Voir accès</button>
         </form>
-        {% if userId is not null %}
+        {% if userId is not empty %}
             <div style="margin-top: 18px;">
-                <strong>ID utilisateur :</strong> {{ userId }}<br>
-                <div style="margin-top: 12px;">
-                    <strong>Pages/modules accessibles :</strong>
-                    <form method="post" style="margin-top: 8px; text-align: left;">
-                        {% for module in allModules %}
-                            <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 1.08rem; color: #232946;">
-                                <input type="checkbox" name="modules[]" value="{{ module }}" {% if access is not null and module in access %}checked{% endif %}>
-                                {{ module }}
-                            </label>
-                        {% endfor %}
-                        <button type="submit" style="background: #ff6600; color: #fff; font-weight: 600; padding: 10px 22px; border-radius: 7px; border: none; font-size: 1.08rem; letter-spacing: 0.5px; cursor: pointer; transition: background 0.2s; margin-top: 10px;">Enregistrer</button>
-                    </form>
-                </div>
+                <strong>ID utilisateur :</strong> {{ userId }}
+                <form method="post" style="margin-top: 18px; text-align: left;">
+                    <input type="hidden" name="form_user_id" value="{{ userId }}">
+                    <div style="margin-bottom: 16px; display:flex; align-items:center; gap:10px;">
+                        <label style="font-weight: 600; color:#232946;">
+                            <input type="checkbox" name="is_admin" {% if isAdmin %}checked{% endif %}> Est administrateur
+                        </label>
+                    </div>
+                    <div style="margin-top: 12px;">
+                        <strong>Pages accessibles :</strong>
+                        <div style="margin-top: 8px;">
+                            {% for code, label in allPages %}
+                                <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 1.08rem; color: #232946;">
+                                    <input type="checkbox" name="pages[]" value="{{ code }}" {% if pageAccess is defined and code in pageAccess %}checked{% endif %}>
+                                    {{ label }} <span style="color:#718096; font-size:0.9rem;">({{ code }})</span>
+                                </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-success" style="margin-top: 12px;">Enregistrer</button>
+                </form>
             </div>
         {% endif %}
     </div>

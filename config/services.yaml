@@ -50,5 +50,10 @@ services:
         arguments:
             $defaultConnection: '@doctrine.dbal.default_connection'
 
+    # Configuration pour le service AccessControlOracleService
+    App\Service\AccessControlOracleService:
+        arguments:
+            $defaultConnection: '@doctrine.dbal.default_connection'
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

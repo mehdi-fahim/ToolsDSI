@@ -303,7 +303,7 @@
                 {% endif %}
             </ul>
         </nav>
-        {% if app.session and app.session.get('is_super_admin') %}
+        {% if app.session and app.session.get('is_admin') %}
         <div style="text-align: center; margin-bottom: 18px;">
             <a href="{{ path('admin_user_access') }}" style="color: #fff; font-weight: 600; text-decoration: none; font-size: 1.08rem; letter-spacing: 0.5px;">Administration</a>
         </div>
