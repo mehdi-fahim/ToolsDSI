@@ -27,7 +27,19 @@ class PropositionOracleService
 
     public function getProposition(int $numeroProposition): ?array
     {
-        $sql = "SELECT * FROM ACPRS WHERE ACPRS_NUM = :num";
+        $sql = "SELECT 
+                    ACPRS_NUM,
+                    TOTIE_COD_RES,
+                    TOTIE_LIB,
+                    PAESI_CODEXT,
+                    PANES_COD,
+                    MGADR_LIB,
+                    MGADR_CODPOS,
+                    MGADR_LIBCOM,
+                    TOTIE_LIB_GAR,
+                    ACPRS_DATCRE
+                FROM ACPRS 
+                WHERE ACPRS_NUM = :num";
         $row = $this->defaultConnection->fetchAssociative($sql, ['num' => $numeroProposition]);
         return $row ?: null;
     }

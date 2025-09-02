@@ -83,7 +83,38 @@
   {% elseif numero and proposition %}
     <div style="background:#fff;border-radius:15px;box-shadow:0 8px 32px rgba(0,0,0,0.08);border:1px solid #eef2f7;padding:22px 24px;">
       <h2 style="font-size:1.2rem;color:#232946;font-weight:700;margin-bottom:10px;">Proposition {{ numero }}</h2>
-      <pre style="background:#f7fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;font-size:12px;overflow:auto;">{{ proposition|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
+      <div class="table-container">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>N° proposition</th>
+              <th>Tiers Rés.</th>
+              <th>Libellé Rés.</th>
+              <th>Code ESI</th>
+              <th>Nature</th>
+              <th>Adresse</th>
+              <th>CP</th>
+              <th>Commune</th>
+              <th>Lib. Garantie</th>
+              <th>Créée le</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>{{ proposition.ACPRS_NUM }}</td>
+              <td>{{ proposition.TOTIE_COD_RES }}</td>
+              <td>{{ proposition.TOTIE_LIB }}</td>
+              <td>{{ proposition.PAESI_CODEXT }}</td>
+              <td>{{ proposition.PANES_COD }}</td>
+              <td>{{ proposition.MGADR_LIB }}</td>
+              <td>{{ proposition.MGADR_CODPOS }}</td>
+              <td>{{ proposition.MGADR_LIBCOM }}</td>
+              <td>{{ proposition.TOTIE_LIB_GAR }}</td>
+              <td>{{ proposition.ACPRS_DATCRE }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
       <form action="{{ path('admin_proposition') }}" method="post" style="margin-top:14px;" onsubmit="return openConfirmModal(event, 'Confirmer la suppression de la proposition ?');">
         <input type="hidden" name="numero_proposition" value="{{ numero }}">
         <input type="hidden" name="action" value="delete_proposition">
