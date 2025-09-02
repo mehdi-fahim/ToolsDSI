@@ -1,0 +1,91 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Proposition - Suppression{% endblock %}
+
+{% block body %}
+<div class="max-w-5xl mx-auto py-8 px-4">
+  <h1 class="text-2xl font-bold mb-6">Gestion des propositions</h1>
+
+  {% if error %}
+    <div class="mb-4 rounded border border-red-200 bg-red-50 text-red-800 px-4 py-3">{{ error }}</div>
+  {% endif %}
+  {% if success %}
+    <div class="mb-4 rounded border border-green-200 bg-green-50 text-green-800 px-4 py-3">{{ success }}</div>
+  {% endif %}
+
+  <form action="{{ path('admin_proposition') }}" method="post" class="mb-6 flex items-end gap-3">
+    <div>
+      <label class="block text-sm font-medium mb-1">Numéro de proposition</label>
+      <input type="number" name="numero_proposition" value="{{ numero ?? '' }}" required class="border rounded px-3 py-2">
+    </div>
+    <button type="submit" class="bg-primary-600 hover:bg-primary-700 text-white rounded px-4 py-2">Rechercher</button>
+  </form>
+
+  {% if numero and candidats is not empty %}
+    <h2 class="text-lg font-semibold mb-2">Candidats de la proposition {{ numero }}</h2>
+    <form action="{{ path('admin_proposition') }}" method="post" class="mb-4">
+      <input type="hidden" name="numero_proposition" value="{{ numero }}">
+      <input type="hidden" name="action" value="delete_all_candidates">
+      <button type="submit" class="bg-red-600 hover:bg-red-700 text-white rounded px-4 py-2" onclick="return confirm('Supprimer tous les candidats ?');">Supprimer tous les candidats</button>
+    </form>
+
+    <div class="overflow-x-auto">
+      <table class="min-w-full border border-gray-200 bg-white">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-3 py-2 text-left text-sm">Prénom</th>
+            <th class="px-3 py-2 text-left text-sm">Nom</th>
+            <th class="px-3 py-2 text-left text-sm">Date naissance</th>
+            <th class="px-3 py-2 text-left text-sm">N° tiers</th>
+            <th class="px-3 py-2 text-left text-sm">N° dossier</th>
+            <th class="px-3 py-2 text-left text-sm">Créé le</th>
+            <th class="px-3 py-2 text-left text-sm">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in candidats %}
+            <tr class="border-t">
+              <td class="px-3 py-2 text-sm">{{ c.PRENOM }}</td>
+              <td class="px-3 py-2 text-sm">{{ c.NOM }}</td>
+              <td class="px-3 py-2 text-sm">{{ c.DATE_NAISSANCE }}</td>
+              <td class="px-3 py-2 text-sm">{{ c.NUMERO_TIERS }}</td>
+              <td class="px-3 py-2 text-sm">{{ c.NUMERO_DOSSIER }}</td>
+              <td class="px-3 py-2 text-sm">{{ c.DATE_CREATION }}</td>
+              <td class="px-3 py-2 text-sm">
+                <form action="{{ path('admin_proposition') }}" method="post" onsubmit="return confirm('Supprimer ce candidat ?');">
+                  <input type="hidden" name="numero_proposition" value="{{ numero }}">
+                  <input type="hidden" name="numero_tiers" value="{{ c.NUMERO_TIERS }}">
+                  <input type="hidden" name="numero_dossier" value="{{ c.NUMERO_DOSSIER }}">
+                  <input type="hidden" name="action" value="delete_candidate">
+                  <button type="submit" class="bg-red-600 hover:bg-red-700 text-white rounded px-3 py-1">Supprimer</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-6">
+      <form action="{{ path('admin_proposition') }}" method="post" onsubmit="return confirm('Supprimer la proposition après suppression des candidats ?');">
+        <input type="hidden" name="numero_proposition" value="{{ numero }}">
+        <input type="hidden" name="action" value="delete_proposition">
+        <button type="submit" class="bg-red-700 hover:bg-red-800 text-white rounded px-4 py-2">Supprimer la proposition</button>
+      </form>
+    </div>
+
+  {% elseif numero and proposition %}
+    <h2 class="text-lg font-semibold mb-2">Proposition {{ numero }}</h2>
+    <pre class="bg-gray-100 p-4 rounded text-sm mb-4">{{ proposition|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
+
+    <form action="{{ path('admin_proposition') }}" method="post" onsubmit="return confirm('Supprimer la proposition ?');">
+      <input type="hidden" name="numero_proposition" value="{{ numero }}">
+      <input type="hidden" name="action" value="delete_proposition">
+      <button type="submit" class="bg-red-700 hover:bg-red-800 text-white rounded px-4 py-2">Supprimer la proposition</button>
+    </form>
+
+  {% elseif numero %}
+    <div class="rounded border border-yellow-200 bg-yellow-50 text-yellow-800 px-4 py-3">Aucun candidat ni proposition trouvés pour ce numéro.</div>
+  {% endif %}
+</div>
+{% endblock %}

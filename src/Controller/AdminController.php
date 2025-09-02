@@ -18,6 +18,7 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use App\Service\EngagementOracleService;
 use App\Service\AccessControlOracleService;
+use App\Service\PropositionOracleService;
 
 #[Route('/admin')]
 class AdminController extends AbstractController
@@ -29,7 +30,8 @@ class AdminController extends AbstractController
         private LocataireOracleService $locataireOracleService,
         private ExtractionOracleService $extractionOracleService,
         private EngagementOracleService $engagementOracleService,
-        private AccessControlOracleService $accessControlOracleService
+        private AccessControlOracleService $accessControlOracleService,
+        private PropositionOracleService $propositionOracleService
     ) {}
 
     #[Route('', name: 'admin_dashboard', methods: ['GET'])]
@@ -842,6 +844,78 @@ class AdminController extends AbstractController
             'isAdmin' => $isAdminFlag,
             'allPages' => $allPages,
             'pageAccess' => array_keys($userPageAccess),
+        ]);
+    }
+
+    #[Route('/admin/proposition', name: 'admin_proposition', methods: ['GET', 'POST'])]
+    public function proposition(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        $numero = (int) $request->request->get('numero_proposition', 0);
+        $error = null;
+        $success = null;
+        $candidats = [];
+        $proposition = null;
+
+        // Suppression d'un candidat
+        if ($request->isMethod('POST') && $request->request->get('action') === 'delete_candidate') {
+            $numero = (int) $request->request->get('numero_proposition');
+            $tiers = (string) $request->request->get('numero_tiers');
+            $dossier = (string) $request->request->get('numero_dossier');
+            try {
+                $count = $this->propositionOracleService->deleteCandidate($numero, $tiers, $dossier);
+                $success = $count > 0 ? 'Candidat supprimé.' : 'Aucun candidat supprimé.';
+            } catch (\Throwable $e) {
+                $error = 'Erreur lors de la suppression du candidat: ' . $e->getMessage();
+            }
+        }
+
+        // Suppression de tous les candidats
+        if ($request->isMethod('POST') && $request->request->get('action') === 'delete_all_candidates') {
+            $numero = (int) $request->request->get('numero_proposition');
+            try {
+                $count = $this->propositionOracleService->deleteAllCandidates($numero);
+                $success = $count . ' candidat(s) supprimé(s).';
+            } catch (\Throwable $e) {
+                $error = 'Erreur lors de la suppression des candidats: ' . $e->getMessage();
+            }
+        }
+
+        // Suppression de la proposition
+        if ($request->isMethod('POST') && $request->request->get('action') === 'delete_proposition') {
+            $numero = (int) $request->request->get('numero_proposition');
+            try {
+                $count = $this->propositionOracleService->deleteProposition($numero);
+                $success = $count > 0 ? 'Proposition supprimée.' : 'Aucune proposition supprimée.';
+            } catch (\Throwable $e) {
+                $error = 'Erreur lors de la suppression de la proposition: ' . $e->getMessage();
+            }
+        }
+
+        // Consultation selon le numéro
+        if ($numero > 0) {
+            try {
+                $candidats = $this->propositionOracleService->getCandidatesByProposition($numero);
+                if (empty($candidats)) {
+                    $proposition = $this->propositionOracleService->getProposition($numero);
+                    if (!$proposition) {
+                        $error = 'Aucune proposition trouvée pour ce numéro.';
+                    }
+                }
+            } catch (\Throwable $e) {
+                $error = 'Erreur lors de la consultation: ' . $e->getMessage();
+            }
+        }
+
+        return $this->render('admin/proposition.html.twig', [
+            'numero' => $numero,
+            'candidats' => $candidats,
+            'proposition' => $proposition,
+            'error' => $error,
+            'success' => $success,
         ]);
     }
 
