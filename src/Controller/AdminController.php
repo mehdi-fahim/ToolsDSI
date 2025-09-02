@@ -6,7 +6,6 @@ use App\Entity\EditionBureautique;
 use App\Service\EditionBureautiqueOracleService;
 use App\Service\UtilisateurOracleService;
 use App\Service\MotDePasseOracleService;
-use App\Service\LocataireOracleService;
 use App\Service\ExtractionOracleService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -19,6 +18,7 @@ use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use App\Service\EngagementOracleService;
 use App\Service\AccessControlOracleService;
 use App\Service\PropositionOracleService;
+use App\Service\BeckrelOracleService;
 
 #[Route('/admin')]
 class AdminController extends AbstractController
@@ -27,11 +27,11 @@ class AdminController extends AbstractController
         private EditionBureautiqueOracleService $oracleService,
         private UtilisateurOracleService $utilisateurOracleService,
         private MotDePasseOracleService $motDePasseOracleService,
-        private LocataireOracleService $locataireOracleService,
         private ExtractionOracleService $extractionOracleService,
         private EngagementOracleService $engagementOracleService,
         private AccessControlOracleService $accessControlOracleService,
-        private PropositionOracleService $propositionOracleService
+        private PropositionOracleService $propositionOracleService,
+        private BeckrelOracleService $beckrelOracleService
     ) {}
 
     #[Route('', name: 'admin_dashboard', methods: ['GET'])]
@@ -603,88 +603,6 @@ class AdminController extends AbstractController
         ]);
     }
 
-    #[Route('/admin/locataire', name: 'admin_locataire', methods: ['GET'])]
-    public function locataire(Request $request, SessionInterface $session): Response
-    {
-        if (!$this->isAuthenticated($session)) {
-            return $this->redirectToRoute('login');
-        }
-
-        $searchType = $request->query->get('search_type', '');
-        $searchValue = $request->query->get('search_value', '');
-        $page = (int) $request->query->get('page', 1);
-        $limit = 20;
-
-        $data = [];
-        $pagination = [];
-        $error = null;
-
-        if ($searchType && $searchValue) {
-            try {
-                switch ($searchType) {
-                    case 'esi':
-                        $result = $this->locataireOracleService->searchByEsi($searchValue, $page, $limit);
-                        break;
-                    case 'contrat':
-                        $result = $this->locataireOracleService->searchByContrat($searchValue, $page, $limit);
-                        break;
-                    case 'intitule':
-                        $result = $this->locataireOracleService->searchByIntitule($searchValue, $page, $limit);
-                        break;
-                    default:
-                        $error = 'Type de recherche non valide';
-                        $result = ['data' => [], 'total' => 0, 'page' => 1, 'limit' => $limit, 'totalPages' => 0];
-                }
-                
-                $data = $result['data'];
-                $pagination = [
-                    'page' => $result['page'],
-                    'total' => $result['total'],
-                    'limit' => $result['limit'],
-                    'totalPages' => $result['totalPages']
-                ];
-            } catch (\Exception $e) {
-                $error = 'Erreur de connexion à la base de données Oracle. Veuillez vérifier la configuration de la connexion.';
-                $data = [];
-                $pagination = ['page' => 1, 'total' => 0, 'limit' => $limit, 'totalPages' => 0];
-            }
-        }
-
-        return $this->render('admin/locataire.html.twig', [
-            'searchType' => $searchType,
-            'searchValue' => $searchValue,
-            'data' => $data,
-            'pagination' => $pagination,
-            'error' => $error
-        ]);
-    }
-
-    #[Route('/admin/locataire/detail/{esi}', name: 'admin_locataire_detail', methods: ['GET'])]
-    public function locataireDetail(string $esi, SessionInterface $session): Response
-    {
-        if (!$this->isAuthenticated($session)) {
-            return $this->redirectToRoute('login');
-        }
-
-        try {
-            $locataire = $this->locataireOracleService->getLocataireByEsi($esi);
-            if (!$locataire) {
-                throw $this->createNotFoundException('Locataire non trouvé');
-            }
-        } catch (\Exception $e) {
-            return $this->render('admin/locataire_detail.html.twig', [
-                'locataire' => null,
-                'esi' => $esi,
-                'error' => 'Erreur de connexion à la base de données Oracle. Veuillez vérifier la configuration de la connexion.'
-            ]);
-        }
-
-        return $this->render('admin/locataire_detail.html.twig', [
-            'locataire' => $locataire,
-            'esi' => $esi,
-            'error' => null
-        ]);
-    }
 
     #[Route('/admin/extraction', name: 'admin_extraction', methods: ['GET', 'POST'])]
     public function extraction(Request $request, SessionInterface $session): Response
@@ -791,12 +709,12 @@ class AdminController extends AbstractController
             'admin_dashboard' => 'Dashboard',
             'admin_entity_view' => 'Document BI',
             'admin_users' => 'Utilisateurs',
-            'admin_locataire' => 'Locataire',
             'admin_extraction' => 'Extraction CSV',
             'admin_engagement' => 'Engagements',
             'admin_user_unlock' => 'Débloquer MDP',
             'admin_user_access' => 'Administration',
             'admin_proposition' => 'Proposition (Suppression)',
+            'admin_beckrel_users' => 'Utilisateurs Beckrel',
         ];
 
         $isAdminFlag = null;
@@ -921,6 +839,54 @@ class AdminController extends AbstractController
     }
 
 
+
+    #[Route('/admin/beckrel', name: 'admin_beckrel_users', methods: ['GET', 'POST'])]
+    public function beckrelUsers(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        $error = null;
+        $success = null;
+
+        if ($request->isMethod('POST')) {
+            $tiers = trim((string) $request->request->get('numero_tiers', ''));
+            $email = trim((string) $request->request->get('email', ''));
+
+            if ($tiers === '' || $email === '') {
+                $error = 'Le numéro de tiers et l\'email sont obligatoires.';
+            } else {
+                try {
+                    if (!$this->beckrelOracleService->tiersExists($tiers)) {
+                        $error = 'Tiers non trouvé dans TOZD2.';
+                    } else {
+                        // S\'assurer que TOZD2_VALPHA contient l\'email
+                        $this->beckrelOracleService->ensureEmailInTozd2($tiers, $email);
+                        // Ajouter l\'accès Beckrel
+                        $this->beckrelOracleService->addUserAccess($tiers);
+                        $success = 'Utilisateur ajouté aux accès Beckrel.';
+                    }
+                } catch (\Throwable $e) {
+                    $error = 'Erreur lors de l\'ajout: ' . $e->getMessage();
+                }
+            }
+        }
+
+        // Liste des utilisateurs Beckrel
+        try {
+            $users = $this->beckrelOracleService->listUsers();
+        } catch (\Throwable $e) {
+            $users = [];
+            $error = $error ?: 'Erreur lors du chargement des utilisateurs: ' . $e->getMessage();
+        }
+
+        return $this->render('admin/beckrel_users.html.twig', [
+            'users' => $users,
+            'error' => $error,
+            'success' => $success,
+        ]);
+    }
 
     #[Route('/admin/show-password', name: 'admin_user_show_password', methods: ['GET'])]
     public function showPassword(Request $request, SessionInterface $session): Response
