@@ -309,6 +309,9 @@
                 {% if 'admin_engagement' in access %}
                 <li><a href="{{ path('admin_engagement') }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">📋 <span>Engagements</span></a></li>
                 {% endif %}
+                {% if 'admin_proposition' in access %}
+                <li><a href="{{ path('admin_proposition') }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">🗂️ <span>Proposition</span></a></li>
+                {% endif %}
                 {% if 'admin_user_unlock' in access %}
                     <li><a href="{{ path('admin_user_unlock') }}" style="color: #fff; font-weight: 600; text-decoration: none; font-size: 1.08rem; letter-spacing: 0.5px; padding: 14px 32px; display: block;"><span style='font-size:1.1em;'>🔒</span> Débloquer MDP</a></li>
                 {% endif %}
