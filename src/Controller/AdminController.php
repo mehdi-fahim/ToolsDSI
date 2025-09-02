@@ -902,15 +902,19 @@ class AdminController extends AbstractController
         $success = null;
 
         if ($request->isMethod('POST')) {
-            $code = trim((string) $request->request->get('code', ''));
             $email = trim((string) $request->request->get('email', ''));
 
-            if ($code === '' || $email === '') {
-                $error = 'Le code et l\'email sont obligatoires.';
+            if ($email === '') {
+                $error = 'L\'email est obligatoire.';
             } else {
                 try {
-                    $this->sowellOracleService->setEmailInTozd2ForCode($code, $email);
-                    $success = 'Email renseigné dans TOZD2 pour ce code.';
+                    $user = $this->sowellOracleService->findUserByEmail($email);
+                    if (!$user) {
+                        $error = 'Aucun utilisateur Sowell trouvé pour cet email.';
+                    } else {
+                        $this->sowellOracleService->setEmailInTozd2ForCode($user['CODE'], $email);
+                        $success = 'Email renseigné dans TOZD2 pour le code ' . $user['CODE'] . '.';
+                    }
                 } catch (\Throwable $e) {
                     $error = 'Erreur lors de la mise à jour: ' . $e->getMessage();
                 }

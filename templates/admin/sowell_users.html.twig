@@ -13,6 +13,21 @@
         <div style="background: #DEF7EC; color: #03543F; padding: 12px 16px; border-radius: 6px; margin-bottom: 16px;">{{ success }}</div>
     {% endif %}
 
+    <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; margin-bottom: 24px;">
+        <h2 style="font-size: 1.2rem; margin-bottom: 12px;">Ajouter un utilisateur (renseigner email dans TOZD2)</h2>
+        <form method="post">
+            <div style="display: grid; grid-template-columns: 1fr; gap: 12px;">
+                <div>
+                    <label for="email" style="display:block; font-weight: 600; margin-bottom: 6px;">Email</label>
+                    <input type="email" id="email" name="email" class="input" style="width:100%; padding: 10px 12px; border:1px solid #d1d5db; border-radius: 8px;" required />
+                </div>
+            </div>
+            <div style="margin-top: 12px;">
+                <button type="submit" class="btn" style="padding: 10px 16px; border-radius: 8px;">Ajouter</button>
+            </div>
+        </form>
+    </div>
+
     <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px;">
         <h2 style="font-size: 1.2rem; margin-bottom: 12px;">Liste des utilisateurs</h2>
         <div style="overflow-x:auto;">
@@ -23,7 +38,6 @@
                         <th style="padding:10px; border-bottom:1px solid #e5e7eb;">Prénom</th>
                         <th style="padding:10px; border-bottom:1px solid #e5e7eb;">Code</th>
                         <th style="padding:10px; border-bottom:1px solid #e5e7eb;">Email</th>
-                        <th style="padding:10px; border-bottom:1px solid #e5e7eb; width: 1%; white-space: nowrap;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -38,13 +52,6 @@
                         <td style="padding:10px; border-bottom:1px solid #f3f4f6;">{{ u.FIRST_NAME }}</td>
                         <td style="padding:10px; border-bottom:1px solid #f3f4f6;">{{ u.CODE }}</td>
                         <td style="padding:10px; border-bottom:1px solid #f3f4f6;">{{ u.EMAIL }}</td>
-                        <td style="padding:10px; border-bottom:1px solid #f3f4f6;">
-                            <form method="post" style="display:inline;">
-                                <input type="hidden" name="code" value="{{ u.CODE }}" />
-                                <input type="hidden" name="email" value="{{ u.EMAIL }}" />
-                                <button type="submit" class="btn btn-success" style="padding: 6px 12px; border-radius: 6px;">Renseigner email dans TOZD2</button>
-                            </form>
-                        </td>
                     </tr>
                     {% endfor %}
                 {% endif %}

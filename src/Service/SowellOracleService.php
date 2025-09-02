@@ -18,6 +18,13 @@ class SowellOracleService
         return $this->connection->executeQuery($sql)->fetchAllAssociative();
     }
 
+    public function findUserByEmail(string $email): ?array
+    {
+        $sql = "SELECT FIRST_NAME, LAST_NAME, CODE, EMAIL FROM SOWELL_V_USER WHERE UPPER(EMAIL) = UPPER(:email)";
+        $row = $this->connection->executeQuery($sql, ['email' => $email])->fetchAssociative();
+        return $row ?: null;
+    }
+
     public function setEmailInTozd2ForCode(string $code, string $email): int
     {
         // Met TOZD2_VALPHA = email pour le TOTIE_COD = CODE (on ne demande pas le tiers en entrée)
