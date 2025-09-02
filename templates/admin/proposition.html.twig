@@ -23,10 +23,10 @@
 
   {% if numero and candidats is not empty %}
     <h2 class="text-lg font-semibold mb-2">Candidats de la proposition {{ numero }}</h2>
-    <form action="{{ path('admin_proposition') }}" method="post" class="mb-4">
+    <form action="{{ path('admin_proposition') }}" method="post" class="mb-4" onsubmit="return confirm('Supprimer tous les candidats ?');">
       <input type="hidden" name="numero_proposition" value="{{ numero }}">
       <input type="hidden" name="action" value="delete_all_candidates">
-      <button type="submit" class="bg-red-600 hover:bg-red-700 text-white rounded px-4 py-2" onclick="return confirm('Supprimer tous les candidats ?');">Supprimer tous les candidats</button>
+      <button type="submit" class="bg-red-600 hover:bg-red-700 text-white rounded px-4 py-2">Supprimer tous les candidats</button>
     </form>
 
     <div class="overflow-x-auto">
@@ -67,7 +67,7 @@
     </div>
 
     <div class="mt-6">
-      <form action="{{ path('admin_proposition') }}" method="post" onsubmit="return confirm('Supprimer la proposition après suppression des candidats ?');">
+      <form action="{{ path('admin_proposition') }}" method="post" onsubmit="return openConfirmModal(event, 'Confirmer la suppression de la proposition ?');">
         <input type="hidden" name="numero_proposition" value="{{ numero }}">
         <input type="hidden" name="action" value="delete_proposition">
         <button type="submit" class="bg-red-700 hover:bg-red-800 text-white rounded px-4 py-2">Supprimer la proposition</button>
@@ -78,7 +78,7 @@
     <h2 class="text-lg font-semibold mb-2">Proposition {{ numero }}</h2>
     <pre class="bg-gray-100 p-4 rounded text-sm mb-4">{{ proposition|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
 
-    <form action="{{ path('admin_proposition') }}" method="post" onsubmit="return confirm('Supprimer la proposition ?');">
+    <form action="{{ path('admin_proposition') }}" method="post" onsubmit="return openConfirmModal(event, 'Confirmer la suppression de la proposition ?');">
       <input type="hidden" name="numero_proposition" value="{{ numero }}">
       <input type="hidden" name="action" value="delete_proposition">
       <button type="submit" class="bg-red-700 hover:bg-red-800 text-white rounded px-4 py-2">Supprimer la proposition</button>
@@ -88,4 +88,50 @@
     <div class="rounded border border-yellow-200 bg-yellow-50 text-yellow-800 px-4 py-3">Aucun candidat ni proposition trouvés pour ce numéro.</div>
   {% endif %}
 </div>
+{% endblock %}
+
+{% block javascripts %}
+  <script>
+    function openConfirmModal(e, message) {
+      e.preventDefault();
+      const overlay = document.createElement('div');
+      overlay.style.position = 'fixed';
+      overlay.style.inset = '0';
+      overlay.style.background = 'rgba(0,0,0,0.4)';
+      overlay.style.display = 'flex';
+      overlay.style.alignItems = 'center';
+      overlay.style.justifyContent = 'center';
+      overlay.style.zIndex = '9999';
+
+      const modal = document.createElement('div');
+      modal.style.background = '#fff';
+      modal.style.borderRadius = '12px';
+      modal.style.padding = '20px';
+      modal.style.width = '420px';
+      modal.style.boxShadow = '0 10px 30px rgba(0,0,0,0.15)';
+
+      modal.innerHTML = `
+        <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 10px;">Confirmation</h3>
+        <p style="font-size: 14px; color: #4a5568; margin-bottom: 16px;">${message}</p>
+        <div style="display:flex; gap:10px; justify-content:flex-end;">
+          <button id="cancelBtn" style="padding:8px 14px; border-radius:8px; border:1px solid #e2e8f0; background:#fff;">Annuler</button>
+          <button id="confirmBtn" style="padding:8px 14px; border-radius:8px; background:#e11d48; color:#fff;">Confirmer</button>
+        </div>
+      `;
+
+      overlay.appendChild(modal);
+      document.body.appendChild(overlay);
+
+      modal.querySelector('#cancelBtn').addEventListener('click', () => {
+        document.body.removeChild(overlay);
+      });
+      modal.querySelector('#confirmBtn').addEventListener('click', () => {
+        // Soumettre le formulaire original
+        const form = e.target;
+        form.submit();
+      });
+
+      return false;
+    }
+  </script>
 {% endblock %}

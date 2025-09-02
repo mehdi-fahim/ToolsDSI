@@ -796,6 +796,7 @@ class AdminController extends AbstractController
             'admin_engagement' => 'Engagements',
             'admin_user_unlock' => 'Débloquer MDP',
             'admin_user_access' => 'Administration',
+            'admin_proposition' => 'Proposition (Suppression)',
         ];
 
         $isAdminFlag = null;
