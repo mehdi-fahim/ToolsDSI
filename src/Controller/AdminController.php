@@ -848,7 +848,7 @@ class AdminController extends AbstractController
         ]);
     }
 
-    #[Route('/admin/proposition', name: 'admin_proposition', methods: ['GET', 'POST'])]
+    #[Route('/proposition', name: 'admin_proposition', methods: ['GET', 'POST'])]
     public function proposition(Request $request, SessionInterface $session): Response
     {
         if (!$this->isAuthenticated($session)) {
