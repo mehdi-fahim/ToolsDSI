@@ -19,6 +19,7 @@ use App\Service\EngagementOracleService;
 use App\Service\AccessControlOracleService;
 use App\Service\PropositionOracleService;
 use App\Service\BeckrelOracleService;
+use App\Service\SowellOracleService;
 
 #[Route('/admin')]
 class AdminController extends AbstractController
@@ -31,7 +32,8 @@ class AdminController extends AbstractController
         private EngagementOracleService $engagementOracleService,
         private AccessControlOracleService $accessControlOracleService,
         private PropositionOracleService $propositionOracleService,
-        private BeckrelOracleService $beckrelOracleService
+        private BeckrelOracleService $beckrelOracleService,
+        private SowellOracleService $sowellOracleService
     ) {}
 
     #[Route('', name: 'admin_dashboard', methods: ['GET'])]
@@ -715,6 +717,7 @@ class AdminController extends AbstractController
             'admin_user_access' => 'Administration',
             'admin_proposition' => 'Proposition (Suppression)',
             'admin_beckrel_users' => 'Utilisateurs Beckrel',
+            'admin_sowell_users' => 'Utilisateurs Sowell',
         ];
 
         $isAdminFlag = null;
@@ -882,6 +885,46 @@ class AdminController extends AbstractController
         }
 
         return $this->render('admin/beckrel_users.html.twig', [
+            'users' => $users,
+            'error' => $error,
+            'success' => $success,
+        ]);
+    }
+
+    #[Route('/admin/sowell', name: 'admin_sowell_users', methods: ['GET', 'POST'])]
+    public function sowellUsers(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        $error = null;
+        $success = null;
+
+        if ($request->isMethod('POST')) {
+            $code = trim((string) $request->request->get('code', ''));
+            $email = trim((string) $request->request->get('email', ''));
+
+            if ($code === '' || $email === '') {
+                $error = 'Le code et l\'email sont obligatoires.';
+            } else {
+                try {
+                    $this->sowellOracleService->setEmailInTozd2ForCode($code, $email);
+                    $success = 'Email renseigné dans TOZD2 pour ce code.';
+                } catch (\Throwable $e) {
+                    $error = 'Erreur lors de la mise à jour: ' . $e->getMessage();
+                }
+            }
+        }
+
+        try {
+            $users = $this->sowellOracleService->listUsers();
+        } catch (\Throwable $e) {
+            $users = [];
+            $error = $error ?: 'Erreur lors du chargement des utilisateurs: ' . $e->getMessage();
+        }
+
+        return $this->render('admin/sowell_users.html.twig', [
             'users' => $users,
             'error' => $error,
             'success' => $success,
