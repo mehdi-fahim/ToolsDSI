@@ -14,10 +14,14 @@
     {% endif %}
 
     <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; margin-bottom: 24px;">
-        <h2 style="font-size: 1.2rem; margin-bottom: 12px;">Ajouter un utilisateur (renseigner email dans TOZD2)</h2>
+        <h2 style="font-size: 1.2rem; margin-bottom: 12px;">Ajouter un utilisateur</h2>
         <form method="post">
             <input type="hidden" name="action" value="add_user" />
-            <div style="display: grid; grid-template-columns: 1fr; gap: 12px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div>
+                    <label for="numero_tiers" style="display:block; font-weight: 600; margin-bottom: 6px;">Numéro de tiers</label>
+                    <input type="text" id="numero_tiers" name="numero_tiers" class="input" style="width:100%; padding: 10px 12px; border:1px solid #d1d5db; border-radius: 8px;" required />
+                </div>
                 <div>
                     <label for="email" style="display:block; font-weight: 600; margin-bottom: 6px;">Email</label>
                     <input type="email" id="email" name="email" class="input" style="width:100%; padding: 10px 12px; border:1px solid #d1d5db; border-radius: 8px;" required />
