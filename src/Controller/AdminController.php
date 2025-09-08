@@ -862,30 +862,51 @@ class AdminController extends AbstractController
             } else {
                 try {
                     if (!$this->beckrelOracleService->tiersExists($tiers)) {
-                        $error = 'Tiers non trouvé dans TOZD2.';
-                    } else {
-                        // S\'assurer que TOZD2_VALPHA contient l\'email
-                        $this->beckrelOracleService->ensureEmailInTozd2($tiers, $email);
-                        // Ajouter l\'accès Beckrel
-                        $this->beckrelOracleService->addUserAccess($tiers);
-                        $success = 'Utilisateur ajouté aux accès Beckrel.';
+                        // Créer l'enregistrement TOZD2 si absent
+                        $this->beckrelOracleService->createTozd2Record($tiers, $email);
                     }
+                    // Mettre/mettre à jour l'email dans TOZD2
+                    $this->beckrelOracleService->ensureEmailInTozd2($tiers, $email);
+                    // Ajouter l'accès Beckrel
+                    $this->beckrelOracleService->addUserAccess($tiers);
+                    $success = 'Utilisateur ajouté/actualisé dans TOZD2 et ajouté aux accès Beckrel.';
                 } catch (\Throwable $e) {
                     $error = 'Erreur lors de l\'ajout: ' . $e->getMessage();
                 }
             }
         }
 
-        // Liste des utilisateurs Beckrel
+        // Suppression d'un utilisateur par email
+        if ($request->isMethod('POST') && $request->request->get('action') === 'delete_user') {
+            $emailToDelete = trim((string) $request->request->get('email_to_delete', ''));
+            if ($emailToDelete !== '') {
+                try {
+                    $deleted = $this->beckrelOracleService->removeUserAccessByEmail($emailToDelete);
+                    $success = $deleted > 0 ? 'Utilisateur supprimé des accès Beckrel.' : 'Aucun accès supprimé pour cet email.';
+                } catch (\Throwable $e) {
+                    $error = 'Erreur lors de la suppression: ' . $e->getMessage();
+                }
+            }
+        }
+
+        // Liste paginée des utilisateurs Beckrel
+        $page = max(1, (int) $request->query->get('page', 1));
+        $limit = 20;
         try {
-            $users = $this->beckrelOracleService->listUsers();
+            $result = $this->beckrelOracleService->listUsersPaginated($page, $limit);
         } catch (\Throwable $e) {
-            $users = [];
+            $result = ['data' => [], 'total' => 0, 'page' => 1, 'limit' => $limit, 'totalPages' => 0];
             $error = $error ?: 'Erreur lors du chargement des utilisateurs: ' . $e->getMessage();
         }
 
         return $this->render('admin/beckrel_users.html.twig', [
-            'users' => $users,
+            'users' => $result['data'],
+            'pagination' => [
+                'page' => $result['page'],
+                'total' => $result['total'],
+                'limit' => $result['limit'],
+                'totalPages' => $result['totalPages'],
+            ],
             'error' => $error,
             'success' => $success,
         ]);
