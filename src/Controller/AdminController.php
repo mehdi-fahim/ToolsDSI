@@ -923,26 +923,21 @@ class AdminController extends AbstractController
         $success = null;
 
         if ($request->isMethod('POST') && $request->request->get('action') === 'add_user') {
+            $code = trim((string) $request->request->get('numero_tiers', ''));
             $email = trim((string) $request->request->get('email', ''));
 
-            if ($email === '') {
-                $error = 'L\'email est obligatoire.';
+            if ($code === '' || $email === '') {
+                $error = 'Le numéro de tiers et l\'email sont obligatoires.';
             } else {
                 try {
-                    $user = $this->sowellOracleService->findUserByEmail($email);
-                    if (!$user) {
-                        $error = 'Aucun utilisateur Sowell trouvé pour cet email.';
-                    } else {
-                        $code = $user['CODE'];
-                        if (!$this->sowellOracleService->tiersExists($code)) {
-                            $this->sowellOracleService->createTozd2RecordForCode($code, $email);
-                        }
-                        $this->sowellOracleService->setEmailInTozd2ForCode($code, $email);
-                        $this->sowellOracleService->addUserAccess($code);
-                        $success = 'Utilisateur ajouté/actualisé dans TOZD2 et ajouté aux accès Sowell.';
+                    if (!$this->sowellOracleService->tiersExists($code)) {
+                        $this->sowellOracleService->createTozd2RecordForCode($code, $email);
                     }
+                    $this->sowellOracleService->setEmailInTozd2ForCode($code, $email);
+                    $this->sowellOracleService->addUserAccess($code);
+                    $success = 'Utilisateur ajouté/actualisé dans TOZD2 et ajouté aux accès Sowell.';
                 } catch (\Throwable $e) {
-                    $error = 'Erreur lors de la mise à jour: ' . $e->getMessage();
+                    $error = 'Erreur lors de l\'ajout: ' . $e->getMessage();
                 }
             }
         }
