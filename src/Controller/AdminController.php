@@ -922,7 +922,7 @@ class AdminController extends AbstractController
         $error = null;
         $success = null;
 
-        if ($request->isMethod('POST')) {
+        if ($request->isMethod('POST') && $request->request->get('action') === 'add_user') {
             $email = trim((string) $request->request->get('email', ''));
 
             if ($email === '') {
@@ -933,8 +933,13 @@ class AdminController extends AbstractController
                     if (!$user) {
                         $error = 'Aucun utilisateur Sowell trouvé pour cet email.';
                     } else {
-                        $this->sowellOracleService->setEmailInTozd2ForCode($user['CODE'], $email);
-                        $success = 'Email renseigné dans TOZD2 pour le code ' . $user['CODE'] . '.';
+                        $code = $user['CODE'];
+                        if (!$this->sowellOracleService->tiersExists($code)) {
+                            $this->sowellOracleService->createTozd2RecordForCode($code, $email);
+                        }
+                        $this->sowellOracleService->setEmailInTozd2ForCode($code, $email);
+                        $this->sowellOracleService->addUserAccess($code);
+                        $success = 'Utilisateur ajouté/actualisé dans TOZD2 et ajouté aux accès Sowell.';
                     }
                 } catch (\Throwable $e) {
                     $error = 'Erreur lors de la mise à jour: ' . $e->getMessage();
@@ -942,15 +947,35 @@ class AdminController extends AbstractController
             }
         }
 
+        if ($request->isMethod('POST') && $request->request->get('action') === 'delete_user') {
+            $emailToDelete = trim((string) $request->request->get('email_to_delete', ''));
+            if ($emailToDelete !== '') {
+                try {
+                    $deleted = $this->sowellOracleService->removeUserAccessByEmail($emailToDelete);
+                    $success = $deleted > 0 ? 'Utilisateur supprimé des accès Sowell.' : 'Aucun accès supprimé pour cet email.';
+                } catch (\Throwable $e) {
+                    $error = 'Erreur lors de la suppression: ' . $e->getMessage();
+                }
+            }
+        }
+
+        $page = max(1, (int) $request->query->get('page', 1));
+        $limit = 20;
         try {
-            $users = $this->sowellOracleService->listUsers();
+            $result = $this->sowellOracleService->listUsersPaginated($page, $limit);
         } catch (\Throwable $e) {
-            $users = [];
+            $result = ['data' => [], 'total' => 0, 'page' => 1, 'limit' => $limit, 'totalPages' => 0];
             $error = $error ?: 'Erreur lors du chargement des utilisateurs: ' . $e->getMessage();
         }
 
         return $this->render('admin/sowell_users.html.twig', [
-            'users' => $users,
+            'users' => $result['data'],
+            'pagination' => [
+                'page' => $result['page'],
+                'total' => $result['total'],
+                'limit' => $result['limit'],
+                'totalPages' => $result['totalPages'],
+            ],
             'error' => $error,
             'success' => $success,
         ]);
