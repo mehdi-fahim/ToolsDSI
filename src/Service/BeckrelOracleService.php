@@ -42,45 +42,6 @@ class BeckrelOracleService
         $sql = "INSERT INTO BECKREL_USERS_ACCESS (TOTIE_COD) VALUES (:tiers)";
         return $this->connection->executeStatement($sql, ['tiers' => $numeroTiers]);
     }
-
-    public function createTozd2Record(string $numeroTiers, string $email): int
-    {
-        // Crée une ligne dans TOZD2 selon le format fourni
-        // Valeurs par défaut: MGZDE_COD='SOWE', MGENT_COD='TODPP', U_VERSION=1, SIT=NULL, TOZD2_VDATE=NULL, TOZD2_VNUM=NULL,
-        // TOZD2_UTICRE='SOPRAUNG', TOZD2_DATCRE=NULL, TOZD2_UTIMAJ=NULL, TOZD2_DATMAJ=SYSDATE
-        $sql = "INSERT INTO TOZD2 (
-            TOTIE_COD,
-            MGZDE_COD,
-            MGENT_COD,
-            U_VERSION,
-            SIT,
-            TOZD2_VALPHA,
-            TOZD2_VDATE,
-            TOZD2_VNUM,
-            TOZD2_UTICRE,
-            TOZD2_DATCRE,
-            TOZD2_UTIMAJ,
-            TOZD2_DATMAJ
-        ) VALUES (
-            :tiers,
-            'SOWE',
-            'TODPP',
-            1,
-            NULL,
-            :email,
-            NULL,
-            NULL,
-            'SOPRAUNG',
-            NULL,
-            NULL,
-            SYSDATE
-        )";
-
-        return $this->connection->executeStatement($sql, [
-            'tiers' => $numeroTiers,
-            'email' => $email,
-        ]);
-    }
 }
 
 

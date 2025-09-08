@@ -1,0 +1,12 @@
+<VirtualHost *:80>
+    ServerName outils.dsi
+    DocumentRoot "C:\xampp\htdocs\ToolsDSI\public"
+
+    <Directory "C:\xampp\htdocs\ToolsDSI\public">
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    ErrorLog logs/symfony_error.log
+    CustomLog logs/symfony_access.log combined
+</VirtualHost>
