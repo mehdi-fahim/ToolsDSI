@@ -20,6 +20,7 @@ use App\Service\AccessControlOracleService;
 use App\Service\PropositionOracleService;
 use App\Service\BeckrelOracleService;
 use App\Service\SowellOracleService;
+use App\Service\ModeOperatoireService;
 
 #[Route('/admin')]
 class AdminController extends AbstractController
@@ -33,7 +34,8 @@ class AdminController extends AbstractController
         private AccessControlOracleService $accessControlOracleService,
         private PropositionOracleService $propositionOracleService,
         private BeckrelOracleService $beckrelOracleService,
-        private SowellOracleService $sowellOracleService
+        private SowellOracleService $sowellOracleService,
+        private ModeOperatoireService $modeOperatoireService
     ) {}
 
     #[Route('', name: 'admin_dashboard', methods: ['GET'])]
@@ -165,6 +167,48 @@ class AdminController extends AbstractController
             ],
             'search' => $search
         ]);
+    }
+
+    #[Route('/admin/mode-operatoire', name: 'admin_mode_operatoire', methods: ['GET'])]
+    public function modeOperatoire(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        $rel = (string) $request->query->get('path', '');
+        $q = trim((string) $request->query->get('q', ''));
+        $items = $this->modeOperatoireService->listTree($rel);
+        $searchResults = [];
+        if ($q !== '') {
+            $searchResults = $this->modeOperatoireService->search($q);
+        }
+
+        return $this->render('admin/mode_operatoire.html.twig', [
+            'basePath' => $this->modeOperatoireService->getBasePath(),
+            'path' => $rel,
+            'items' => $items,
+            'q' => $q,
+            'results' => $searchResults,
+        ]);
+    }
+
+    #[Route('/admin/mode-operatoire/download', name: 'admin_mode_operatoire_download', methods: ['GET'])]
+    public function modeOperatoireDownload(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+        $rel = (string) $request->query->get('path', '');
+        $full = $this->modeOperatoireService->resolvePath($rel);
+        if (!is_file($full)) {
+            throw $this->createNotFoundException('Fichier introuvable');
+        }
+        $content = file_get_contents($full);
+        $response = new Response($content);
+        $response->headers->set('Content-Type', 'application/octet-stream');
+        $response->headers->set('Content-Disposition', 'attachment; filename="' . basename($full) . '"');
+        return $response;
     }
 
     #[Route('/entity/utilisateur/detail/{id}', name: 'admin_user_detail', methods: ['GET'])]
@@ -720,6 +764,7 @@ class AdminController extends AbstractController
             'admin_proposition' => 'Proposition (Suppression)',
             'admin_beckrel_users' => 'Utilisateurs Beckrel',
             'admin_sowell_users' => 'Utilisateurs Sowell',
+            'admin_mode_operatoire' => 'Mode opératoire',
         ];
 
         $isAdminFlag = null;

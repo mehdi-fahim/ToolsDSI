@@ -1,0 +1,58 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Mode opératoire{% endblock %}
+
+{% block content %}
+<div style="max-width: 1200px; margin: 0 auto;">
+    <h1 style="font-size: 1.8rem; margin-bottom: 16px;">Mode opératoire</h1>
+
+    <form method="get" class="search-container" style="margin-bottom: 16px; display:flex; gap:10px;">
+        <input type="text" name="q" value="{{ q }}" placeholder="Rechercher dans les noms de fichiers et contenus (txt, md, ...)" class="search-input" />
+        <button class="btn">Rechercher</button>
+    </form>
+
+    {% if q %}
+        <div style="margin-bottom: 20px;">
+            <h3 style="margin-bottom: 8px;">Résultats pour "{{ q }}"</h3>
+            {% if results is empty %}
+            <div style="color:#6b7280;">Aucun résultat</div>
+            {% else %}
+            <ul style="list-style:none; padding:0; margin:0;">
+                {% for r in results %}
+                <li style="padding:6px 0; display:flex; justify-content: space-between; align-items:center;">
+                    <span>📄 {{ r.path }}</span>
+                    <a class="btn" href="{{ path('admin_mode_operatoire_download', {path: r.path}) }}">Télécharger</a>
+                </li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    <div style="background:#fff; border:1px solid #e5e7eb; border-radius: 10px; padding: 16px;">
+        <h2 style="font-size: 1.2rem; margin-bottom: 12px;">Arborescence</h2>
+        {% if path %}
+        <div style="margin-bottom: 10px;">
+            <a href="{{ path('admin_mode_operatoire', {path: ''}) }}" class="btn btn-secondary">Racine</a>
+        </div>
+        {% endif %}
+        <ul style="list-style:none; padding:0; margin:0;">
+            {% for i in items %}
+                <li style="padding: 6px 0; display:flex; justify-content: space-between; align-items:center;">
+                    {% if i.type == 'dir' %}
+                        <a href="{{ path('admin_mode_operatoire', {path: i.path}) }}" style="text-decoration:none; color:#1f2937;">📁 {{ i.name }}</a>
+                        <span></span>
+                    {% else %}
+                        <span>📄 {{ i.name }}</span>
+                        <a class="btn" href="{{ path('admin_mode_operatoire_download', {path: i.path}) }}">Télécharger</a>
+                    {% endif %}
+                </li>
+            {% else %}
+                <li style="color:#6b7280;">Aucun élément</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+
