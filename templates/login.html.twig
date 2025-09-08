@@ -82,8 +82,8 @@
         <div class="login-title">Connexion</div>
         <div class="login-desc">Bienvenue sur l'Outil DSI.<br>Retourner à la page <a href="{{ path('admin_dashboard') }}">d'accueil</a></div>
         <form class="login-form" method="post">
-            <input type="text" id="login_id" name="id" placeholder="Identifiant" required style="text-transform: uppercase;" autocomplete="username">
-            <input type="password" id="login_password" name="password" placeholder="Mot de passe" required style="text-transform: uppercase;" autocomplete="current-password">
+            <input type="text" id="login_id" name="id" placeholder="Identifiant (ULIS)" required style="text-transform: uppercase;" autocomplete="username">
+            <input type="password" id="login_password" name="password" placeholder="Mot de passe (ULIS)" required style="text-transform: uppercase;" autocomplete="current-password">
             <button type="submit">Se connecter</button>
         </form>
         {% if error %}
