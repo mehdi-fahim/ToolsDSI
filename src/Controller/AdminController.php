@@ -294,7 +294,8 @@ class AdminController extends AbstractController
             'eso_administratif' => '',
             'responsable_engagement' => '',
             'marche_rattache' => '',
-            'lot_reference' => ''
+            'lot_reference' => '',
+            'pluriannuel' => ''
         ];
 
         if ($request->isMethod('POST')) {
@@ -307,7 +308,8 @@ class AdminController extends AbstractController
                 'eso_administratif' => $request->request->get('eso_administratif', ''),
                 'responsable_engagement' => $request->request->get('responsable_engagement', ''),
                 'marche_rattache' => $request->request->get('marche_rattache', ''),
-                'lot_reference' => $request->request->get('lot_reference', '')
+                'lot_reference' => $request->request->get('lot_reference', ''),
+                'pluriannuel' => $request->request->get('pluriannuel', '')
             ];
 
             // Validation des données

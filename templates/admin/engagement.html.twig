@@ -40,6 +40,12 @@
                 <span style="font-weight: 600;">🔄 Engagement pluriannuel détecté</span>
                 <span style="margin-left: 10px; font-size: 0.9rem;">Cet engagement s'étend sur plusieurs exercices.</span>
             </div>
+            <div style="margin-bottom: 12px;">
+                <label style="display:flex; align-items:center; gap:10px; color:#4a5568;">
+                    <input type="checkbox" name="pluriannuel" value="1" {{ (engagementData.pluriannuel ?? '') ? 'checked' : '' }} />
+                    Pluriannuel
+                </label>
+            </div>
             
             <!-- Première ligne -->
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 20px; margin-bottom: 20px; align-items: end;">
@@ -95,10 +101,7 @@
                            name="type_engagement" 
                            value="{{ engagementData.type_engagement ?? '' }}"
                            placeholder="Type d'engagement"
-                           style="flex: 1; margin: 0 15px; padding: 10px 12px; border: 2px solid #e2e8f0; border-radius: 6px; font-size: 14px;">
-                    <button type="button" onclick="modifierChamp('type_engagement')" class="btn btn-secondary">
-                        ✏️ Modifier
-                    </button>
+                           style="flex: 1; margin: 0 15px; padding: 10px 12px; border: 2px solid #e2e8f0; border-radius: 6px; font-size: 14px;" readonly>
                 </div>
                 
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -153,12 +156,10 @@
                                name="lot_reference" 
                                value="{{ engagementData.lot_reference ?? '' }}"
                                placeholder="Référence du lot"
-                               style="width: 120px; padding: 10px 12px; border: 2px solid #e2e8f0; border-radius: 6px; font-size: 14px;">
+                               style="width: 120px; padding: 10px 12px; border: 2px solid #e2e8f0; border-radius: 6px; font-size: 14px;" readonly>
                     </div>
                     
-                    <button type="button" onclick="modifierChamp('marche_lot')" class="btn btn-secondary">
-                        ✏️ Modifier
-                    </button>
+                    
                 </div>
             </div>
         </div>
