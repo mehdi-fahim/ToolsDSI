@@ -862,14 +862,14 @@ class AdminController extends AbstractController
             } else {
                 try {
                     if (!$this->beckrelOracleService->tiersExists($tiers)) {
-                        $error = 'Tiers non trouvé dans TOZD2.';
-                    } else {
-                        // S\'assurer que TOZD2_VALPHA contient l\'email
-                        $this->beckrelOracleService->ensureEmailInTozd2($tiers, $email);
-                        // Ajouter l\'accès Beckrel
-                        $this->beckrelOracleService->addUserAccess($tiers);
-                        $success = 'Utilisateur ajouté aux accès Beckrel.';
+                        // Créer l'enregistrement dans TOZD2 si absent
+                        $this->beckrelOracleService->createTozd2Record($tiers, $email);
                     }
+                    // S'assurer que TOZD2_VALPHA contient l'email (mise à jour inconditionnelle)
+                    $this->beckrelOracleService->ensureEmailInTozd2($tiers, $email);
+                    // Ajouter l'accès Beckrel
+                    $this->beckrelOracleService->addUserAccess($tiers);
+                    $success = 'Utilisateur ajouté/actualisé dans TOZD2 et ajouté aux accès Beckrel.';
                 } catch (\Throwable $e) {
                     $error = 'Erreur lors de l\'ajout: ' . $e->getMessage();
                 }
