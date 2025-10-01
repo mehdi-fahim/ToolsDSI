@@ -261,6 +261,62 @@
             margin-bottom: 20px;
         }
 
+        /* Styles pour les menus déroulants */
+        .sidebar-dropdown {
+            position: relative;
+        }
+
+        .dropdown-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: #fff;
+            text-decoration: none;
+            padding: 14px 32px;
+            font-size: 1.1rem;
+            transition: background 0.2s;
+            cursor: pointer;
+        }
+
+        .dropdown-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .dropdown-arrow {
+            transition: transform 0.3s ease;
+            font-size: 0.8rem;
+        }
+
+        .dropdown-arrow.open {
+            transform: rotate(180deg);
+        }
+
+        .dropdown-menu {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .dropdown-menu.open {
+            max-height: 500px;
+        }
+
+        .dropdown-menu a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #fff;
+            text-decoration: none;
+            padding: 12px 32px 12px 50px;
+            font-size: 1rem;
+            transition: background 0.2s;
+        }
+
+        .dropdown-menu a:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
         @media (max-width: 768px) {
             .admin-container {
                 padding: 10px;
@@ -294,33 +350,91 @@
             <ul style="list-style: none; padding: 0; margin: 0;">
                 <li><a href="{{ path('admin_dashboard') }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">🏠 <span>Accueil</span></a></li>
                 {% set access = app.session and app.session.get('page_access') ? app.session.get('page_access') : [] %}
-                {% if 'admin_entity_view' in access %}
-                <li><a href="{{ path('admin_entity_view', {entityName: 'EditionBureautique'}) }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">📄 <span>Document BI</span></a></li>
-                {% endif %}
-                {% if 'admin_users' in access and app.session.get('is_admin') %}
-                <li><a href="{{ path('admin_entity_view', {entityName: 'Utilisateur'}) }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">👥 <span>Utilisateurs</span></a></li>
-                {% endif %}
                 
-                {% if 'admin_extraction' in access %}
-                <li><a href="{{ path('admin_extraction') }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">📊 <span>Extraction CSV</span></a></li>
+                {# Menu déroulant Utilisateurs #}
+                {% if ('admin_users' in access and app.session.get('is_admin')) or 'admin_beckrel_users' in access or 'admin_sowell_users' in access %}
+                <li class="sidebar-dropdown">
+                    <div class="dropdown-toggle" onclick="toggleDropdown(this)">
+                        <span style="display: flex; align-items: center; gap: 12px;">👥 <span>Utilisateurs</span></span>
+                        <span class="dropdown-arrow">▼</span>
+                    </div>
+                    <div class="dropdown-menu">
+                        {% if 'admin_users' in access and app.session.get('is_admin') %}
+                        <a href="{{ path('admin_entity_view', {entityName: 'Utilisateur'}) }}">
+                            <span>Utilisateurs</span>
+                        </a>
+                        {% endif %}
+                        {% if 'admin_beckrel_users' in access %}
+                        <a href="{{ path('admin_beckrel_users') }}">
+                            <span>Users Beckrel</span>
+                        </a>
+                        {% endif %}
+                        {% if 'admin_sowell_users' in access %}
+                        <a href="{{ path('admin_sowell_users') }}">
+                            <span>Users Sowell</span>
+                        </a>
+                        {% endif %}
+                    </div>
+                </li>
                 {% endif %}
-                {% if 'admin_engagement' in access %}
-                <li><a href="{{ path('admin_engagement') }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">📋 <span>Engagements</span></a></li>
+
+                {# Menu déroulant Documents #}
+                {% if 'admin_entity_view' in access or 'admin_extraction' in access %}
+                <li class="sidebar-dropdown">
+                    <div class="dropdown-toggle" onclick="toggleDropdown(this)">
+                        <span style="display: flex; align-items: center; gap: 12px;">📄 <span>Documents</span></span>
+                        <span class="dropdown-arrow">▼</span>
+                    </div>
+                    <div class="dropdown-menu">
+                        {% if 'admin_entity_view' in access %}
+                        <a href="{{ path('admin_entity_view', {entityName: 'EditionBureautique'}) }}">
+                            <span>Document BI</span>
+                        </a>
+                        {% endif %}
+                        {% if 'admin_extraction' in access %}
+                        <a href="{{ path('admin_extraction') }}">
+                            <span>Extraction CSV</span>
+                        </a>
+                        {% endif %}
+                    </div>
+                </li>
                 {% endif %}
-                {% if 'admin_proposition' in access %}
-                <li><a href="{{ path('admin_proposition') }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">🗂️ <span>Proposition</span></a></li>
+
+                {# Menu déroulant Gestion #}
+                {% if 'admin_engagement' in access or 'admin_proposition' in access or 'admin_mode_operatoire' in access or 'admin_logement' in access %}
+                <li class="sidebar-dropdown">
+                    <div class="dropdown-toggle" onclick="toggleDropdown(this)">
+                        <span style="display: flex; align-items: center; gap: 12px;">🗂️ <span>Gestion</span></span>
+                        <span class="dropdown-arrow">▼</span>
+                    </div>
+                    <div class="dropdown-menu">
+                        {% if 'admin_logement' in access %}
+                        <a href="{{ path('admin_logement') }}">
+                            <span>Logement</span>
+                        </a>
+                        {% endif %}
+                        {% if 'admin_engagement' in access %}
+                        <a href="{{ path('admin_engagement') }}">
+                            <span>Engagements</span>
+                        </a>
+                        {% endif %}
+                        {% if 'admin_proposition' in access %}
+                        <a href="{{ path('admin_proposition') }}">
+                            <span>Proposition</span>
+                        </a>
+                        {% endif %}
+                        {% if 'admin_mode_operatoire' in access %}
+                        <a href="{{ path('admin_mode_operatoire') }}">
+                            <span>Mode opératoire</span>
+                        </a>
+                        {% endif %}
+                    </div>
+                </li>
                 {% endif %}
-                {% if 'admin_beckrel_users' in access %}
-                <li><a href="{{ path('admin_beckrel_users') }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">👥 <span>Users Beckrel</span></a></li>
-                {% endif %}
-                {% if 'admin_sowell_users' in access %}
-                <li><a href="{{ path('admin_sowell_users') }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">👥 <span>Users Sowell</span></a></li>
-                {% endif %}
-                {% if 'admin_mode_operatoire' in access %}
-                <li><a href="{{ path('admin_mode_operatoire') }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">📁 <span>Mode opératoire</span></a></li>
-                {% endif %}
+
+                {# Débloquer MDP - reste seul #}
                 {% if 'admin_user_unlock' in access %}
-                    <li><a href="{{ path('admin_user_unlock') }}" style="color: #fff; font-weight: 600; text-decoration: none; font-size: 1.08rem; letter-spacing: 0.5px; padding: 14px 32px; display: block;"><span style='font-size:1.1em;'>🔒 </span>Débloquer MDP</a></li>
+                    <li><a href="{{ path('admin_user_unlock') }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">🔒 <span>Débloquer MDP</span></a></li>
                 {% endif %}
             </ul>
         </nav>
@@ -362,6 +476,25 @@
     </div>
 
     <script>
+        // Fonction pour gérer les menus déroulants
+        function toggleDropdown(toggleElement) {
+            const dropdown = toggleElement.closest('.sidebar-dropdown');
+            const menu = dropdown.querySelector('.dropdown-menu');
+            const arrow = dropdown.querySelector('.dropdown-arrow');
+            
+            // Fermer tous les autres dropdowns
+            document.querySelectorAll('.sidebar-dropdown').forEach(otherDropdown => {
+                if (otherDropdown !== dropdown) {
+                    otherDropdown.querySelector('.dropdown-menu').classList.remove('open');
+                    otherDropdown.querySelector('.dropdown-arrow').classList.remove('open');
+                }
+            });
+            
+            // Toggle le dropdown actuel
+            menu.classList.toggle('open');
+            arrow.classList.toggle('open');
+        }
+
         // Fonction utilitaire pour les requêtes AJAX
         function makeRequest(url, options = {}) {
             return fetch(url, {

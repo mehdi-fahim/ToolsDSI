@@ -35,7 +35,8 @@ class AdminController extends AbstractController
         private PropositionOracleService $propositionOracleService,
         private BeckrelOracleService $beckrelOracleService,
         private SowellOracleService $sowellOracleService,
-        private ModeOperatoireService $modeOperatoireService
+        private ModeOperatoireService $modeOperatoireService,
+        private \App\Service\LogementOracleService $logementOracleService
     ) {}
 
     #[Route('', name: 'admin_dashboard', methods: ['GET'])]
@@ -209,6 +210,101 @@ class AdminController extends AbstractController
         $response->headers->set('Content-Type', 'application/octet-stream');
         $response->headers->set('Content-Disposition', 'attachment; filename="' . basename($full) . '"');
         return $response;
+    }
+
+    #[Route('/admin/logement', name: 'admin_logement', methods: ['GET', 'POST'])]
+    public function logement(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        $error = null;
+        $success = null;
+
+        $numeroDemande = trim((string) $request->request->get('numero_demande', ''));
+        $etat = (string) $request->request->get('etat', '');
+        $demandeurTiers = trim((string) $request->request->get('demandeur_tiers', ''));
+        $demandeurDebut = (string) $request->request->get('demandeur_debut', '');
+        $demandeurFin = (string) $request->request->get('demandeur_fin', '');
+        $codemandeurTiers = trim((string) $request->request->get('codemandeur_tiers', ''));
+        $codemandeurDebut = (string) $request->request->get('codemandeur_debut', '');
+        $codemandeurFin = (string) $request->request->get('codemandeur_fin', '');
+        $action = (string) $request->request->get('action', '');
+
+        $data = [
+            'demande' => null,
+            'demandeur' => [
+                'tiers' => null,
+                'debut' => null,
+                'fin' => null,
+            ],
+            'codemandeur' => [
+                'tiers' => null,
+                'debut' => null,
+                'fin' => null,
+            ],
+        ];
+
+        if ($request->isMethod('POST')) {
+            try {
+                switch ($action) {
+                    case 'search':
+                        if ($numeroDemande === '') {
+                            $error = 'Veuillez saisir un numéro de demande.';
+                            break;
+                        }
+                        $data['demande'] = $this->logementOracleService->getDemandeByNumero($numeroDemande);
+                        $data['demandeur']['tiers'] = $this->logementOracleService->getTiersByRole($numeroDemande, 'CAND');
+                        $datesCand = $this->logementOracleService->getDatesByRole($numeroDemande, 'CAND');
+                        $data['demandeur']['debut'] = $datesCand['debut'];
+                        $data['demandeur']['fin'] = $datesCand['fin'];
+                        $data['codemandeur']['tiers'] = $this->logementOracleService->getTiersByRole($numeroDemande, 'CODEM');
+                        $datesCodem = $this->logementOracleService->getDatesByRole($numeroDemande, 'CODEM');
+                        $data['codemandeur']['debut'] = $datesCodem['debut'];
+                        $data['codemandeur']['fin'] = $datesCodem['fin'];
+                        if (!$data['demande']) {
+                            $error = 'Aucune demande trouvée pour ce numéro.';
+                        }
+                        break;
+                    case 'update_etat':
+                        if ($numeroDemande === '' || $etat === '') {
+                            $error = 'Numéro de demande et état sont requis.';
+                            break;
+                        }
+                        $count = $this->logementOracleService->updateEtatDemande($numeroDemande, $etat);
+                        $success = $count > 0 ? 'État de la demande mis à jour.' : 'Aucune mise à jour effectuée.';
+                        break;
+                    case 'update_demandeur':
+                        if ($numeroDemande === '') { $error = 'Numéro de demande requis.'; break; }
+                        $this->logementOracleService->updateRole($numeroDemande, 'CAND', $demandeurTiers ?: null, $demandeurDebut ?: null, $demandeurFin ?: null);
+                        $success = 'Modification du demandeur effectuée';
+                        break;
+                    case 'update_codemandeur':
+                        if ($numeroDemande === '') { $error = 'Numéro de demande requis.'; break; }
+                        $this->logementOracleService->updateRole($numeroDemande, 'CODEM', $codemandeurTiers ?: null, $codemandeurDebut ?: null, $codemandeurFin ?: null);
+                        $success = 'Modification du co-demandeur effectuée';
+                        break;
+                    case 'delete_codemandeur':
+                        if ($numeroDemande === '' || $codemandeurTiers === '') { $error = 'Numéro de demande et co-demandeur requis.'; break; }
+                        $this->logementOracleService->deleteCoDemandeur($numeroDemande, $codemandeurTiers);
+                        $success = 'Suppression du co-demandeur effectuée';
+                        break;
+                    default:
+                        // no-op
+                }
+            } catch (\Throwable $e) {
+                $error = 'Erreur: ' . $e->getMessage();
+            }
+        }
+
+        return $this->render('admin/logement.html.twig', [
+            'numeroDemande' => $numeroDemande,
+            'etat' => $etat,
+            'data' => $data,
+            'error' => $error,
+            'success' => $success,
+        ]);
     }
 
     #[Route('/entity/utilisateur/detail/{id}', name: 'admin_user_detail', methods: ['GET'])]
@@ -759,6 +855,7 @@ class AdminController extends AbstractController
             'admin_users' => 'Utilisateurs',
             'admin_extraction' => 'Extraction CSV',
             'admin_engagement' => 'Engagements',
+            'admin_logement' => 'Logement',
             'admin_user_unlock' => 'Débloquer MDP',
             'admin_user_access' => 'Administration',
             'admin_proposition' => 'Proposition (Suppression)',
