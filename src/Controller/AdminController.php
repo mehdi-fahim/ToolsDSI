@@ -277,12 +277,14 @@ class AdminController extends AbstractController
                         break;
                     case 'update_demandeur':
                         if ($numeroDemande === '') { $error = 'Numéro de demande requis.'; break; }
-                        $this->logementOracleService->updateRole($numeroDemande, 'CAND', $demandeurTiers ?: null, $demandeurDebut ?: null, $demandeurFin ?: null);
+                        if ($demandeurTiers === '') { $error = 'Le code tiers du demandeur est requis pour la mise à jour.'; break; }
+                        $this->logementOracleService->updateRole($numeroDemande, 'CAND', $demandeurTiers, $demandeurDebut ?: null, $demandeurFin ?: null);
                         $success = 'Modification du demandeur effectuée';
                         break;
                     case 'update_codemandeur':
                         if ($numeroDemande === '') { $error = 'Numéro de demande requis.'; break; }
-                        $this->logementOracleService->updateRole($numeroDemande, 'CODEM', $codemandeurTiers ?: null, $codemandeurDebut ?: null, $codemandeurFin ?: null);
+                        if ($codemandeurTiers === '') { $error = 'Le code tiers du co-demandeur est requis pour la mise à jour.'; break; }
+                        $this->logementOracleService->updateRole($numeroDemande, 'CODEM', $codemandeurTiers, $codemandeurDebut ?: null, $codemandeurFin ?: null);
                         $success = 'Modification du co-demandeur effectuée';
                         break;
                     case 'delete_codemandeur':
@@ -455,9 +457,29 @@ class AdminController extends AbstractController
             // Validation des données
             if (empty($engagementData['societe']) || empty($engagementData['exercice'])) {
                 $error = 'La société et l\'exercice sont obligatoires.';
+            } elseif (empty($engagementData['numero_engagement'])) {
+                $error = 'Le numéro d\'engagement est obligatoire pour la mise à jour.';
             } else {
-                $success = 'Les données d\'engagement ont été enregistrées avec succès.';
-                // Ici vous pourriez ajouter la logique pour sauvegarder en base de données
+                try {
+                    // Appeler le service pour mettre à jour l'engagement
+                    $updateResult = $this->engagementOracleService->updateEngagement(
+                        (int)$engagementData['exercice'],
+                        (int)$engagementData['numero_engagement'],
+                        $engagementData['societe'],
+                        $engagementData
+                    );
+
+                    if ($updateResult['success']) {
+                        $success = $updateResult['message'];
+                        if (!empty($updateResult['updated'])) {
+                            $success .= ' Champs modifiés: ' . implode(', ', array_keys($updateResult['updated']));
+                        }
+                    } else {
+                        $error = $updateResult['error'];
+                    }
+                } catch (\Exception $e) {
+                    $error = 'Erreur lors de la mise à jour: ' . $e->getMessage();
+                }
             }
         }
 

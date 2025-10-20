@@ -101,4 +101,80 @@ class EngagementOracleService
             return false;
         }
     }
+
+    /**
+     * Met à jour les informations d'un engagement
+     */
+    public function updateEngagement(int $exercice, int $numeroEngagement, string $societe, array $data): array
+    {
+        try {
+            $this->connection->beginTransaction();
+
+            $updated = [];
+
+            // Mise à jour de l'ESO administratif dans TAENG
+            if (isset($data['eso_administratif']) && $data['eso_administratif'] !== '') {
+                $result = $this->connection->executeStatement(
+                    "UPDATE TAENG SET TOESO_COD = ? WHERE ICEXE_NUM = ? AND TAENG_NUM = ? AND TOTIE_CODSCTE = ?",
+                    [$data['eso_administratif'], $exercice, $numeroEngagement, $societe]
+                );
+                if ($result > 0) {
+                    $updated['eso_administratif'] = $data['eso_administratif'];
+                }
+            }
+
+            // Mise à jour du responsable de l'engagement dans TAENR
+            if (isset($data['responsable_engagement']) && $data['responsable_engagement'] !== '') {
+                // Vérifier si l'enregistrement existe déjà
+                $exists = $this->connection->executeQuery(
+                    "SELECT COUNT(*) FROM TAENR WHERE ICEXE_NUM = ? AND TAENG_NUM = ? AND TOTIE_CODSCTE = ?",
+                    [$exercice, $numeroEngagement, $societe]
+                )->fetchOne();
+
+                if ((int)$exists > 0) {
+                    // Mettre à jour l'enregistrement existant
+                    $result = $this->connection->executeStatement(
+                        "UPDATE TAENR SET TOTIE_COD = ? WHERE ICEXE_NUM = ? AND TAENG_NUM = ? AND TOTIE_CODSCTE = ?",
+                        [$data['responsable_engagement'], $exercice, $numeroEngagement, $societe]
+                    );
+                } else {
+                    // Créer un nouvel enregistrement
+                    $result = $this->connection->executeStatement(
+                        "INSERT INTO TAENR (ICEXE_NUM, TAENG_NUM, TOTIE_CODSCTE, TOTIE_COD) VALUES (?, ?, ?, ?)",
+                        [$exercice, $numeroEngagement, $societe, $data['responsable_engagement']]
+                    );
+                }
+                
+                if ($result > 0) {
+                    $updated['responsable_engagement'] = $data['responsable_engagement'];
+                }
+            }
+
+            // Mise à jour du marché rattaché dans TAENG
+            if (isset($data['marche_rattache']) && $data['marche_rattache'] !== '') {
+                $result = $this->connection->executeStatement(
+                    "UPDATE TAENG SET TAMAC_NUM = ? WHERE ICEXE_NUM = ? AND TAENG_NUM = ? AND TOTIE_CODSCTE = ?",
+                    [$data['marche_rattache'], $exercice, $numeroEngagement, $societe]
+                );
+                if ($result > 0) {
+                    $updated['marche_rattache'] = $data['marche_rattache'];
+                }
+            }
+
+            $this->connection->commit();
+
+            return [
+                'success' => true,
+                'updated' => $updated,
+                'message' => count($updated) > 0 ? 'Engagement mis à jour avec succès.' : 'Aucune modification effectuée.'
+            ];
+
+        } catch (\Exception $e) {
+            $this->connection->rollBack();
+            return [
+                'success' => false,
+                'error' => 'Erreur lors de la mise à jour: ' . $e->getMessage()
+            ];
+        }
+    }
 }

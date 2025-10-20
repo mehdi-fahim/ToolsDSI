@@ -62,7 +62,20 @@ class LogementOracleService
      */
     public function updateRole(string $numeroDemande, string $role, ?string $tiers, ?string $dateDebut, ?string $dateFin): int
     {
-        $sql = "UPDATE ACPAR SET TOTIE_COD = :tiers, ACPAR_DTDDPA = :dateDebut, ACPAR_DTFPAR = :dateFin WHERE ACDOS_NUM = :num AND ACTPA_COD = :role";
+        // Par sécurité, exiger un tiers pour cibler une seule ligne et éviter les violations de contrainte unique
+        if ($tiers === null || $tiers === '') {
+            throw new \InvalidArgumentException('Le code tiers est requis pour mettre à jour ce rôle.');
+        }
+
+        // Cibler explicitement la ligne du rôle ET du tiers pour ne pas modifier plusieurs enregistrements
+        $sql = "UPDATE ACPAR
+                SET TOTIE_COD = :tiers,
+                    ACPAR_DTDDPA = :dateDebut,
+                    ACPAR_DTFPAR = :dateFin
+                WHERE ACDOS_NUM = :num
+                  AND ACTPA_COD = :role
+                  AND TOTIE_COD = :tiers";
+
         return $this->defaultConnection->executeStatement($sql, [
             'tiers' => $tiers,
             'dateDebut' => $dateDebut,
