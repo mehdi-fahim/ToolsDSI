@@ -1,0 +1,14 @@
+parameters:
+    # Configuration pour la connexion système Oracle avec utilisateur ETUDES
+    system_database_url: "oci8://ETUDES:ETUDES@172.22.0.30:1521/OPULISE?charset=AL32UTF8"
+
+doctrine:
+    dbal:
+        connections:
+            system:
+                url: '%system_database_url%'
+                driver: 'oci8'
+                charset: AL32UTF8
+                use_savepoints: true
+                options:
+                    charset: 'utf8'

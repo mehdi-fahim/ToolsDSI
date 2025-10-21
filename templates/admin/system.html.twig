@@ -58,50 +58,58 @@
 
                 <div style="overflow-x:auto;">
                     <table style="width:100%;border-collapse:collapse;">
-                        <thead>
-                            <tr style="background:#f7fafc;border-bottom:2px solid #e2e8f0;">
-                                <th style="padding:12px;text-align:left;font-weight:600;color:#4a5568;">SID</th>
-                                <th style="padding:12px;text-align:left;font-weight:600;color:#4a5568;">Serial#</th>
-                                <th style="padding:12px;text-align:left;font-weight:600;color:#4a5568;">Objet</th>
-                                <th style="padding:12px;text-align:left;font-weight:600;color:#4a5568;">Utilisateur OS</th>
-                                <th style="padding:12px;text-align:left;font-weight:600;color:#4a5568;">Statut</th>
-                                <th style="padding:12px;text-align:left;font-weight:600;color:#4a5568;">Actions</th>
-                            </tr>
-                        </thead>
+                               <thead>
+                                   <tr style="background:#f7fafc;border-bottom:2px solid #e2e8f0;">
+                                       <th style="padding:12px;text-align:left;font-weight:600;color:#4a5568;">SID</th>
+                                       <th style="padding:12px;text-align:left;font-weight:600;color:#4a5568;">Serial#</th>
+                                       <th style="padding:12px;text-align:left;font-weight:600;color:#4a5568;">Objet</th>
+                                       <th style="padding:12px;text-align:left;font-weight:600;color:#4a5568;">Utilisateur</th>
+                                       <th style="padding:12px;text-align:left;font-weight:600;color:#4a5568;">Machine</th>
+                                       <th style="padding:12px;text-align:left;font-weight:600;color:#4a5568;">Statut</th>
+                                       <th style="padding:12px;text-align:left;font-weight:600;color:#4a5568;">Actions</th>
+                                   </tr>
+                               </thead>
                         <tbody>
-                            {% for table in lockedTables %}
-                                <tr style="border-bottom:1px solid #e2e8f0;">
-                                    <td style="padding:12px;font-family:monospace;font-weight:600;">{{ table.sid }}</td>
-                                    <td style="padding:12px;font-family:monospace;">{{ table.serial# }}</td>
-                                    <td style="padding:12px;font-weight:600;color:#2d3748;">{{ table.object_name }}</td>
-                                    <td style="padding:12px;">{{ table.osuser }}</td>
-                                    <td style="padding:12px;">
-                                        {% if table.status == 'BLOCKING' %}
-                                            <span style="background:#fed7d7;color:#c53030;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600;">
-                                                🔴 {{ table.status }}
-                                            </span>
-                                        {% elseif table.status == 'GLOBAL' %}
-                                            <span style="background:#fef5e7;color:#d69e2e;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600;">
-                                                🟡 {{ table.status }}
-                                            </span>
-                                        {% else %}
-                                            <span style="background:#f0fff4;color:#38a169;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600;">
-                                                🟢 {{ table.status }}
-                                            </span>
-                                        {% endif %}
-                                    </td>
-                                    <td style="padding:12px;">
-                                        <form method="post" style="display:inline;" onsubmit="return confirm('Êtes-vous sûr de vouloir tuer cette session ?');">
-                                            <input type="hidden" name="action" value="kill_session">
-                                            <input type="hidden" name="sid" value="{{ table.sid }}">
-                                            <input type="hidden" name="serial" value="{{ table.serial# }}">
-                                            <button type="submit" class="btn btn-danger" style="background:#e53e3e;color:white;padding:6px 12px;border:none;border-radius:4px;font-size:12px;">
-                                                🗑️ Tuer
-                                            </button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            {% endfor %}
+                                   {% for table in lockedTables %}
+                                       <tr style="border-bottom:1px solid #e2e8f0;">
+                                           <td style="padding:12px;font-family:monospace;font-weight:600;">{{ table.sid }}</td>
+                                           <td style="padding:12px;font-family:monospace;">{{ table.serial# }}</td>
+                                           <td style="padding:12px;font-weight:600;color:#2d3748;">{{ table.object_name }}</td>
+                                           <td style="padding:12px;">
+                                               <div style="font-weight:600;color:#2d3748;">{{ table.username|default('N/A') }}</div>
+                                               <div style="font-size:12px;color:#718096;">{{ table.osuser|default('N/A') }}</div>
+                                           </td>
+                                           <td style="padding:12px;">
+                                               <div style="font-weight:600;color:#2d3748;">{{ table.machine|default('N/A') }}</div>
+                                               <div style="font-size:12px;color:#718096;">{{ table.program|default('N/A') }}</div>
+                                           </td>
+                                           <td style="padding:12px;">
+                                               {% if table.status == 'BLOCKING' %}
+                                                   <span style="background:#fed7d7;color:#c53030;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600;">
+                                                       🔴 {{ table.status }}
+                                                   </span>
+                                               {% elseif table.status == 'GLOBAL' %}
+                                                   <span style="background:#fef5e7;color:#d69e2e;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600;">
+                                                       🟡 {{ table.status }}
+                                                   </span>
+                                               {% else %}
+                                                   <span style="background:#f0fff4;color:#38a169;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600;">
+                                                       🟢 {{ table.status }}
+                                                   </span>
+                                               {% endif %}
+                                           </td>
+                                           <td style="padding:12px;">
+                                               <form method="post" style="display:inline;" onsubmit="return confirm('Êtes-vous sûr de vouloir tuer cette session ?');">
+                                                   <input type="hidden" name="action" value="kill_session">
+                                                   <input type="hidden" name="sid" value="{{ table.sid }}">
+                                                   <input type="hidden" name="serial" value="{{ table.serial# }}">
+                                                   <button type="submit" class="btn btn-danger" style="background:#e53e3e;color:white;padding:6px 12px;border:none;border-radius:4px;font-size:12px;">
+                                                       🗑️ Tuer
+                                                   </button>
+                                               </form>
+                                           </td>
+                                       </tr>
+                                   {% endfor %}
                         </tbody>
                     </table>
                 </div>

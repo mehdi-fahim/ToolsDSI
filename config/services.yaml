@@ -30,6 +30,12 @@ services:
     App\Controller\:
         resource: '../src/Controller/'
         tags: ['controller.service_arguments']
+    
+    # Configuration spécifique pour SystemController avec connexion système
+    App\Controller\SystemController:
+        arguments:
+            $defaultConnection: '@doctrine.dbal.default_connection'
+            $systemConnection: '@doctrine.dbal.system_connection'
 
     # Configuration pour les repositories
     App\Repository\:

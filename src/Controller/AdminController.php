@@ -1246,68 +1246,6 @@ class AdminController extends AbstractController
         ]);
     }
 
-    #[Route('/admin/system', name: 'admin_system', methods: ['GET', 'POST'])]
-    public function system(Request $request): Response
-    {
-        // Version ultra-simple sans authentification ni services
-        $error = null;
-        $success = null;
-        $lockedTables = [];
-        $killResults = [];
-        $loadSessions = false;
-
-        if ($request->isMethod('POST')) {
-            $action = $request->request->get('action', '');
-            
-            switch ($action) {
-                case 'load_sessions':
-                    $loadSessions = true;
-                    // Données de test statiques
-                    $lockedTables = [
-                        [
-                            'sid' => '123',
-                            'serial#' => '456',
-                            'object_name' => 'Session Oracle 1',
-                            'osuser' => 'SYSTEM',
-                            'status' => 'ACTIVE'
-                        ],
-                        [
-                            'sid' => '789',
-                            'serial#' => '012',
-                            'object_name' => 'Session Oracle 2',
-                            'osuser' => 'PCH',
-                            'status' => 'ACTIVE'
-                        ],
-                        [
-                            'sid' => '555',
-                            'serial#' => '999',
-                            'object_name' => 'Session Oracle 3',
-                            'osuser' => 'ADMIN',
-                            'status' => 'BLOCKING'
-                        ]
-                    ];
-                    break;
-                    
-                case 'kill_session':
-                    $sid = (int)$request->request->get('sid');
-                    $serial = (int)$request->request->get('serial');
-                    $success = "Session {$sid},{$serial} tuée avec succès (simulation).";
-                    break;
-                    
-                case 'kill_all':
-                    $success = "Toutes les sessions ont été tuées avec succès (simulation).";
-                    break;
-            }
-        }
-
-        return $this->render('admin/system.html.twig', [
-            'lockedTables' => $lockedTables,
-            'killResults' => $killResults,
-            'error' => $error,
-            'success' => $success,
-            'loadSessions' => $loadSessions,
-        ]);
-    }
 
     #[Route('/admin/logs', name: 'admin_logs', methods: ['GET'])]
     public function logs(Request $request, SessionInterface $session): Response
