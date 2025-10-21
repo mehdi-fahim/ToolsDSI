@@ -61,5 +61,21 @@ services:
         arguments:
             $defaultConnection: '@doctrine.dbal.default_connection'
 
+    # Configuration pour le service SystemOracleService
+    App\Service\SystemOracleService:
+        arguments:
+            $defaultConnection: '@doctrine.dbal.default_connection'
+
+    # Configuration pour le service UserActionLogger
+    App\Service\UserActionLogger:
+        arguments:
+            $userActionsLogger: '@monolog.logger.user_actions'
+            $systemEventsLogger: '@monolog.logger.system_events'
+
+    # Configuration pour le service LogViewerService
+    App\Service\LogViewerService:
+        arguments:
+            $kernelLogsDir: '%kernel.logs_dir%'
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

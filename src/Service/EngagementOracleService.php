@@ -125,28 +125,49 @@ class EngagementOracleService
 
             // Mise à jour du responsable de l'engagement dans TAENR
             if (isset($data['responsable_engagement']) && $data['responsable_engagement'] !== '') {
-                // Vérifier si l'enregistrement existe déjà
-                $exists = $this->connection->executeQuery(
-                    "SELECT COUNT(*) FROM TAENR WHERE ICEXE_NUM = ? AND TAENG_NUM = ? AND TOTIE_CODSCTE = ?",
-                    [$exercice, $numeroEngagement, $societe]
-                )->fetchOne();
-
-                if ((int)$exists > 0) {
-                    // Mettre à jour l'enregistrement existant
-                    $result = $this->connection->executeStatement(
-                        "UPDATE TAENR SET TOTIE_COD = ? WHERE ICEXE_NUM = ? AND TAENG_NUM = ? AND TOTIE_CODSCTE = ?",
-                        [$data['responsable_engagement'], $exercice, $numeroEngagement, $societe]
+                try {
+                    // D'abord, supprimer tous les enregistrements existants pour cet engagement
+                    $this->connection->executeStatement(
+                        "DELETE FROM TAENR WHERE ICEXE_NUM = ? AND TAENG_NUM = ? AND TOTIE_CODSCTE = ?",
+                        [$exercice, $numeroEngagement, $societe]
                     );
-                } else {
-                    // Créer un nouvel enregistrement
+
+                    // Puis insérer le nouveau responsable
                     $result = $this->connection->executeStatement(
                         "INSERT INTO TAENR (ICEXE_NUM, TAENG_NUM, TOTIE_CODSCTE, TOTIE_COD) VALUES (?, ?, ?, ?)",
                         [$exercice, $numeroEngagement, $societe, $data['responsable_engagement']]
                     );
-                }
-                
-                if ($result > 0) {
-                    $updated['responsable_engagement'] = $data['responsable_engagement'];
+                    
+                    if ($result > 0) {
+                        $updated['responsable_engagement'] = $data['responsable_engagement'];
+                    }
+                } catch (\Exception $e) {
+                    // Si l'insertion échoue, essayer une approche alternative avec MERGE
+                    try {
+                        $result = $this->connection->executeStatement(
+                            "MERGE INTO TAENR t1
+                             USING (SELECT ? as ICEXE_NUM, ? as TAENG_NUM, ? as TOTIE_CODSCTE, ? as TOTIE_COD FROM DUAL) t2
+                             ON (t1.ICEXE_NUM = t2.ICEXE_NUM AND t1.TAENG_NUM = t2.TAENG_NUM AND t1.TOTIE_CODSCTE = t2.TOTIE_CODSCTE)
+                             WHEN MATCHED THEN UPDATE SET t1.TOTIE_COD = t2.TOTIE_COD
+                             WHEN NOT MATCHED THEN INSERT (ICEXE_NUM, TAENG_NUM, TOTIE_CODSCTE, TOTIE_COD) 
+                                                   VALUES (t2.ICEXE_NUM, t2.TAENG_NUM, t2.TOTIE_CODSCTE, t2.TOTIE_COD)",
+                            [$exercice, $numeroEngagement, $societe, $data['responsable_engagement']]
+                        );
+                        
+                        if ($result > 0) {
+                            $updated['responsable_engagement'] = $data['responsable_engagement'];
+                        }
+                    } catch (\Exception $mergeException) {
+                        // Si MERGE échoue aussi, essayer un simple UPDATE avec WHERE EXISTS
+                        $result = $this->connection->executeStatement(
+                            "UPDATE TAENR SET TOTIE_COD = ? WHERE ICEXE_NUM = ? AND TAENG_NUM = ? AND TOTIE_CODSCTE = ?",
+                            [$data['responsable_engagement'], $exercice, $numeroEngagement, $societe]
+                        );
+                        
+                        if ($result > 0) {
+                            $updated['responsable_engagement'] = $data['responsable_engagement'];
+                        }
+                    }
                 }
             }
 

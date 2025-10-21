@@ -1,0 +1,128 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Logs de l'Application{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="admin-header">
+        <h1>📋 Logs de l'Application</h1>
+        <p>Visualisation des logs d'actions utilisateur et d'événements système.</p>
+    </div>
+
+    <div class="admin-content">
+        <!-- Statistiques des logs -->
+        <div style="background:white;border-radius:12px;padding:24px;box-shadow:0 4px 6px rgba(0,0,0,0.1);margin-bottom:24px;">
+            <h3 style="margin-top:0;color:#2d3748;">📊 Statistiques des Logs</h3>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;">
+                <div style="background:#f7fafc;padding:16px;border-radius:8px;border-left:4px solid #4299e1;">
+                    <h4 style="margin:0 0 8px 0;color:#2d3748;">Actions Utilisateur</h4>
+                    <p style="margin:0;color:#4a5568;">
+                        {% if stats.user_actions.exists %}
+                            {{ stats.user_actions.lines }} lignes ({{ (stats.user_actions.size / 1024)|number_format(1) }} KB)
+                        {% else %}
+                            Fichier non trouvé
+                        {% endif %}
+                    </p>
+                </div>
+                <div style="background:#f7fafc;padding:16px;border-radius:8px;border-left:4px solid #38a169;">
+                    <h4 style="margin:0 0 8px 0;color:#2d3748;">Événements Système</h4>
+                    <p style="margin:0;color:#4a5568;">
+                        {% if stats.system_events.exists %}
+                            {{ stats.system_events.lines }} lignes ({{ (stats.system_events.size / 1024)|number_format(1) }} KB)
+                        {% else %}
+                            Fichier non trouvé
+                        {% endif %}
+                    </p>
+                </div>
+                <div style="background:#f7fafc;padding:16px;border-radius:8px;border-left:4px solid #d69e2e;">
+                    <h4 style="margin:0 0 8px 0;color:#2d3748;">Logs Généraux</h4>
+                    <p style="margin:0;color:#4a5568;">
+                        {% if stats.general.exists %}
+                            {{ stats.general.lines }} lignes ({{ (stats.general.size / 1024)|number_format(1) }} KB)
+                        {% else %}
+                            Fichier non trouvé
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtres -->
+        <div style="background:white;border-radius:12px;padding:24px;box-shadow:0 4px 6px rgba(0,0,0,0.1);margin-bottom:24px;">
+            <h3 style="margin-top:0;color:#2d3748;">🔍 Filtres</h3>
+            <form method="get" style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
+                <div>
+                    <label for="type" style="display:block;margin-bottom:4px;color:#4a5568;font-weight:600;">Type de log :</label>
+                    <select id="type" name="type" style="padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;">
+                        <option value="user_actions" {{ logType == 'user_actions' ? 'selected' : '' }}>Actions Utilisateur</option>
+                        <option value="system_events" {{ logType == 'system_events' ? 'selected' : '' }}>Événements Système</option>
+                        <option value="general" {{ logType == 'general' ? 'selected' : '' }}>Logs Généraux</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="limit" style="display:block;margin-bottom:4px;color:#4a5568;font-weight:600;">Nombre de lignes :</label>
+                    <select id="limit" name="limit" style="padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;">
+                        <option value="25" {{ limit == 25 ? 'selected' : '' }}>25</option>
+                        <option value="50" {{ limit == 50 ? 'selected' : '' }}>50</option>
+                        <option value="100" {{ limit == 100 ? 'selected' : '' }}>100</option>
+                        <option value="200" {{ limit == 200 ? 'selected' : '' }}>200</option>
+                    </select>
+                </div>
+                <div style="display:flex;align-items:end;height:100%;">
+                    <button type="submit" class="btn btn-primary" style="padding:8px 16px;">Filtrer</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Affichage des logs -->
+        <div style="background:white;border-radius:12px;padding:24px;box-shadow:0 4px 6px rgba(0,0,0,0.1);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                <h3 style="margin:0;color:#2d3748;">
+                    {% if logType == 'user_actions' %}
+                        🔐 Actions Utilisateur
+                    {% elseif logType == 'system_events' %}
+                        ⚙️ Événements Système
+                    {% else %}
+                        📄 Logs Généraux
+                    {% endif %}
+                </h3>
+                <span style="color:#718096;font-size:14px;">{{ logs|length }} entrées affichées</span>
+            </div>
+
+            {% if logs is empty %}
+                <div style="background:#f7fafc;padding:20px;border-radius:8px;text-align:center;color:#4a5568;">
+                    <h4>📭 Aucun log trouvé</h4>
+                    <p>Il n'y a pas encore de logs pour ce type ou le fichier n'existe pas.</p>
+                </div>
+            {% else %}
+                <div style="background:#1a202c;color:#e2e8f0;border-radius:8px;padding:16px;overflow-x:auto;font-family:monospace;font-size:13px;">
+                    {% for log in logs %}
+                        <div style="margin-bottom:12px;padding:8px;border-left:3px solid 
+                            {% if log.level == 'ERROR' %}#e53e3e
+                            {% elseif log.level == 'WARNING' %}#d69e2e
+                            {% elseif log.level == 'INFO' %}#38a169
+                            {% else %}#4299e1
+                            {% endif %};">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                                <span style="color:#a0aec0;font-size:11px;">[{{ log.timestamp }}]</span>
+                                <span style="background:
+                                    {% if log.level == 'ERROR' %}#e53e3e
+                                    {% elseif log.level == 'WARNING' %}#d69e2e
+                                    {% elseif log.level == 'INFO' %}#38a169
+                                    {% else %}#4299e1
+                                    {% endif %};color:white;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;">
+                                    {{ log.level }}
+                                </span>
+                            </div>
+                            <div style="color:#e2e8f0;word-break:break-all;">{{ log.message }}</div>
+                            {% if log.channel != 'unknown' %}
+                                <div style="color:#a0aec0;font-size:11px;margin-top:4px;">Channel: {{ log.channel }}</div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

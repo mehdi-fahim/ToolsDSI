@@ -1,6 +1,8 @@
 monolog:
     channels:
         - deprecation # Deprecations are logged in the dedicated "deprecation" channel when it exists
+        - user_actions # Channel pour les actions utilisateur
+        - system_events # Channel pour les événements système
 
 when@dev:
     monolog:
@@ -10,6 +12,16 @@ when@dev:
                 path: "%kernel.logs_dir%/%kernel.environment%.log"
                 level: debug
                 channels: ["!event"]
+            user_actions:
+                type: stream
+                path: "%kernel.logs_dir%/user_actions.log"
+                level: info
+                channels: ["user_actions"]
+            system_events:
+                type: stream
+                path: "%kernel.logs_dir%/system_events.log"
+                level: info
+                channels: ["system_events"]
             # uncomment to get logging in your browser
             # you may have to allow bigger header sizes in your Web server configuration
             #firephp:

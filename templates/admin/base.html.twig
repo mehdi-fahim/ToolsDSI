@@ -436,6 +436,16 @@
                 {% if 'admin_user_unlock' in access %}
                     <li><a href="{{ path('admin_user_unlock') }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">🔒 <span>Débloquer MDP</span></a></li>
                 {% endif %}
+                
+                {# Système #}
+                {% if 'admin_system' in access %}
+                    <li><a href="{{ path('admin_system') }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">🔧 <span>Système</span></a></li>
+                {% endif %}
+                
+                {# Logs #}
+                {% if 'admin_logs' in access %}
+                    <li><a href="{{ path('admin_logs') }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">📋 <span>Logs</span></a></li>
+                {% endif %}
             </ul>
         </nav>
         {% if app.session and app.session.get('is_admin') %}

@@ -21,6 +21,9 @@ use App\Service\PropositionOracleService;
 use App\Service\BeckrelOracleService;
 use App\Service\SowellOracleService;
 use App\Service\ModeOperatoireService;
+use App\Service\SystemOracleService;
+use App\Service\UserActionLogger;
+use App\Service\LogViewerService;
 
 #[Route('/admin')]
 class AdminController extends AbstractController
@@ -36,7 +39,10 @@ class AdminController extends AbstractController
         private BeckrelOracleService $beckrelOracleService,
         private SowellOracleService $sowellOracleService,
         private ModeOperatoireService $modeOperatoireService,
-        private \App\Service\LogementOracleService $logementOracleService
+        private \App\Service\LogementOracleService $logementOracleService,
+        private SystemOracleService $systemOracleService,
+        private UserActionLogger $userActionLogger,
+        private LogViewerService $logViewerService
     ) {}
 
     #[Route('', name: 'admin_dashboard', methods: ['GET'])]
@@ -245,6 +251,8 @@ class AdminController extends AbstractController
                 'fin' => null,
             ],
         ];
+        
+        $etatActuel = null;
 
         if ($request->isMethod('POST')) {
             try {
@@ -255,15 +263,19 @@ class AdminController extends AbstractController
                             break;
                         }
                         $data['demande'] = $this->logementOracleService->getDemandeByNumero($numeroDemande);
-                        $data['demandeur']['tiers'] = $this->logementOracleService->getTiersByRole($numeroDemande, 'CAND');
-                        $datesCand = $this->logementOracleService->getDatesByRole($numeroDemande, 'CAND');
-                        $data['demandeur']['debut'] = $datesCand['debut'];
-                        $data['demandeur']['fin'] = $datesCand['fin'];
-                        $data['codemandeur']['tiers'] = $this->logementOracleService->getTiersByRole($numeroDemande, 'CODEM');
-                        $datesCodem = $this->logementOracleService->getDatesByRole($numeroDemande, 'CODEM');
-                        $data['codemandeur']['debut'] = $datesCodem['debut'];
-                        $data['codemandeur']['fin'] = $datesCodem['fin'];
-                        if (!$data['demande']) {
+                        if ($data['demande']) {
+                            // Récupérer le statut actuel de la demande
+                            $etatActuel = $data['demande']['ACDEM_ETA'] ?? null;
+                            
+                            $data['demandeur']['tiers'] = $this->logementOracleService->getTiersByRole($numeroDemande, 'CAND');
+                            $datesCand = $this->logementOracleService->getDatesByRole($numeroDemande, 'CAND');
+                            $data['demandeur']['debut'] = $datesCand['debut'];
+                            $data['demandeur']['fin'] = $datesCand['fin'];
+                            $data['codemandeur']['tiers'] = $this->logementOracleService->getTiersByRole($numeroDemande, 'CODEM');
+                            $datesCodem = $this->logementOracleService->getDatesByRole($numeroDemande, 'CODEM');
+                            $data['codemandeur']['debut'] = $datesCodem['debut'];
+                            $data['codemandeur']['fin'] = $datesCodem['fin'];
+                        } else {
                             $error = 'Aucune demande trouvée pour ce numéro.';
                         }
                         break;
@@ -274,6 +286,12 @@ class AdminController extends AbstractController
                         }
                         $count = $this->logementOracleService->updateEtatDemande($numeroDemande, $etat);
                         $success = $count > 0 ? 'État de la demande mis à jour.' : 'Aucune mise à jour effectuée.';
+                        
+                        // Log de l'action
+                        $this->userActionLogger->logDataModification('LOGMNT', 'UPDATE_ETAT', [
+                            'numero_demande' => $numeroDemande,
+                            'nouvel_etat' => $etat
+                        ], $session->get('user_id'));
                         break;
                     case 'update_demandeur':
                         if ($numeroDemande === '') { $error = 'Numéro de demande requis.'; break; }
@@ -302,7 +320,7 @@ class AdminController extends AbstractController
 
         return $this->render('admin/logement.html.twig', [
             'numeroDemande' => $numeroDemande,
-            'etat' => $etat,
+            'etat' => $etatActuel ?? $etat,
             'data' => $data,
             'error' => $error,
             'success' => $success,
@@ -650,6 +668,9 @@ class AdminController extends AbstractController
                 $session->set('user_prenom', 'Administrateur');
                 $session->set('user_groupe', 'SUPER_ADMIN');
                 
+                // Log de la connexion admin
+                $this->userActionLogger->logUserLogin('PCH', $request->getClientIp(), true);
+                
                 return $this->redirectToRoute('admin_dashboard');
             }
             
@@ -679,8 +700,13 @@ class AdminController extends AbstractController
                 $userAccessMap = $this->accessControlOracleService->getUserPageAccess($user['CODE_UTILISATEUR']);
                 $session->set('page_access', array_keys($userAccessMap));
                 
+                // Log de la connexion utilisateur
+                $this->userActionLogger->logUserLogin($user['CODE_UTILISATEUR'], $request->getClientIp(), true);
+                
                 return $this->redirectToRoute('admin_dashboard');
             } else {
+                // Log de la tentative de connexion échouée
+                $this->userActionLogger->logUserLogin($userId, $request->getClientIp(), false);
                 $error = 'Identifiants invalides. Vérifiez votre code utilisateur et mot de passe.';
             }
         }
@@ -692,6 +718,12 @@ class AdminController extends AbstractController
     #[Route('/logout', name: 'logout', methods: ['GET'])]
     public function logout(SessionInterface $session): Response
     {
+        // Log de la déconnexion
+        $userId = $session->get('user_id');
+        if ($userId) {
+            $this->userActionLogger->logUserLogout($userId);
+        }
+        
         // Nettoyer toutes les données de session
         $session->remove('is_admin');
         $session->remove('is_super_admin');
@@ -879,6 +911,8 @@ class AdminController extends AbstractController
             'admin_engagement' => 'Engagements',
             'admin_logement' => 'Logement',
             'admin_user_unlock' => 'Débloquer MDP',
+            'admin_system' => 'Système',
+            'admin_logs' => 'Logs',
             'admin_user_access' => 'Administration',
             'admin_proposition' => 'Proposition (Suppression)',
             'admin_beckrel_users' => 'Utilisateurs Beckrel',
@@ -1160,6 +1194,105 @@ class AdminController extends AbstractController
         return $this->render('admin/show_password.html.twig', [
             'userId' => $userId,
             'password' => $password
+        ]);
+    }
+
+    #[Route('/admin/system', name: 'admin_system', methods: ['GET', 'POST'])]
+    public function system(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        $error = null;
+        $success = null;
+        $lockedTables = [];
+        $killResults = [];
+
+        // Récupérer la liste des tables locker
+        try {
+            $lockedTables = $this->systemOracleService->getLockedTables();
+        } catch (\Exception $e) {
+            $error = 'Erreur lors de la récupération des tables locker: ' . $e->getMessage();
+        }
+
+        if ($request->isMethod('POST')) {
+            $action = $request->request->get('action', '');
+            
+            try {
+                switch ($action) {
+                    case 'kill_session':
+                        $sid = (int)$request->request->get('sid');
+                        $serial = (int)$request->request->get('serial');
+                        
+                        if ($this->systemOracleService->killSession($sid, $serial)) {
+                            $success = "Session {$sid},{$serial} tuée avec succès.";
+                            
+                            // Log de l'action critique
+                            $this->userActionLogger->logCriticalSystemAction('KILL_SESSION', [
+                                'sid' => $sid,
+                                'serial' => $serial,
+                                'user_id' => $session->get('user_id')
+                            ]);
+                        } else {
+                            $error = "Erreur lors de la suppression de la session {$sid},{$serial}.";
+                        }
+                        break;
+                        
+                    case 'kill_all':
+                        $killResults = $this->systemOracleService->killAllLockedSessions();
+                        $successCount = count(array_filter($killResults, fn($r) => $r['success']));
+                        $totalCount = count($killResults);
+                        $success = "{$successCount}/{$totalCount} sessions tuées avec succès.";
+                        break;
+                }
+                
+                // Recharger la liste après action
+                $lockedTables = $this->systemOracleService->getLockedTables();
+                
+            } catch (\Exception $e) {
+                $error = 'Erreur lors de l\'exécution: ' . $e->getMessage();
+            }
+        }
+
+        return $this->render('admin/system.html.twig', [
+            'lockedTables' => $lockedTables,
+            'killResults' => $killResults,
+            'error' => $error,
+            'success' => $success,
+        ]);
+    }
+
+    #[Route('/admin/logs', name: 'admin_logs', methods: ['GET'])]
+    public function logs(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        $logType = $request->query->get('type', 'user_actions');
+        $limit = (int)$request->query->get('limit', 50);
+
+        $logs = [];
+        $stats = $this->logViewerService->getLogStats();
+
+        switch ($logType) {
+            case 'user_actions':
+                $logs = $this->logViewerService->getUserActionLogs($limit);
+                break;
+            case 'system_events':
+                $logs = $this->logViewerService->getSystemEventLogs($limit);
+                break;
+            case 'general':
+                $logs = $this->logViewerService->getGeneralLogs($limit);
+                break;
+        }
+
+        return $this->render('admin/logs.html.twig', [
+            'logs' => $logs,
+            'stats' => $stats,
+            'logType' => $logType,
+            'limit' => $limit,
         ]);
     }
 
