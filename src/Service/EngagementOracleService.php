@@ -165,10 +165,10 @@ class EngagementOracleService
                         [is_numeric($data['responsable_engagement']) ? (int)$data['responsable_engagement'] : $data['responsable_engagement'], $exercice, $numeroEngagement, $societe]
                     );
                 } else {
-                    // Créer un nouvel enregistrement
+                    // Créer un nouvel enregistrement avec TAITL_COD requis
                     $result = $this->connection->executeStatement(
-                        "INSERT INTO TAENR (ICEXE_NUM, TAENG_NUM, TOTIE_CODSCTE, TOTIE_COD) VALUES (?, ?, ?, ?)",
-                        [$exercice, $numeroEngagement, $societe, is_numeric($data['responsable_engagement']) ? (int)$data['responsable_engagement'] : $data['responsable_engagement']]
+                        "INSERT INTO TAENR (ICEXE_NUM, TAENG_NUM, TOTIE_CODSCTE, TOTIE_COD, TAITL_COD) VALUES (?, ?, ?, ?, ?)",
+                        [$exercice, $numeroEngagement, $societe, is_numeric($data['responsable_engagement']) ? (int)$data['responsable_engagement'] : $data['responsable_engagement'], 'DEFAULT']
                     );
                 }
                 
