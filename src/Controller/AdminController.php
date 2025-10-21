@@ -24,6 +24,7 @@ use App\Service\ModeOperatoireService;
 use App\Service\SystemOracleService;
 use App\Service\UserActionLogger;
 use App\Service\LogViewerService;
+use App\Service\DetailedUserActionLogger;
 
 #[Route('/admin')]
 class AdminController extends AbstractController
@@ -42,15 +43,23 @@ class AdminController extends AbstractController
         private \App\Service\LogementOracleService $logementOracleService,
         private SystemOracleService $systemOracleService,
         private UserActionLogger $userActionLogger,
-        private LogViewerService $logViewerService
+        private LogViewerService $logViewerService,
+        private DetailedUserActionLogger $detailedUserActionLogger
     ) {}
 
     #[Route('', name: 'admin_dashboard', methods: ['GET'])]
-    public function dashboard(SessionInterface $session): Response
+    public function dashboard(SessionInterface $session, Request $request): Response
     {
         if (!$this->isAuthenticated($session)) {
             return $this->redirectToRoute('login');
         }
+
+        // Log de l'accès au dashboard
+        $this->detailedUserActionLogger->logPageAccess(
+            'Dashboard',
+            $session->get('user_id'),
+            $request->getClientIp()
+        );
         
         // Liste des entités disponibles
         $availableEntities = [
@@ -503,8 +512,26 @@ class AdminController extends AbstractController
                             'societe' => $engagementData['societe'],
                             'updated_fields' => $updateResult['updated'] ?? []
                         ], $session->get('user_id'));
+
+                        // Log détaillé
+                        $this->detailedUserActionLogger->logFormSubmit(
+                            'Engagement Update',
+                            'Engagement Page',
+                            $engagementData,
+                            $session->get('user_id'),
+                            $request->getClientIp()
+                        );
                     } else {
                         $error = $updateResult['error'];
+                        
+                        // Log de l'erreur
+                        $this->detailedUserActionLogger->logUserError(
+                            $updateResult['error'],
+                            'Engagement Page',
+                            $engagementData,
+                            $session->get('user_id'),
+                            $request->getClientIp()
+                        );
                     }
                 } catch (\Exception $e) {
                     $error = 'Erreur lors de la mise à jour: ' . $e->getMessage();
@@ -1219,19 +1246,26 @@ class AdminController extends AbstractController
         $success = null;
         $lockedTables = [];
         $killResults = [];
-
-        // Récupérer la liste des tables locker
-        try {
-            $lockedTables = $this->systemOracleService->getLockedTables();
-        } catch (\Exception $e) {
-            $error = 'Erreur lors de la récupération des tables locker: ' . $e->getMessage();
-        }
+        $loadSessions = false;
 
         if ($request->isMethod('POST')) {
             $action = $request->request->get('action', '');
             
             try {
                 switch ($action) {
+                    case 'load_sessions':
+                        $loadSessions = true;
+                        $lockedTables = $this->systemOracleService->getLockedTables();
+                        
+                        // Log de l'action
+                        $this->detailedUserActionLogger->logButtonClick(
+                            'Load Sessions',
+                            'System Page',
+                            $session->get('user_id'),
+                            $request->getClientIp()
+                        );
+                        break;
+                        
                     case 'kill_session':
                         $sid = (int)$request->request->get('sid');
                         $serial = (int)$request->request->get('serial');
@@ -1271,6 +1305,7 @@ class AdminController extends AbstractController
             'killResults' => $killResults,
             'error' => $error,
             'success' => $success,
+            'loadSessions' => $loadSessions,
         ]);
     }
 

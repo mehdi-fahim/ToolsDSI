@@ -17,21 +17,43 @@
     {% endif %}
 
     <div class="admin-content">
-        {% if lockedTables is empty %}
+        {% if not loadSessions %}
             <div style="background:#f7fafc;padding:20px;border-radius:8px;text-align:center;color:#4a5568;">
-                <h3>✅ Aucune table verrouillée</h3>
-                <p>Aucune session Oracle n'a actuellement de tables verrouillées.</p>
+                <h3>📋 Charger les sessions Oracle</h3>
+                <p>Cliquez sur le bouton ci-dessous pour voir les sessions Oracle actives.</p>
+                <form method="post" style="margin-top:16px;">
+                    <button type="submit" name="action" value="load_sessions" class="btn btn-primary" style="background:#4299e1;color:white;padding:12px 24px;border:none;border-radius:6px;font-size:16px;">
+                        🔄 Charger les sessions
+                    </button>
+                </form>
+            </div>
+        {% elseif lockedTables is empty %}
+            <div style="background:#f7fafc;padding:20px;border-radius:8px;text-align:center;color:#4a5568;">
+                <h3>📭 Aucune session trouvée</h3>
+                <p>Il n'y a actuellement aucune session Oracle active ou accessible.</p>
+                <form method="post" style="margin-top:16px;">
+                    <button type="submit" name="action" value="load_sessions" class="btn btn-primary" style="background:#4299e1;color:white;padding:12px 24px;border:none;border-radius:6px;font-size:16px;">
+                        🔄 Recharger
+                    </button>
+                </form>
             </div>
         {% else %}
             <div style="background:white;border-radius:12px;padding:24px;box-shadow:0 4px 6px rgba(0,0,0,0.1);">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-                    <h3 style="margin:0;color:#2d3748;">Tables Verrouillées ({{ lockedTables|length }})</h3>
-                    <form method="post" style="display:inline;" onsubmit="return confirm('Êtes-vous sûr de vouloir tuer TOUTES les sessions avec des tables verrouillées ?');">
-                        <input type="hidden" name="action" value="kill_all">
-                        <button type="submit" class="btn btn-danger" style="background:#e53e3e;color:white;padding:8px 16px;border:none;border-radius:6px;">
-                            🗑️ Tuer toutes les sessions
-                        </button>
-                    </form>
+                    <h3 style="margin:0;color:#2d3748;">Sessions Oracle ({{ lockedTables|length }})</h3>
+                    <div style="display:flex;gap:8px;">
+                        <form method="post" style="display:inline;">
+                            <button type="submit" name="action" value="load_sessions" class="btn" style="background:#4299e1;color:white;padding:8px 16px;border:none;border-radius:6px;">
+                                🔄 Recharger
+                            </button>
+                        </form>
+                        <form method="post" style="display:inline;" onsubmit="return confirm('Êtes-vous sûr de vouloir tuer TOUTES les sessions ?');">
+                            <input type="hidden" name="action" value="kill_all">
+                            <button type="submit" class="btn btn-danger" style="background:#e53e3e;color:white;padding:8px 16px;border:none;border-radius:6px;">
+                                🗑️ Tuer toutes
+                            </button>
+                        </form>
+                    </div>
                 </div>
 
                 <div style="overflow-x:auto;">
@@ -40,7 +62,7 @@
                             <tr style="background:#f7fafc;border-bottom:2px solid #e2e8f0;">
                                 <th style="padding:12px;text-align:left;font-weight:600;color:#4a5568;">SID</th>
                                 <th style="padding:12px;text-align:left;font-weight:600;color:#4a5568;">Serial#</th>
-                                <th style="padding:12px;text-align:left;font-weight:600;color:#4a5568;">Table</th>
+                                <th style="padding:12px;text-align:left;font-weight:600;color:#4a5568;">Objet</th>
                                 <th style="padding:12px;text-align:left;font-weight:600;color:#4a5568;">Utilisateur OS</th>
                                 <th style="padding:12px;text-align:left;font-weight:600;color:#4a5568;">Statut</th>
                                 <th style="padding:12px;text-align:left;font-weight:600;color:#4a5568;">Actions</th>

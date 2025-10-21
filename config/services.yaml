@@ -77,6 +77,11 @@ services:
         arguments:
             $kernelLogsDir: '%kernel.logs_dir%'
 
+    # Configuration pour le service DetailedUserActionLogger
+    App\Service\DetailedUserActionLogger:
+        arguments:
+            $userActionsLogger: '@monolog.logger.user_actions'
+
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

@@ -132,6 +132,28 @@
                                 </span>
                             </div>
                             <div style="color:#e2e8f0;word-break:break-all;">{{ log.message }}</div>
+                            
+                            {% if log.context.user_id is defined %}
+                                <div style="color:#a0aec0;font-size:11px;margin-top:4px;">
+                                    <strong>👤 Utilisateur:</strong> {{ log.context.user_id }}
+                                    {% if log.context.user_name is defined and log.context.user_name != '' %}
+                                        ({{ log.context.user_name }})
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                            
+                            {% if log.context.ip_address is defined %}
+                                <div style="color:#a0aec0;font-size:11px;">
+                                    <strong>🌐 IP:</strong> {{ log.context.ip_address }}
+                                </div>
+                            {% endif %}
+                            
+                            {% if log.context.action_type is defined %}
+                                <div style="color:#a0aec0;font-size:11px;">
+                                    <strong>⚡ Type:</strong> {{ log.context.action_type }}
+                                </div>
+                            {% endif %}
+                            
                             {% if log.channel != 'unknown' %}
                                 <div style="color:#a0aec0;font-size:11px;margin-top:4px;">Channel: {{ log.channel }}</div>
                             {% endif %}
