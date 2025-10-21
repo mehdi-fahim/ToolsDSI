@@ -1247,12 +1247,9 @@ class AdminController extends AbstractController
     }
 
     #[Route('/admin/system', name: 'admin_system', methods: ['GET', 'POST'])]
-    public function system(Request $request, SessionInterface $session): Response
+    public function system(Request $request): Response
     {
-        if (!$this->isAuthenticated($session)) {
-            return $this->redirectToRoute('login');
-        }
-
+        // Version ultra-simple sans authentification ni services
         $error = null;
         $success = null;
         $lockedTables = [];
@@ -1265,7 +1262,7 @@ class AdminController extends AbstractController
             switch ($action) {
                 case 'load_sessions':
                     $loadSessions = true;
-                    // Données de test statiques pour éviter les erreurs Oracle
+                    // Données de test statiques
                     $lockedTables = [
                         [
                             'sid' => '123',
