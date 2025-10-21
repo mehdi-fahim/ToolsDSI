@@ -115,18 +115,34 @@ class EngagementOracleService
             // Mise à jour de l'ESO administratif dans TAENG
             if (isset($data['eso_administratif']) && $data['eso_administratif'] !== '') {
                 // Vérifier d'abord que le tiers ESO existe dans la table des tiers
-                $tiersExists = $this->connection->executeQuery(
-                    "SELECT COUNT(*) FROM TOTIE WHERE TOTIE_COD = ?",
-                    [$data['eso_administratif']]
-                )->fetchOne();
+                try {
+                    $tiersExists = $this->connection->executeQuery(
+                        "SELECT COUNT(*) FROM TOTIE WHERE TOTIE_COD = ?",
+                        [$data['eso_administratif']]
+                    )->fetchOne();
 
-                if ((int)$tiersExists === 0) {
-                    throw new \Exception("Le numéro de tiers de l'ESO administratif n'existe pas.");
+                    if ((int)$tiersExists === 0) {
+                        throw new \Exception("Le numéro de tiers de l'ESO administratif n'existe pas.");
+                    }
+                } catch (\Exception $e) {
+                    // Si la requête échoue, essayer avec une conversion numérique
+                    if (is_numeric($data['eso_administratif'])) {
+                        $tiersExists = $this->connection->executeQuery(
+                            "SELECT COUNT(*) FROM TOTIE WHERE TOTIE_COD = ?",
+                            [(int)$data['eso_administratif']]
+                        )->fetchOne();
+
+                        if ((int)$tiersExists === 0) {
+                            throw new \Exception("Le numéro de tiers de l'ESO administratif n'existe pas.");
+                        }
+                    } else {
+                        throw new \Exception("Le numéro de tiers de l'ESO administratif n'est pas valide.");
+                    }
                 }
 
                 $result = $this->connection->executeStatement(
                     "UPDATE TAENG SET TOESO_COD = ? WHERE ICEXE_NUM = ? AND TAENG_NUM = ? AND TOTIE_CODSCTE = ?",
-                    [$data['eso_administratif'], $exercice, $numeroEngagement, $societe]
+                    [is_numeric($data['eso_administratif']) ? (int)$data['eso_administratif'] : $data['eso_administratif'], $exercice, $numeroEngagement, $societe]
                 );
                 if ($result > 0) {
                     $updated['eso_administratif'] = $data['eso_administratif'];
@@ -136,13 +152,29 @@ class EngagementOracleService
             // Mise à jour du responsable de l'engagement dans TAENR
             if (isset($data['responsable_engagement']) && $data['responsable_engagement'] !== '') {
                 // Vérifier d'abord que le tiers responsable existe dans la table des tiers
-                $tiersExists = $this->connection->executeQuery(
-                    "SELECT COUNT(*) FROM TOTIE WHERE TOTIE_COD = ?",
-                    [$data['responsable_engagement']]
-                )->fetchOne();
+                try {
+                    $tiersExists = $this->connection->executeQuery(
+                        "SELECT COUNT(*) FROM TOTIE WHERE TOTIE_COD = ?",
+                        [$data['responsable_engagement']]
+                    )->fetchOne();
 
-                if ((int)$tiersExists === 0) {
-                    throw new \Exception("Le numéro de tiers du responsable d'engagement n'existe pas.");
+                    if ((int)$tiersExists === 0) {
+                        throw new \Exception("Le numéro de tiers du responsable d'engagement n'existe pas.");
+                    }
+                } catch (\Exception $e) {
+                    // Si la requête échoue, essayer avec une conversion numérique
+                    if (is_numeric($data['responsable_engagement'])) {
+                        $tiersExists = $this->connection->executeQuery(
+                            "SELECT COUNT(*) FROM TOTIE WHERE TOTIE_COD = ?",
+                            [(int)$data['responsable_engagement']]
+                        )->fetchOne();
+
+                        if ((int)$tiersExists === 0) {
+                            throw new \Exception("Le numéro de tiers du responsable d'engagement n'existe pas.");
+                        }
+                    } else {
+                        throw new \Exception("Le numéro de tiers du responsable d'engagement n'est pas valide.");
+                    }
                 }
 
                 // Vérifier si un enregistrement existe déjà pour cet engagement
@@ -155,13 +187,13 @@ class EngagementOracleService
                     // Mettre à jour l'enregistrement existant
                     $result = $this->connection->executeStatement(
                         "UPDATE TAENR SET TOTIE_COD = ? WHERE ICEXE_NUM = ? AND TAENG_NUM = ? AND TOTIE_CODSCTE = ?",
-                        [$data['responsable_engagement'], $exercice, $numeroEngagement, $societe]
+                        [is_numeric($data['responsable_engagement']) ? (int)$data['responsable_engagement'] : $data['responsable_engagement'], $exercice, $numeroEngagement, $societe]
                     );
                 } else {
                     // Créer un nouvel enregistrement
                     $result = $this->connection->executeStatement(
                         "INSERT INTO TAENR (ICEXE_NUM, TAENG_NUM, TOTIE_CODSCTE, TOTIE_COD) VALUES (?, ?, ?, ?)",
-                        [$exercice, $numeroEngagement, $societe, $data['responsable_engagement']]
+                        [$exercice, $numeroEngagement, $societe, is_numeric($data['responsable_engagement']) ? (int)$data['responsable_engagement'] : $data['responsable_engagement']]
                     );
                 }
                 

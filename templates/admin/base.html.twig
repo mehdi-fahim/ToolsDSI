@@ -447,8 +447,6 @@
                     <li><a href="{{ path('admin_logs') }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">📋 <span>Logs</span></a></li>
                 {% endif %}
                 
-                {# Diagnostic #}
-                <li><a href="{{ path('admin_diagnostic') }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">🔧 <span>Diagnostic</span></a></li>
             </ul>
         </nav>
         {% if app.session and app.session.get('is_admin') %}

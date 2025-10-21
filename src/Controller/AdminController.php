@@ -24,7 +24,6 @@ use App\Service\ModeOperatoireService;
 use App\Service\SystemOracleService;
 use App\Service\UserActionLogger;
 use App\Service\LogViewerService;
-use App\Service\OracleDiagnosticService;
 
 #[Route('/admin')]
 class AdminController extends AbstractController
@@ -43,8 +42,7 @@ class AdminController extends AbstractController
         private \App\Service\LogementOracleService $logementOracleService,
         private SystemOracleService $systemOracleService,
         private UserActionLogger $userActionLogger,
-        private LogViewerService $logViewerService,
-        private OracleDiagnosticService $oracleDiagnosticService
+        private LogViewerService $logViewerService
     ) {}
 
     #[Route('', name: 'admin_dashboard', methods: ['GET'])]
@@ -1313,21 +1311,6 @@ class AdminController extends AbstractController
         ]);
     }
 
-    #[Route('/admin/diagnostic', name: 'admin_diagnostic', methods: ['GET'])]
-    public function diagnostic(SessionInterface $session): Response
-    {
-        if (!$this->isAuthenticated($session)) {
-            return $this->redirectToRoute('login');
-        }
-
-        $connectionTest = $this->oracleDiagnosticService->testConnection();
-        $constantsTest = $this->oracleDiagnosticService->testOci8Constants();
-
-        return $this->render('admin/diagnostic.html.twig', [
-            'connection_test' => $connectionTest,
-            'constants_test' => $constantsTest,
-        ]);
-    }
 
     /**
      * Récupère la classe d'entité à partir du nom

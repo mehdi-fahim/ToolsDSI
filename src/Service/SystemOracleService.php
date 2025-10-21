@@ -15,18 +15,17 @@ class SystemOracleService
      */
     public function getLockedTables(): array
     {
-        // Requête simplifiée pour éviter les problèmes de permissions
+        // Requête très simple pour éviter les problèmes de permissions
         $sql = "SELECT
                     s.sid,
                     s.serial#,
-                    'UNKNOWN' as object_name,
+                    'Session Oracle' as object_name,
                     s.osuser,
-                    'UNKNOWN' as status
+                    s.status
                 FROM
                     v\$session s
                 WHERE
-                    s.status = 'ACTIVE'
-                    AND s.username IS NOT NULL
+                    s.username IS NOT NULL
                 ORDER BY
                     s.sid";
 
@@ -53,6 +52,16 @@ class SystemOracleService
     public function killSession(int $sid, int $serial): bool
     {
         try {
+            // Vérifier d'abord que la session existe
+            $sessionExists = $this->defaultConnection->executeQuery(
+                "SELECT COUNT(*) FROM v\$session WHERE sid = ? AND serial# = ?",
+                [$sid, $serial]
+            )->fetchOne();
+
+            if ((int)$sessionExists === 0) {
+                return false; // Session n'existe pas
+            }
+
             $sql = "ALTER SYSTEM KILL SESSION '{$sid},{$serial}' IMMEDIATE";
             $this->defaultConnection->executeStatement($sql);
             return true;
