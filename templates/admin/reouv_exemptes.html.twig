@@ -1,0 +1,94 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Réouv exemptés{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="admin-header">
+        <h1>🔄 Réouv exemptés</h1>
+        <p>Réouverture des étapes exemptées d'un processus de proposition</p>
+    </div>
+
+    <div class="admin-content">
+        {% if error %}
+            <div style="background:#fed7d7;color:#c53030;padding:12px 16px;border-radius:8px;margin-bottom:16px;border-left:4px solid #c53030;">
+                {{ error|raw }}
+            </div>
+        {% endif %}
+
+        {% if success %}
+            <div style="background:#c6f6d5;color:#22543d;padding:12px 16px;border-radius:8px;margin-bottom:16px;border-left:4px solid #22543d;">
+                {{ success|raw }}
+            </div>
+        {% endif %}
+
+        <div style="background:white;border-radius:12px;padding:24px;box-shadow:0 4px 6px rgba(0,0,0,0.1);">
+            <form method="post" style="margin-bottom:30px;">
+                <div style="margin-bottom:20px;">
+                    <label for="numero_proposition" style="display:block;font-weight:600;margin-bottom:8px;color:#2d3748;">
+                        📋 Numéro de proposition
+                    </label>
+                    <input 
+                        type="number" 
+                        id="numero_proposition" 
+                        name="numero_proposition" 
+                        value="{{ numero_proposition > 0 ? numero_proposition : '' }}"
+                        placeholder="Entrez le numéro de proposition"
+                        required
+                        style="width:100%;max-width:400px;padding:12px 16px;border:2px solid #e2e8f0;border-radius:8px;font-size:16px;transition:all 0.3s ease;"
+                        onfocus="this.style.borderColor='#4299e1';this.style.boxShadow='0 0 0 3px rgba(66, 153, 225, 0.1)';"
+                        onblur="this.style.borderColor='#e2e8f0';this.style.boxShadow='none';"
+                    >
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="background:#4299e1;color:white;padding:12px 32px;border:none;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;transition:all 0.3s ease;">
+                    🔄 Réouvrir les étapes exemptées
+                </button>
+            </form>
+
+            {% if proposition_info %}
+                <div style="background:#f7fafc;border-left:4px solid #4299e1;padding:20px;border-radius:8px;margin-top:24px;">
+                    <h3 style="margin:0 0 12px 0;color:#2d3748;font-size:1.2rem;">📄 Informations de la proposition</h3>
+                    <div style="display:grid;grid-template-columns:auto 1fr;gap:12px;color:#4a5568;">
+                        <strong>Numéro workflow :</strong>
+                        <span>{{ proposition_info.wxpro_num }}</span>
+                        
+                        <strong>Dossier :</strong>
+                        <span>{{ proposition_info.bidos_num|default('N/A') }}</span>
+                        
+                        <strong>Date :</strong>
+                        <span>{{ proposition_info.wxpdo_dat|default('N/A') }}</span>
+                        
+                        <strong>Étapes exemptées :</strong>
+                        <span style="font-weight:600;color:{% if exempted_count > 0 %}#c53030{% else %}#38a169{% endif %};">
+                            {{ exempted_count }} étape(s)
+                        </span>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:16px;margin-top:24px;color:#856404;">
+            <h4 style="margin:0 0 8px 0;display:flex;align-items:center;gap:8px;">
+                ℹ️ Information
+            </h4>
+            <p style="margin:0;line-height:1.6;">
+                Cette fonction permet de réouvrir les étapes exemptées d'un processus de proposition en effectuant les actions suivantes :
+            </p>
+            <ul style="margin:8px 0 0 0;padding-left:20px;line-height:1.8;">
+                <li>Mise à jour du statut du processus (WXPRO_ETA = 'E') dans la table WXPRO</li>
+                <li>Réouverture des étapes exemptées (WFDEC_COD = '_EXS') dans la table WXETP</li>
+                <li>Remise des étapes en mode normal (WXETP_ETA = 'N', WXETP_ACCES = 'C')</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<style>
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+        opacity: 1;
+    }
+</style>
+{% endblock %}
+

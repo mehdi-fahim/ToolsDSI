@@ -66,6 +66,11 @@ services:
         arguments:
             $defaultConnection: '@doctrine.dbal.default_connection'
 
+    # Configuration pour le service ReouvExemptesOracleService
+    App\Service\ReouvExemptesOracleService:
+        arguments:
+            $connection: '@doctrine.dbal.default_connection'
+
     # Configuration pour le service UserActionLogger
     App\Service\UserActionLogger:
         arguments:

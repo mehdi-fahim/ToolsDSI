@@ -401,7 +401,7 @@
                 {% endif %}
 
                 {# Menu déroulant Gestion #}
-                {% if 'admin_engagement' in access or 'admin_proposition' in access or 'admin_mode_operatoire' in access or 'admin_logement' in access %}
+                {% if 'admin_engagement' in access or 'admin_proposition' in access or 'admin_mode_operatoire' in access or 'admin_logement' in access or 'admin_reouv_exemptes' in access %}
                 <li class="sidebar-dropdown">
                     <div class="dropdown-toggle" onclick="toggleDropdown(this)">
                         <span style="display: flex; align-items: center; gap: 12px;">🗂️ <span>Gestion</span></span>
@@ -421,6 +421,11 @@
                         {% if 'admin_proposition' in access %}
                         <a href="{{ path('admin_proposition') }}">
                             <span>Proposition</span>
+                        </a>
+                        {% endif %}
+                        {% if 'admin_reouv_exemptes' in access %}
+                        <a href="{{ path('admin_reouv_exemptes') }}">
+                            <span>🔄 Réouv exemptés</span>
                         </a>
                         {% endif %}
                         {% if 'admin_mode_operatoire' in access %}

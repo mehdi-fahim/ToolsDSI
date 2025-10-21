@@ -42,6 +42,7 @@ class AdminController extends AbstractController
         private \App\Service\LogementOracleService $logementOracleService,
         private UserActionLogger $userActionLogger,
         private LogViewerService $logViewerService,
+        private \App\Service\ReouvExemptesOracleService $reouvExemptesOracleService,
         private ?DetailedUserActionLogger $detailedUserActionLogger = null
     ) {}
 
@@ -964,6 +965,7 @@ class AdminController extends AbstractController
             'admin_logs' => 'Logs',
             'admin_user_access' => 'Administration',
             'admin_proposition' => 'Proposition (Suppression)',
+            'admin_reouv_exemptes' => 'Réouv exemptés',
             'admin_beckrel_users' => 'Utilisateurs Beckrel',
             'admin_sowell_users' => 'Utilisateurs Sowell',
             'admin_mode_operatoire' => 'Mode opératoire',
@@ -1090,7 +1092,61 @@ class AdminController extends AbstractController
         ]);
     }
 
+    #[Route('/reouv-exemptes', name: 'admin_reouv_exemptes', methods: ['GET', 'POST'])]
+    public function reouvExemptes(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
 
+        $numeroProposition = (int) $request->request->get('numero_proposition', 0);
+        $error = null;
+        $success = null;
+        $propositionInfo = null;
+        $exemptedCount = 0;
+
+        if ($request->isMethod('POST') && $numeroProposition > 0) {
+            // Vérifier si la proposition existe
+            if (!$this->reouvExemptesOracleService->propositionExists($numeroProposition)) {
+                $error = "❌ La proposition n°{$numeroProposition} n'existe pas.";
+            } else {
+                // Obtenir le nombre d'étapes exemptées avant réouverture
+                $exemptedCount = $this->reouvExemptesOracleService->getExemptedStepsCount($numeroProposition);
+                
+                if ($exemptedCount === 0) {
+                    $error = "ℹ️ Aucune étape exemptée trouvée pour la proposition n°{$numeroProposition}.";
+                } else {
+                    // Réouvrir les étapes exemptées
+                    $result = $this->reouvExemptesOracleService->reopenExemptedSteps($numeroProposition);
+                    
+                    if ($result['success']) {
+                        $success = $result['message'];
+                        $propositionInfo = $this->reouvExemptesOracleService->getPropositionInfo($numeroProposition);
+                    } else {
+                        $error = $result['error'];
+                    }
+                }
+            }
+        }
+
+        // Si on a un numéro de proposition, afficher les informations
+        if ($numeroProposition > 0 && !$error && !$success) {
+            $propositionInfo = $this->reouvExemptesOracleService->getPropositionInfo($numeroProposition);
+            $exemptedCount = $this->reouvExemptesOracleService->getExemptedStepsCount($numeroProposition);
+            
+            if (!$propositionInfo) {
+                $error = "❌ La proposition n°{$numeroProposition} n'existe pas.";
+            }
+        }
+
+        return $this->render('admin/reouv_exemptes.html.twig', [
+            'numero_proposition' => $numeroProposition,
+            'proposition_info' => $propositionInfo,
+            'exempted_count' => $exemptedCount,
+            'error' => $error,
+            'success' => $success,
+        ]);
+    }
 
     #[Route('/admin/beckrel', name: 'admin_beckrel_users', methods: ['GET', 'POST'])]
     public function beckrelUsers(Request $request, SessionInterface $session): Response
