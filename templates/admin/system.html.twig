@@ -9,128 +9,24 @@
         <p>Visualisation et gestion des sessions Oracle qui ont des tables verrouillées.</p>
     </div>
 
-    {% if error %}
-        <div style="background:#fed7d7;color:#c53030;padding:12px 16px;border-radius:8px;margin-bottom:16px;">{{ error }}</div>
-    {% endif %}
-    {% if success %}
-        <div style="background:#c6f6d5;color:#22543d;padding:12px 16px;border-radius:8px;margin-bottom:16px;">{{ success }}</div>
-    {% endif %}
-
     <div class="admin-content">
-        {% if not loadSessions %}
-            <div style="background:#f7fafc;padding:20px;border-radius:8px;text-align:center;color:#4a5568;">
-                <h3>📋 Charger les sessions Oracle</h3>
-                <p>Cliquez sur le bouton ci-dessous pour voir les sessions Oracle actives.</p>
-                <form method="post" style="margin-top:16px;">
-                    <button type="submit" name="action" value="load_sessions" class="btn btn-primary" style="background:#4299e1;color:white;padding:12px 24px;border:none;border-radius:6px;font-size:16px;">
-                        🔄 Charger les sessions
-                    </button>
-                </form>
+        <div style="background:#fff3cd;border:2px solid #ffc107;padding:40px;border-radius:12px;text-align:center;color:#856404;box-shadow:0 4px 6px rgba(0,0,0,0.1);">
+            <div style="font-size:64px;margin-bottom:20px;">🚧</div>
+            <h2 style="margin:0 0 16px 0;color:#856404;">Fonctionnalité en développement</h2>
+            <p style="font-size:18px;margin:0;line-height:1.6;">
+                La gestion des tables verrouillées Oracle sera bientôt disponible.<br>
+                Cette fonctionnalité permettra de visualiser et gérer les sessions Oracle actives.
+            </p>
+            <div style="margin-top:32px;padding-top:24px;border-top:1px solid #ffc107;">
+                <p style="font-size:14px;color:#856404;margin:0;">
+                    <strong>Fonctionnalités à venir :</strong><br>
+                    ✓ Affichage des sessions Oracle actives<br>
+                    ✓ Détection des objets verrouillés<br>
+                    ✓ Gestion des sessions bloquantes<br>
+                    ✓ Suppression de sessions individuelles ou en masse
+                </p>
             </div>
-        {% elseif lockedTables is empty %}
-            <div style="background:#f7fafc;padding:20px;border-radius:8px;text-align:center;color:#4a5568;">
-                <h3>📭 Aucune session trouvée</h3>
-                <p>Il n'y a actuellement aucune session Oracle active ou accessible.</p>
-                <form method="post" style="margin-top:16px;">
-                    <button type="submit" name="action" value="load_sessions" class="btn btn-primary" style="background:#4299e1;color:white;padding:12px 24px;border:none;border-radius:6px;font-size:16px;">
-                        🔄 Recharger
-                    </button>
-                </form>
-            </div>
-        {% else %}
-            <div style="background:white;border-radius:12px;padding:24px;box-shadow:0 4px 6px rgba(0,0,0,0.1);">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-                    <h3 style="margin:0;color:#2d3748;">Sessions Oracle ({{ lockedTables|length }})</h3>
-                    <div style="display:flex;gap:8px;">
-                        <form method="post" style="display:inline;">
-                            <button type="submit" name="action" value="load_sessions" class="btn" style="background:#4299e1;color:white;padding:8px 16px;border:none;border-radius:6px;">
-                                🔄 Recharger
-                            </button>
-                        </form>
-                        <form method="post" style="display:inline;" onsubmit="return confirm('Êtes-vous sûr de vouloir tuer TOUTES les sessions ?');">
-                            <input type="hidden" name="action" value="kill_all">
-                            <button type="submit" class="btn btn-danger" style="background:#e53e3e;color:white;padding:8px 16px;border:none;border-radius:6px;">
-                                🗑️ Tuer toutes
-                            </button>
-                        </form>
-                    </div>
-                </div>
-
-                <div style="overflow-x:auto;">
-                    <table style="width:100%;border-collapse:collapse;">
-                               <thead>
-                                   <tr style="background:#f7fafc;border-bottom:2px solid #e2e8f0;">
-                                       <th style="padding:12px;text-align:left;font-weight:600;color:#4a5568;">SID</th>
-                                       <th style="padding:12px;text-align:left;font-weight:600;color:#4a5568;">Serial#</th>
-                                       <th style="padding:12px;text-align:left;font-weight:600;color:#4a5568;">Objet</th>
-                                       <th style="padding:12px;text-align:left;font-weight:600;color:#4a5568;">Utilisateur</th>
-                                       <th style="padding:12px;text-align:left;font-weight:600;color:#4a5568;">Machine</th>
-                                       <th style="padding:12px;text-align:left;font-weight:600;color:#4a5568;">Statut</th>
-                                       <th style="padding:12px;text-align:left;font-weight:600;color:#4a5568;">Actions</th>
-                                   </tr>
-                               </thead>
-                        <tbody>
-                                   {% for table in lockedTables %}
-                                       <tr style="border-bottom:1px solid #e2e8f0;">
-                                           <td style="padding:12px;font-family:monospace;font-weight:600;">{{ table.sid }}</td>
-                                           <td style="padding:12px;font-family:monospace;">{{ table.serial# }}</td>
-                                           <td style="padding:12px;font-weight:600;color:#2d3748;">{{ table.object_name }}</td>
-                                           <td style="padding:12px;">
-                                               <div style="font-weight:600;color:#2d3748;">{{ table.username|default('N/A') }}</div>
-                                               <div style="font-size:12px;color:#718096;">{{ table.osuser|default('N/A') }}</div>
-                                           </td>
-                                           <td style="padding:12px;">
-                                               <div style="font-weight:600;color:#2d3748;">{{ table.machine|default('N/A') }}</div>
-                                               <div style="font-size:12px;color:#718096;">{{ table.program|default('N/A') }}</div>
-                                           </td>
-                                           <td style="padding:12px;">
-                                               {% if table.status == 'BLOCKING' %}
-                                                   <span style="background:#fed7d7;color:#c53030;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600;">
-                                                       🔴 {{ table.status }}
-                                                   </span>
-                                               {% elseif table.status == 'GLOBAL' %}
-                                                   <span style="background:#fef5e7;color:#d69e2e;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600;">
-                                                       🟡 {{ table.status }}
-                                                   </span>
-                                               {% else %}
-                                                   <span style="background:#f0fff4;color:#38a169;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600;">
-                                                       🟢 {{ table.status }}
-                                                   </span>
-                                               {% endif %}
-                                           </td>
-                                           <td style="padding:12px;">
-                                               <form method="post" style="display:inline;" onsubmit="return confirm('Êtes-vous sûr de vouloir tuer cette session ?');">
-                                                   <input type="hidden" name="action" value="kill_session">
-                                                   <input type="hidden" name="sid" value="{{ table.sid }}">
-                                                   <input type="hidden" name="serial" value="{{ table.serial# }}">
-                                                   <button type="submit" class="btn btn-danger" style="background:#e53e3e;color:white;padding:6px 12px;border:none;border-radius:4px;font-size:12px;">
-                                                       🗑️ Tuer
-                                                   </button>
-                                               </form>
-                                           </td>
-                                       </tr>
-                                   {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        {% endif %}
-
-        {% if killResults is not empty %}
-            <div style="background:#f7fafc;border-radius:8px;padding:20px;margin-top:20px;">
-                <h4 style="margin-top:0;color:#2d3748;">Résultats des suppressions</h4>
-                {% for result in killResults %}
-                    <div style="padding:8px 0;border-bottom:1px solid #e2e8f0;">
-                        <strong>Session {{ result.sid }},{{ result.serial }}</strong> - Table: {{ result.object_name }}
-                        {% if result.success %}
-                            <span style="color:#38a169;">✅ Supprimée avec succès</span>
-                        {% else %}
-                            <span style="color:#e53e3e;">❌ Erreur: {{ result.error }}</span>
-                        {% endif %}
-                    </div>
-                {% endfor %}
-            </div>
-        {% endif %}
+        </div>
     </div>
 </div>
 {% endblock %}

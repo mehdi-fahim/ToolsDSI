@@ -1,22 +1,15 @@
 doctrine:
     dbal:
-        default_connection: default
-        connections:
-            default:
-                url: '%env(resolve:DATABASE_URL)%'
-                driver: 'oci8'
-                charset: AL32UTF8
-                profiling_collect_backtrace: '%kernel.debug%'
-                use_savepoints: true
-                options:
-                    charset: 'utf8'
-            system:
-                url: '%env(resolve:SYSTEM_DATABASE_URL)%'
-                driver: 'oci8'
-                charset: AL32UTF8
-                use_savepoints: true
-                options:
-                    charset: 'utf8'
+        url: '%env(resolve:DATABASE_URL)%'
+        driver: 'oci8'
+        charset: AL32UTF8
+        # Configuration générique - sera détectée automatiquement selon l'URL
+        profiling_collect_backtrace: '%kernel.debug%'
+        use_savepoints: true
+        
+        # Options par défaut (seront surchargées selon la base de données)
+        options:
+            charset: 'utf8'
     orm:
         auto_generate_proxy_classes: true
         enable_lazy_ghost_objects: true
