@@ -21,7 +21,6 @@ use App\Service\PropositionOracleService;
 use App\Service\BeckrelOracleService;
 use App\Service\SowellOracleService;
 use App\Service\ModeOperatoireService;
-use App\Service\SystemOracleService;
 use App\Service\UserActionLogger;
 use App\Service\LogViewerService;
 use App\Service\DetailedUserActionLogger;
@@ -41,7 +40,6 @@ class AdminController extends AbstractController
         private SowellOracleService $sowellOracleService,
         private ModeOperatoireService $modeOperatoireService,
         private \App\Service\LogementOracleService $logementOracleService,
-        private ?SystemOracleService $systemOracleService = null,
         private UserActionLogger $userActionLogger,
         private LogViewerService $logViewerService,
         private ?DetailedUserActionLogger $detailedUserActionLogger = null
@@ -1261,73 +1259,41 @@ class AdminController extends AbstractController
         $killResults = [];
         $loadSessions = false;
 
-        // Par défaut, on affiche juste le bouton, pas de chargement automatique
+        // Page système ultra-simplifiée sans aucun service Oracle
         if ($request->isMethod('POST')) {
             $action = $request->request->get('action', '');
             
-            try {
-                switch ($action) {
-                    case 'load_sessions':
-                        $loadSessions = true;
-                        // Données de test statiques pour éviter toute erreur Oracle
-                        $lockedTables = [
-                            [
-                                'sid' => '123',
-                                'serial#' => '456',
-                                'object_name' => 'Session de test 1',
-                                'osuser' => 'SYSTEM',
-                                'status' => 'ACTIVE'
-                            ],
-                            [
-                                'sid' => '789',
-                                'serial#' => '012',
-                                'object_name' => 'Session de test 2',
-                                'osuser' => 'PCH',
-                                'status' => 'ACTIVE'
-                            ]
-                        ];
-                        
-                        // Log de l'action
-                        if ($this->detailedUserActionLogger) {
-                            $this->detailedUserActionLogger->logButtonClick(
-                                'Load Sessions',
-                                'System Page',
-                                $session->get('user_id'),
-                                $request->getClientIp()
-                            );
-                        }
-                        break;
-                        
-                    case 'kill_session':
-                        $sid = (int)$request->request->get('sid');
-                        $serial = (int)$request->request->get('serial');
-                        
-                        // Simulation pour éviter les erreurs Oracle
-                        $success = "Session {$sid},{$serial} tuée avec succès (simulation).";
-                        
-                        // Log de l'action critique
-                        $this->userActionLogger->logCriticalSystemAction('KILL_SESSION', [
-                            'sid' => $sid,
-                            'serial' => $serial,
-                            'user_id' => $session->get('user_id')
-                        ]);
-                        break;
-                        
-                    case 'kill_all':
-                        // Simulation pour éviter les erreurs Oracle
-                        $success = "Toutes les sessions ont été tuées avec succès (simulation).";
-                        
-                        // Log de l'action critique
-                        $this->userActionLogger->logCriticalSystemAction('KILL_ALL_SESSIONS', [
-                            'killed_count' => 2,
-                            'total_count' => 2,
-                            'user_id' => $session->get('user_id')
-                        ]);
-                        break;
-                }
-                
-            } catch (\Exception $e) {
-                $error = 'Erreur lors de l\'exécution: ' . $e->getMessage();
+            switch ($action) {
+                case 'load_sessions':
+                    $loadSessions = true;
+                    // Données de test statiques
+                    $lockedTables = [
+                        [
+                            'sid' => '123',
+                            'serial#' => '456',
+                            'object_name' => 'Session de test 1',
+                            'osuser' => 'SYSTEM',
+                            'status' => 'ACTIVE'
+                        ],
+                        [
+                            'sid' => '789',
+                            'serial#' => '012',
+                            'object_name' => 'Session de test 2',
+                            'osuser' => 'PCH',
+                            'status' => 'ACTIVE'
+                        ]
+                    ];
+                    break;
+                    
+                case 'kill_session':
+                    $sid = (int)$request->request->get('sid');
+                    $serial = (int)$request->request->get('serial');
+                    $success = "Session {$sid},{$serial} tuée avec succès (simulation).";
+                    break;
+                    
+                case 'kill_all':
+                    $success = "Toutes les sessions ont été tuées avec succès (simulation).";
+                    break;
             }
         }
 
