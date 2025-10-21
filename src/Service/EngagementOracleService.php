@@ -168,7 +168,7 @@ class EngagementOracleService
                     // Créer un nouvel enregistrement avec TAITL_COD requis
                     $result = $this->connection->executeStatement(
                         "INSERT INTO TAENR (ICEXE_NUM, TAENG_NUM, TOTIE_CODSCTE, TOTIE_COD, TAITL_COD) VALUES (?, ?, ?, ?, ?)",
-                        [$exercice, $numeroEngagement, $societe, is_numeric($data['responsable_engagement']) ? (int)$data['responsable_engagement'] : $data['responsable_engagement'], 'DEFAULT']
+                        [$exercice, $numeroEngagement, $societe, is_numeric($data['responsable_engagement']) ? (int)$data['responsable_engagement'] : $data['responsable_engagement'], 'RESEN']
                     );
                 }
                 

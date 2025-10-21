@@ -41,7 +41,7 @@ class AdminController extends AbstractController
         private SowellOracleService $sowellOracleService,
         private ModeOperatoireService $modeOperatoireService,
         private \App\Service\LogementOracleService $logementOracleService,
-        private SystemOracleService $systemOracleService,
+        private ?SystemOracleService $systemOracleService = null,
         private UserActionLogger $userActionLogger,
         private LogViewerService $logViewerService,
         private ?DetailedUserActionLogger $detailedUserActionLogger = null
@@ -1261,6 +1261,7 @@ class AdminController extends AbstractController
         $killResults = [];
         $loadSessions = false;
 
+        // Par défaut, on affiche juste le bouton, pas de chargement automatique
         if ($request->isMethod('POST')) {
             $action = $request->request->get('action', '');
             
@@ -1268,7 +1269,7 @@ class AdminController extends AbstractController
                 switch ($action) {
                     case 'load_sessions':
                         $loadSessions = true;
-                        // Utiliser des données de test pour éviter les erreurs Oracle
+                        // Données de test statiques pour éviter toute erreur Oracle
                         $lockedTables = [
                             [
                                 'sid' => '123',
