@@ -50,26 +50,36 @@
         <!-- Filtres -->
         <div style="background:white;border-radius:12px;padding:24px;box-shadow:0 4px 6px rgba(0,0,0,0.1);margin-bottom:24px;">
             <h3 style="margin-top:0;color:#2d3748;">🔍 Filtres</h3>
-            <form method="get" style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
+            <form method="get" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;align-items:end;">
                 <div>
                     <label for="type" style="display:block;margin-bottom:4px;color:#4a5568;font-weight:600;">Type de log :</label>
-                    <select id="type" name="type" style="padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;">
+                    <select id="type" name="type" style="padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;width:100%;">
                         <option value="user_actions" {{ logType == 'user_actions' ? 'selected' : '' }}>Actions Utilisateur</option>
                         <option value="system_events" {{ logType == 'system_events' ? 'selected' : '' }}>Événements Système</option>
                         <option value="general" {{ logType == 'general' ? 'selected' : '' }}>Logs Généraux</option>
                     </select>
                 </div>
                 <div>
+                    <label for="user_id" style="display:block;margin-bottom:4px;color:#4a5568;font-weight:600;">Utilisateur :</label>
+                    <select id="user_id" name="user_id" style="padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;width:100%;">
+                        <option value="">Tous les utilisateurs</option>
+                        {% for user in uniqueUsers %}
+                            <option value="{{ user }}" {{ userId == user ? 'selected' : '' }}>{{ user }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
                     <label for="limit" style="display:block;margin-bottom:4px;color:#4a5568;font-weight:600;">Nombre de lignes :</label>
-                    <select id="limit" name="limit" style="padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;">
+                    <select id="limit" name="limit" style="padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;width:100%;">
                         <option value="25" {{ limit == 25 ? 'selected' : '' }}>25</option>
                         <option value="50" {{ limit == 50 ? 'selected' : '' }}>50</option>
                         <option value="100" {{ limit == 100 ? 'selected' : '' }}>100</option>
                         <option value="200" {{ limit == 200 ? 'selected' : '' }}>200</option>
                     </select>
                 </div>
-                <div style="display:flex;align-items:end;height:100%;">
+                <div style="display:flex;align-items:end;height:100%;gap:8px;">
                     <button type="submit" class="btn btn-primary" style="padding:8px 16px;">Filtrer</button>
+                    <a href="{{ path('admin_logs') }}" class="btn" style="padding:8px 16px;background:#e2e8f0;color:#4a5568;text-decoration:none;border-radius:6px;">Effacer</a>
                 </div>
             </form>
         </div>
@@ -77,15 +87,22 @@
         <!-- Affichage des logs -->
         <div style="background:white;border-radius:12px;padding:24px;box-shadow:0 4px 6px rgba(0,0,0,0.1);">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-                <h3 style="margin:0;color:#2d3748;">
-                    {% if logType == 'user_actions' %}
-                        🔐 Actions Utilisateur
-                    {% elseif logType == 'system_events' %}
-                        ⚙️ Événements Système
-                    {% else %}
-                        📄 Logs Généraux
+                <div>
+                    <h3 style="margin:0;color:#2d3748;">
+                        {% if logType == 'user_actions' %}
+                            🔐 Actions Utilisateur
+                        {% elseif logType == 'system_events' %}
+                            ⚙️ Événements Système
+                        {% else %}
+                            📄 Logs Généraux
+                        {% endif %}
+                    </h3>
+                    {% if userId %}
+                        <p style="margin:4px 0 0 0;color:#4a5568;font-size:14px;">
+                            <strong>Filtré par utilisateur :</strong> {{ userId }}
+                        </p>
                     {% endif %}
-                </h3>
+                </div>
                 <span style="color:#718096;font-size:14px;">{{ logs|length }} entrées affichées</span>
             </div>
 

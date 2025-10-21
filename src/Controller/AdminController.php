@@ -24,6 +24,7 @@ use App\Service\ModeOperatoireService;
 use App\Service\SystemOracleService;
 use App\Service\UserActionLogger;
 use App\Service\LogViewerService;
+use App\Service\OracleDiagnosticService;
 
 #[Route('/admin')]
 class AdminController extends AbstractController
@@ -42,7 +43,8 @@ class AdminController extends AbstractController
         private \App\Service\LogementOracleService $logementOracleService,
         private SystemOracleService $systemOracleService,
         private UserActionLogger $userActionLogger,
-        private LogViewerService $logViewerService
+        private LogViewerService $logViewerService,
+        private OracleDiagnosticService $oracleDiagnosticService
     ) {}
 
     #[Route('', name: 'admin_dashboard', methods: ['GET'])]
@@ -455,7 +457,7 @@ class AdminController extends AbstractController
             'responsable_engagement' => '',
             'marche_rattache' => '',
             'lot_reference' => '',
-            'pluriannuel' => ''
+            'pluriannuel' => $session->get('engagement_pluriannuel', '')
         ];
 
         if ($request->isMethod('POST')) {
@@ -471,6 +473,9 @@ class AdminController extends AbstractController
                 'lot_reference' => $request->request->get('lot_reference', ''),
                 'pluriannuel' => $request->request->get('pluriannuel', '')
             ];
+            
+            // Conserver la valeur pluriannuel dans la session pour la prochaine requête
+            $session->set('engagement_pluriannuel', $engagementData['pluriannuel']);
 
             // Validation des données
             if (empty($engagementData['societe']) || empty($engagementData['exercice'])) {
@@ -492,6 +497,14 @@ class AdminController extends AbstractController
                         if (!empty($updateResult['updated'])) {
                             $success .= ' Champs modifiés: ' . implode(', ', array_keys($updateResult['updated']));
                         }
+                        
+                        // Log de l'action
+                        $this->userActionLogger->logDataModification('ENGAGEMENT', 'UPDATE', [
+                            'exercice' => $engagementData['exercice'],
+                            'numero_engagement' => $engagementData['numero_engagement'],
+                            'societe' => $engagementData['societe'],
+                            'updated_fields' => $updateResult['updated'] ?? []
+                        ], $session->get('user_id'));
                     } else {
                         $error = $updateResult['error'];
                     }
@@ -1272,19 +1285,21 @@ class AdminController extends AbstractController
 
         $logType = $request->query->get('type', 'user_actions');
         $limit = (int)$request->query->get('limit', 50);
+        $userId = $request->query->get('user_id', '');
 
         $logs = [];
         $stats = $this->logViewerService->getLogStats();
+        $uniqueUsers = $this->logViewerService->getUniqueUsers();
 
         switch ($logType) {
             case 'user_actions':
-                $logs = $this->logViewerService->getUserActionLogs($limit);
+                $logs = $this->logViewerService->getUserActionLogs($limit, $userId ?: null);
                 break;
             case 'system_events':
-                $logs = $this->logViewerService->getSystemEventLogs($limit);
+                $logs = $this->logViewerService->getSystemEventLogs($limit, $userId ?: null);
                 break;
             case 'general':
-                $logs = $this->logViewerService->getGeneralLogs($limit);
+                $logs = $this->logViewerService->getGeneralLogs($limit, $userId ?: null);
                 break;
         }
 
@@ -1293,6 +1308,24 @@ class AdminController extends AbstractController
             'stats' => $stats,
             'logType' => $logType,
             'limit' => $limit,
+            'userId' => $userId,
+            'uniqueUsers' => $uniqueUsers,
+        ]);
+    }
+
+    #[Route('/admin/diagnostic', name: 'admin_diagnostic', methods: ['GET'])]
+    public function diagnostic(SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        $connectionTest = $this->oracleDiagnosticService->testConnection();
+        $constantsTest = $this->oracleDiagnosticService->testOci8Constants();
+
+        return $this->render('admin/diagnostic.html.twig', [
+            'connection_test' => $connectionTest,
+            'constants_test' => $constantsTest,
         ]);
     }
 

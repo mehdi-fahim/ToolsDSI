@@ -1,0 +1,123 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Diagnostic Oracle{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="admin-header">
+        <h1>🔧 Diagnostic Oracle</h1>
+        <p>Diagnostic des problèmes de connexion Oracle et des extensions PHP.</p>
+    </div>
+
+    <div class="admin-content">
+        <!-- Test de connexion -->
+        <div style="background:white;border-radius:12px;padding:24px;box-shadow:0 4px 6px rgba(0,0,0,0.1);margin-bottom:24px;">
+            <h3 style="margin-top:0;color:#2d3748;">🔌 Test de Connexion Oracle</h3>
+            
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:20px;">
+                <div style="background:#f7fafc;padding:16px;border-radius:8px;border-left:4px solid {{ connection_test.connection_status == 'Success' ? '#38a169' : '#e53e3e' }};">
+                    <h4 style="margin:0 0 8px 0;color:#2d3748;">Statut de Connexion</h4>
+                    <p style="margin:0;color:{{ connection_test.connection_status == 'Success' ? '#22543d' : '#c53030' }};font-weight:600;">
+                        {{ connection_test.connection_status }}
+                    </p>
+                </div>
+                
+                <div style="background:#f7fafc;padding:16px;border-radius:8px;border-left:4px solid {{ connection_test.oci8_loaded ? '#38a169' : '#e53e3e' }};">
+                    <h4 style="margin:0 0 8px 0;color:#2d3748;">Extension OCI8</h4>
+                    <p style="margin:0;color:{{ connection_test.oci8_loaded ? '#22543d' : '#c53030' }};font-weight:600;">
+                        {{ connection_test.oci8_loaded ? 'Chargée' : 'Non chargée' }}
+                    </p>
+                </div>
+                
+                <div style="background:#f7fafc;padding:16px;border-radius:8px;border-left:4px solid #4299e1;">
+                    <h4 style="margin:0 0 8px 0;color:#2d3748;">Version PHP</h4>
+                    <p style="margin:0;color:#4a5568;">{{ connection_test.php_version }}</p>
+                </div>
+                
+                <div style="background:#f7fafc;padding:16px;border-radius:8px;border-left:4px solid #4299e1;">
+                    <h4 style="margin:0 0 8px 0;color:#2d3748;">Version OCI8</h4>
+                    <p style="margin:0;color:#4a5568;">{{ connection_test.oci8_version }}</p>
+                </div>
+            </div>
+
+            {% if connection_test.error_message %}
+                <div style="background:#fed7d7;color:#c53030;padding:12px 16px;border-radius:8px;margin-bottom:16px;">
+                    <strong>Erreur de connexion :</strong><br>
+                    {{ connection_test.error_message }}
+                </div>
+            {% endif %}
+
+            {% if connection_test.test_query_result %}
+                <div style="background:#c6f6d5;color:#22543d;padding:12px 16px;border-radius:8px;">
+                    <strong>Test de requête réussi :</strong> {{ connection_test.test_query_result }}
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Test des constantes OCI8 -->
+        <div style="background:white;border-radius:12px;padding:24px;box-shadow:0 4px 6px rgba(0,0,0,0.1);margin-bottom:24px;">
+            <h3 style="margin-top:0;color:#2d3748;">📋 Constantes OCI8</h3>
+            
+            <table style="width:100%; border-collapse: collapse; margin-top: 16px;">
+                <thead>
+                    <tr style="background:#f7fafc;">
+                        <th style="padding: 12px; border: 1px solid #e2e8f0; text-align: left;">Constante</th>
+                        <th style="padding: 12px; border: 1px solid #e2e8f0; text-align: left;">Valeur</th>
+                        <th style="padding: 12px; border: 1px solid #e2e8f0; text-align: left;">Statut</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for constant, value in constants_test %}
+                        <tr>
+                            <td style="padding: 12px; border: 1px solid #e2e8f0; font-family: monospace;">{{ constant }}</td>
+                            <td style="padding: 12px; border: 1px solid #e2e8f0;">{{ value }}</td>
+                            <td style="padding: 12px; border: 1px solid #e2e8f0;">
+                                <span style="color: {{ value != 'Non définie' ? '#38a169' : '#e53e3e' }}; font-weight: 600;">
+                                    {{ value != 'Non définie' ? '✅ Définie' : '❌ Non définie' }}
+                                </span>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Solutions recommandées -->
+        <div style="background:white;border-radius:12px;padding:24px;box-shadow:0 4px 6px rgba(0,0,0,0.1);">
+            <h3 style="margin-top:0;color:#2d3748;">💡 Solutions Recommandées</h3>
+            
+            {% if not connection_test.oci8_loaded %}
+                <div style="background:#fef5e7;color:#744210;padding:16px;border-radius:8px;margin-bottom:16px;">
+                    <h4 style="margin:0 0 8px 0;">Extension OCI8 non chargée</h4>
+                    <p style="margin:0;">L'extension OCI8 n'est pas chargée. Vérifiez votre configuration PHP :</p>
+                    <ul style="margin:8px 0 0 20px;">
+                        <li>Décommentez <code>extension=oci8</code> dans php.ini</li>
+                        <li>Redémarrez le serveur web</li>
+                        <li>Vérifiez que les bibliothèques Oracle sont installées</li>
+                    </ul>
+                </div>
+            {% endif %}
+
+            {% if connection_test.connection_status != 'Success' %}
+                <div style="background:#fef5e7;color:#744210;padding:16px;border-radius:8px;margin-bottom:16px;">
+                    <h4 style="margin:0 0 8px 0;">Problème de connexion Oracle</h4>
+                    <p style="margin:0;">Vérifiez votre configuration de base de données :</p>
+                    <ul style="margin:8px 0 0 20px;">
+                        <li>Serveur Oracle accessible</li>
+                        <li>Identifiants corrects</li>
+                        <li>Port 1521 ouvert</li>
+                        <li>Client Oracle installé</li>
+                    </ul>
+                </div>
+            {% endif %}
+
+            {% if connection_test.connection_status == 'Success' %}
+                <div style="background:#c6f6d5;color:#22543d;padding:16px;border-radius:8px;">
+                    <h4 style="margin:0 0 8px 0;">✅ Connexion Oracle fonctionnelle</h4>
+                    <p style="margin:0;">Votre connexion Oracle fonctionne correctement. Le problème peut être ailleurs.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

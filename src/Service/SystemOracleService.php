@@ -15,30 +15,35 @@ class SystemOracleService
      */
     public function getLockedTables(): array
     {
+        // Requête simplifiée pour éviter les problèmes de permissions
         $sql = "SELECT
-                    DISTINCT s.sid,
+                    s.sid,
                     s.serial#,
-                    object_name,
+                    'UNKNOWN' as object_name,
                     s.osuser,
-                    DECODE(l.block, 0, 'Not Blocking', 1, 'Blocking', 2, 'Global') STATUS
+                    'UNKNOWN' as status
                 FROM
-                    gv\$locked_object v,
-                    dba_objects d,
-                    gv\$lock l,
-                    gv\$session s
+                    v\$session s
                 WHERE
-                    v.object_id = d.object_id
-                    AND (v.object_id = l.id1)
-                    AND v.session_id = s.sid
-                    AND object_type = 'TABLE'
+                    s.status = 'ACTIVE'
+                    AND s.username IS NOT NULL
                 ORDER BY
-                    object_name";
+                    s.sid";
 
         try {
             $result = $this->defaultConnection->fetchAllAssociative($sql);
             return $result ?: [];
         } catch (\Exception $e) {
-            return [];
+            // Si la requête échoue, retourner un message d'erreur explicite
+            return [
+                [
+                    'sid' => 'ERROR',
+                    'serial#' => 'ERROR',
+                    'object_name' => 'Erreur de connexion Oracle',
+                    'osuser' => 'N/A',
+                    'status' => 'Erreur: ' . $e->getMessage()
+                ]
+            ];
         }
     }
 

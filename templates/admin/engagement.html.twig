@@ -42,7 +42,7 @@
             </div>
             <div style="margin-bottom: 12px;">
                 <label style="display:flex; align-items:center; gap:10px; color:#4a5568;">
-                    <input type="checkbox" name="pluriannuel" value="1" {{ (engagementData.pluriannuel ?? '') ? 'checked' : '' }} />
+                    <input type="checkbox" name="pluriannuel" value="1" {{ (engagementData.pluriannuel ?? '') == '1' ? 'checked' : '' }} />
                     Pluriannuel
                 </label>
             </div>
@@ -345,6 +345,27 @@
                     this.title = '';
                 }
             });
+        }
+
+        // Gestion de la case pluriannuel
+        const pluriannuelCheckbox = document.querySelector('input[name="pluriannuel"]');
+        const pluriannuelInfo = document.getElementById('pluriannuel-info');
+        
+        if (pluriannuelCheckbox && pluriannuelInfo) {
+            // Fonction pour afficher/masquer l'info pluriannuel
+            function togglePluriannuelInfo() {
+                if (pluriannuelCheckbox.checked) {
+                    pluriannuelInfo.style.display = 'block';
+                } else {
+                    pluriannuelInfo.style.display = 'none';
+                }
+            }
+            
+            // État initial
+            togglePluriannuelInfo();
+            
+            // Écouter les changements
+            pluriannuelCheckbox.addEventListener('change', togglePluriannuelInfo);
         }
     });
 </script>

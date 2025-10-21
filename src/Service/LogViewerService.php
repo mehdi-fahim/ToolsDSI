@@ -14,28 +14,55 @@ class LogViewerService
     /**
      * Récupère les logs d'actions utilisateur
      */
-    public function getUserActionLogs(int $limit = 100): array
+    public function getUserActionLogs(int $limit = 100, ?string $userId = null): array
     {
         $logFile = $this->logsDir . '/user_actions.log';
-        return $this->parseLogFile($logFile, $limit);
+        $logs = $this->parseLogFile($logFile, $limit);
+        
+        // Filtrer par utilisateur si spécifié
+        if ($userId !== null && $userId !== '') {
+            $logs = array_filter($logs, function($log) use ($userId) {
+                return strpos($log['message'], $userId) !== false;
+            });
+        }
+        
+        return $logs;
     }
 
     /**
      * Récupère les logs d'événements système
      */
-    public function getSystemEventLogs(int $limit = 100): array
+    public function getSystemEventLogs(int $limit = 100, ?string $userId = null): array
     {
         $logFile = $this->logsDir . '/system_events.log';
-        return $this->parseLogFile($logFile, $limit);
+        $logs = $this->parseLogFile($logFile, $limit);
+        
+        // Filtrer par utilisateur si spécifié
+        if ($userId !== null && $userId !== '') {
+            $logs = array_filter($logs, function($log) use ($userId) {
+                return strpos($log['message'], $userId) !== false;
+            });
+        }
+        
+        return $logs;
     }
 
     /**
      * Récupère les logs généraux
      */
-    public function getGeneralLogs(int $limit = 100): array
+    public function getGeneralLogs(int $limit = 100, ?string $userId = null): array
     {
         $logFile = $this->logsDir . '/dev.log';
-        return $this->parseLogFile($logFile, $limit);
+        $logs = $this->parseLogFile($logFile, $limit);
+        
+        // Filtrer par utilisateur si spécifié
+        if ($userId !== null && $userId !== '') {
+            $logs = array_filter($logs, function($log) use ($userId) {
+                return strpos($log['message'], $userId) !== false;
+            });
+        }
+        
+        return $logs;
     }
 
     /**
@@ -111,5 +138,43 @@ class LogViewerService
                 'lines' => file_exists($generalFile) ? count(file($generalFile)) : 0
             ]
         ];
+    }
+
+    /**
+     * Récupère la liste des utilisateurs uniques dans les logs
+     */
+    public function getUniqueUsers(): array
+    {
+        $users = [];
+        
+        // Analyser les logs d'actions utilisateur
+        $userActionsFile = $this->logsDir . '/user_actions.log';
+        if (file_exists($userActionsFile)) {
+            $lines = file($userActionsFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            foreach ($lines as $line) {
+                // Extraire les user_id des logs
+                if (preg_match('/"user_id":"([^"]+)"/', $line, $matches)) {
+                    $users[] = $matches[1];
+                }
+            }
+        }
+        
+        // Analyser les logs système
+        $systemEventsFile = $this->logsDir . '/system_events.log';
+        if (file_exists($systemEventsFile)) {
+            $lines = file($systemEventsFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            foreach ($lines as $line) {
+                // Extraire les user_id des logs système
+                if (preg_match('/"user_id":"([^"]+)"/', $line, $matches)) {
+                    $users[] = $matches[1];
+                }
+            }
+        }
+        
+        // Retourner les utilisateurs uniques triés
+        $uniqueUsers = array_unique($users);
+        sort($uniqueUsers);
+        
+        return $uniqueUsers;
     }
 }
