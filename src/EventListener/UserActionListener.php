@@ -8,8 +8,9 @@ use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 
-#[AsEventListener(event: KernelEvents::REQUEST, priority: 1000)]
-#[AsEventListener(event: KernelEvents::RESPONSE, priority: -1000)]
+// Temporairement désactivé pour debug
+// #[AsEventListener(event: KernelEvents::REQUEST, priority: 1000)]
+// #[AsEventListener(event: KernelEvents::RESPONSE, priority: -1000)]
 class UserActionListener
 {
     private ?string $requestId = null;
@@ -41,9 +42,18 @@ class UserActionListener
         }
 
         $session = $request->getSession();
-        $userId = $session->get('user_id', 'ANONYMOUS');
-        $userName = $session->get('user_nom', '') . ' ' . $session->get('user_prenom', '');
-        $userName = trim($userName) ?: 'Utilisateur inconnu';
+        $userId = 'ANONYMOUS';
+        $userName = 'Utilisateur inconnu';
+        
+        try {
+            if ($session->isStarted()) {
+                $userId = $session->get('user_id', 'ANONYMOUS');
+                $userName = $session->get('user_nom', '') . ' ' . $session->get('user_prenom', '');
+                $userName = trim($userName) ?: 'Utilisateur inconnu';
+            }
+        } catch (\Exception $e) {
+            // Session non disponible, utiliser les valeurs par défaut
+        }
 
         $actionData = [
             'request_id' => $this->requestId,
@@ -85,8 +95,16 @@ class UserActionListener
         }
 
         $session = $request->getSession();
-        $userId = $session->get('user_id', 'ANONYMOUS');
+        $userId = 'ANONYMOUS';
         $duration = $this->startTime ? round((microtime(true) - $this->startTime) * 1000, 2) : 0;
+        
+        try {
+            if ($session->isStarted()) {
+                $userId = $session->get('user_id', 'ANONYMOUS');
+            }
+        } catch (\Exception $e) {
+            // Session non disponible, utiliser les valeurs par défaut
+        }
 
         $responseData = [
             'request_id' => $this->requestId,

@@ -44,7 +44,7 @@ class AdminController extends AbstractController
         private SystemOracleService $systemOracleService,
         private UserActionLogger $userActionLogger,
         private LogViewerService $logViewerService,
-        private DetailedUserActionLogger $detailedUserActionLogger
+        private ?DetailedUserActionLogger $detailedUserActionLogger = null
     ) {}
 
     #[Route('', name: 'admin_dashboard', methods: ['GET'])]
@@ -55,11 +55,13 @@ class AdminController extends AbstractController
         }
 
         // Log de l'accès au dashboard
-        $this->detailedUserActionLogger->logPageAccess(
-            'Dashboard',
-            $session->get('user_id'),
-            $request->getClientIp()
-        );
+        if ($this->detailedUserActionLogger) {
+            $this->detailedUserActionLogger->logPageAccess(
+                'Dashboard',
+                $session->get('user_id'),
+                $request->getClientIp()
+            );
+        }
         
         // Liste des entités disponibles
         $availableEntities = [
@@ -514,24 +516,28 @@ class AdminController extends AbstractController
                         ], $session->get('user_id'));
 
                         // Log détaillé
-                        $this->detailedUserActionLogger->logFormSubmit(
-                            'Engagement Update',
-                            'Engagement Page',
-                            $engagementData,
-                            $session->get('user_id'),
-                            $request->getClientIp()
-                        );
+                        if ($this->detailedUserActionLogger) {
+                            $this->detailedUserActionLogger->logFormSubmit(
+                                'Engagement Update',
+                                'Engagement Page',
+                                $engagementData,
+                                $session->get('user_id'),
+                                $request->getClientIp()
+                            );
+                        }
                     } else {
                         $error = $updateResult['error'];
                         
                         // Log de l'erreur
-                        $this->detailedUserActionLogger->logUserError(
-                            $updateResult['error'],
-                            'Engagement Page',
-                            $engagementData,
-                            $session->get('user_id'),
-                            $request->getClientIp()
-                        );
+                        if ($this->detailedUserActionLogger) {
+                            $this->detailedUserActionLogger->logUserError(
+                                $updateResult['error'],
+                                'Engagement Page',
+                                $engagementData,
+                                $session->get('user_id'),
+                                $request->getClientIp()
+                            );
+                        }
                     }
                 } catch (\Exception $e) {
                     $error = 'Erreur lors de la mise à jour: ' . $e->getMessage();
@@ -1258,12 +1264,14 @@ class AdminController extends AbstractController
                         $lockedTables = $this->systemOracleService->getLockedTables();
                         
                         // Log de l'action
-                        $this->detailedUserActionLogger->logButtonClick(
-                            'Load Sessions',
-                            'System Page',
-                            $session->get('user_id'),
-                            $request->getClientIp()
-                        );
+                        if ($this->detailedUserActionLogger) {
+                            $this->detailedUserActionLogger->logButtonClick(
+                                'Load Sessions',
+                                'System Page',
+                                $session->get('user_id'),
+                                $request->getClientIp()
+                            );
+                        }
                         break;
                         
                     case 'kill_session':
