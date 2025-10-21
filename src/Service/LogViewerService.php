@@ -152,8 +152,12 @@ class LogViewerService
         if (file_exists($userActionsFile)) {
             $lines = file($userActionsFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
             foreach ($lines as $line) {
-                // Extraire les user_id des logs
+                // Extraire les user_id des logs avec plusieurs patterns
                 if (preg_match('/"user_id":"([^"]+)"/', $line, $matches)) {
+                    $users[] = $matches[1];
+                } elseif (preg_match('/"user_id":\s*"([^"]+)"/', $line, $matches)) {
+                    $users[] = $matches[1];
+                } elseif (preg_match('/user_id.*?([A-Z0-9_]+)/', $line, $matches)) {
                     $users[] = $matches[1];
                 }
             }
@@ -166,6 +170,24 @@ class LogViewerService
             foreach ($lines as $line) {
                 // Extraire les user_id des logs système
                 if (preg_match('/"user_id":"([^"]+)"/', $line, $matches)) {
+                    $users[] = $matches[1];
+                } elseif (preg_match('/"user_id":\s*"([^"]+)"/', $line, $matches)) {
+                    $users[] = $matches[1];
+                } elseif (preg_match('/user_id.*?([A-Z0-9_]+)/', $line, $matches)) {
+                    $users[] = $matches[1];
+                }
+            }
+        }
+        
+        // Analyser les logs généraux pour les connexions
+        $generalFile = $this->logsDir . '/dev.log';
+        if (file_exists($generalFile)) {
+            $lines = file($generalFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            foreach ($lines as $line) {
+                // Chercher les patterns de connexion
+                if (preg_match('/logUserLogin.*?([A-Z0-9_]+)/', $line, $matches)) {
+                    $users[] = $matches[1];
+                } elseif (preg_match('/user_id.*?([A-Z0-9_]+)/', $line, $matches)) {
                     $users[] = $matches[1];
                 }
             }

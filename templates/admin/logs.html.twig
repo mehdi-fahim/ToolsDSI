@@ -60,13 +60,16 @@
                     </select>
                 </div>
                 <div>
-                    <label for="user_id" style="display:block;margin-bottom:4px;color:#4a5568;font-weight:600;">Utilisateur :</label>
+                    <label for="user_id" style="display:block;margin-bottom:4px;color:#4a5568;font-weight:600;">Utilisateur ({{ uniqueUsers|length }} trouvés) :</label>
                     <select id="user_id" name="user_id" style="padding:8px 12px;border:1px solid #e2e8f0;border-radius:6px;width:100%;">
                         <option value="">Tous les utilisateurs</option>
                         {% for user in uniqueUsers %}
                             <option value="{{ user }}" {{ userId == user ? 'selected' : '' }}>{{ user }}</option>
                         {% endfor %}
                     </select>
+                    {% if uniqueUsers|length == 0 %}
+                        <div style="color:#e53e3e;font-size:12px;margin-top:4px;">⚠️ Aucun utilisateur trouvé dans les logs</div>
+                    {% endif %}
                 </div>
                 <div>
                     <label for="limit" style="display:block;margin-bottom:4px;color:#4a5568;font-weight:600;">Nombre de lignes :</label>
@@ -80,6 +83,7 @@
                 <div style="display:flex;align-items:end;height:100%;gap:8px;">
                     <button type="submit" class="btn btn-primary" style="padding:8px 16px;">Filtrer</button>
                     <a href="{{ path('admin_logs') }}" class="btn" style="padding:8px 16px;background:#e2e8f0;color:#4a5568;text-decoration:none;border-radius:6px;">Effacer</a>
+                    <a href="{{ path('admin_logs', {'refresh': '1'}) }}" class="btn" style="padding:8px 16px;background:#4299e1;color:white;text-decoration:none;border-radius:6px;">🔄 Actualiser</a>
                 </div>
             </form>
         </div>

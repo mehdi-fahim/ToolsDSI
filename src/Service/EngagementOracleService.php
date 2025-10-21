@@ -114,35 +114,10 @@ class EngagementOracleService
 
             // Mise à jour de l'ESO administratif dans TAENG
             if (isset($data['eso_administratif']) && $data['eso_administratif'] !== '') {
-                // Vérifier d'abord que le tiers ESO existe dans la table des tiers
-                try {
-                    $tiersExists = $this->connection->executeQuery(
-                        "SELECT COUNT(*) FROM TOTIE WHERE TOTIE_COD = ?",
-                        [$data['eso_administratif']]
-                    )->fetchOne();
-
-                    if ((int)$tiersExists === 0) {
-                        throw new \Exception("Le numéro de tiers de l'ESO administratif n'existe pas.");
-                    }
-                } catch (\Exception $e) {
-                    // Si la requête échoue, essayer avec une conversion numérique
-                    if (is_numeric($data['eso_administratif'])) {
-                        $tiersExists = $this->connection->executeQuery(
-                            "SELECT COUNT(*) FROM TOTIE WHERE TOTIE_COD = ?",
-                            [(int)$data['eso_administratif']]
-                        )->fetchOne();
-
-                        if ((int)$tiersExists === 0) {
-                            throw new \Exception("Le numéro de tiers de l'ESO administratif n'existe pas.");
-                        }
-                    } else {
-                        throw new \Exception("Le numéro de tiers de l'ESO administratif n'est pas valide.");
-                    }
-                }
-
+                // L'ESO administratif est un champ avec des caractères, pas un numéro de tiers
                 $result = $this->connection->executeStatement(
                     "UPDATE TAENG SET TOESO_COD = ? WHERE ICEXE_NUM = ? AND TAENG_NUM = ? AND TOTIE_CODSCTE = ?",
-                    [is_numeric($data['eso_administratif']) ? (int)$data['eso_administratif'] : $data['eso_administratif'], $exercice, $numeroEngagement, $societe]
+                    [$data['eso_administratif'], $exercice, $numeroEngagement, $societe]
                 );
                 if ($result > 0) {
                     $updated['eso_administratif'] = $data['eso_administratif'];

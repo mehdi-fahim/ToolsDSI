@@ -8,7 +8,7 @@ use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 
-// Temporairement désactivé pour debug
+// Temporairement désactivé pour éviter les erreurs 500
 // #[AsEventListener(event: KernelEvents::REQUEST, priority: 1000)]
 // #[AsEventListener(event: KernelEvents::RESPONSE, priority: -1000)]
 class UserActionListener

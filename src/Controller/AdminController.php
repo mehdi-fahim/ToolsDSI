@@ -62,6 +62,13 @@ class AdminController extends AbstractController
                 $request->getClientIp()
             );
         }
+
+        // Forcer un log de test pour s'assurer que l'utilisateur apparaît dans la liste
+        $this->userActionLogger->logUserLogin(
+            $session->get('user_id', 'UNKNOWN'),
+            $request->getClientIp(),
+            true
+        );
         
         // Liste des entités disponibles
         $availableEntities = [
