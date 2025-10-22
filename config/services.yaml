@@ -92,6 +92,11 @@ services:
         arguments:
             $defaultConnection: '@doctrine.dbal.default_connection'
 
+    # Configuration pour le service ListeAffectationOracleService
+    App\Service\ListeAffectationOracleService:
+        arguments:
+            $defaultConnection: '@doctrine.dbal.default_connection'
+
     # Configuration pour le service ImportODService
     App\Service\ImportODService:
         arguments:

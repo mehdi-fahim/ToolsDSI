@@ -374,6 +374,11 @@
                             <span>Users Sowell</span>
                         </a>
                         {% endif %}
+                        {% if 'admin_liste_affectation' in access %}
+                        <a href="{{ path('admin_liste_affectation') }}">
+                            <span>Liste d'affectation</span>
+                        </a>
+                        {% endif %}
                     </div>
                 </li>
                 {% endif %}

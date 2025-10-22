@@ -26,6 +26,7 @@ use App\Service\LogViewerService;
 use App\Service\DetailedUserActionLogger;
 use App\Service\ImportODService;
 use App\Service\ImportODOracleService;
+use App\Service\ListeAffectationOracleService;
 
 #[Route('/admin')]
 class AdminController extends AbstractController
@@ -47,6 +48,7 @@ class AdminController extends AbstractController
         private \App\Service\ReouvExemptesOracleService $reouvExemptesOracleService,
         private ImportODService $importODService,
         private ImportODOracleService $importODOracleService,
+        private ListeAffectationOracleService $listeAffectationOracleService,
         private ?DetailedUserActionLogger $detailedUserActionLogger = null
     ) {}
 
@@ -974,6 +976,7 @@ class AdminController extends AbstractController
             'admin_sowell_users' => 'Utilisateurs Sowell',
             'admin_mode_operatoire' => 'Mode opératoire',
             'admin_import_od' => 'Import OD',
+            'admin_liste_affectation' => 'Liste d\'affectation',
         ];
 
         $isAdminFlag = null;
@@ -1537,6 +1540,89 @@ class AdminController extends AbstractController
             'error' => $error,
             'success' => $success
         ]);
+    }
+
+    #[Route('/liste-affectation', name: 'admin_liste_affectation', methods: ['GET'])]
+    public function listeAffectation(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        // Récupérer les paramètres de pagination et recherche
+        $page = (int) $request->query->get('page', 1);
+        $search = $request->query->get('search', '');
+        $groupe = $request->query->get('groupe', '');
+        $limit = 20; // 20 lignes par page
+
+        try {
+            // Récupérer les données Oracle avec pagination et recherche
+            $result = $this->listeAffectationOracleService->getListeAffectations($search, $groupe, $page, $limit);
+            
+            // Récupérer les statistiques
+            $stats = $this->listeAffectationOracleService->getAffectationStats();
+            
+            // Récupérer la liste des groupes pour le filtre
+            $groupes = $this->listeAffectationOracleService->getGroupes();
+            
+            return $this->render('admin/liste_affectation.html.twig', [
+                'data' => $result['data'],
+                'pagination' => [
+                    'page' => $result['page'],
+                    'total' => $result['total'],
+                    'limit' => $result['limit'],
+                    'totalPages' => $result['totalPages']
+                ],
+                'search' => $search,
+                'groupe' => $groupe,
+                'groupes' => $groupes,
+                'stats' => $stats
+            ]);
+            
+        } catch (\Exception $e) {
+            return $this->render('admin/liste_affectation.html.twig', [
+                'data' => [],
+                'pagination' => [
+                    'page' => 1,
+                    'total' => 0,
+                    'limit' => 20,
+                    'totalPages' => 0
+                ],
+                'search' => $search,
+                'groupe' => $groupe,
+                'groupes' => [],
+                'stats' => [],
+                'error' => 'Erreur lors du chargement des données: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    #[Route('/liste-affectation/detail/{lot}', name: 'admin_liste_affectation_detail', methods: ['GET'])]
+    public function listeAffectationDetail(string $lot, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        try {
+            $affectation = $this->listeAffectationOracleService->getAffectationDetails($lot);
+            
+            if (!$affectation) {
+                throw $this->createNotFoundException('Affectation non trouvée pour le LOT: ' . $lot);
+            }
+
+            return $this->render('admin/liste_affectation_detail.html.twig', [
+                'affectation' => $affectation,
+                'lot' => $lot
+            ]);
+            
+        } catch (\Exception $e) {
+            return $this->render('admin/liste_affectation_detail.html.twig', [
+                'affectation' => null,
+                'lot' => $lot,
+                'error' => 'Erreur lors du chargement des détails: ' . $e->getMessage()
+            ]);
+        }
     }
 
     private function isAdmin(SessionInterface $session): bool

@@ -84,3 +84,14 @@ admin_user_show_password:
     controller: App\Controller\AdminController::showPassword
 
 # Routes pour la section Import (gérées par attributs dans AdminController)
+
+# Routes pour la liste d'affectation
+admin_liste_affectation:
+    path: /admin/liste-affectation
+    controller: App\Controller\AdminController::listeAffectation
+
+admin_liste_affectation_detail:
+    path: /admin/liste-affectation/detail/{lot}
+    controller: App\Controller\AdminController::listeAffectationDetail
+    requirements:
+        lot: '[a-zA-Z0-9_-]+'

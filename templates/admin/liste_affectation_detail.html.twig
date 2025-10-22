@@ -1,0 +1,172 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Détails affectation - {{ lot }}{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="admin-header">
+        <h1>👁️ Détails de l'affectation</h1>
+        <p>LOT: <strong>{{ lot }}</strong></p>
+    </div>
+
+    {% if error %}
+        <div style="background: #fed7d7; color: #c53030; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #e53e3e;">
+            <strong>❌ Erreur :</strong> {{ error }}
+        </div>
+    {% endif %}
+
+    {% if affectation %}
+    <div class="admin-content">
+        {# Bouton retour #}
+        <div style="margin-bottom: 20px;">
+            <a href="{{ path('admin_liste_affectation') }}" class="btn btn-secondary">
+                ← Retour à la liste
+            </a>
+        </div>
+
+        {# Informations générales #}
+        <div style="background: #f7fafc; padding: 25px; border-radius: 12px; margin-bottom: 30px;">
+            <h3 style="color: #4a5568; margin-bottom: 20px; font-size: 1.5rem;">📋 Informations générales</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                <div>
+                    <strong>Agence:</strong> {{ affectation.AGENCE|default('-') }}
+                </div>
+                <div>
+                    <strong>LOT:</strong> {{ affectation.LOT|default('-') }}
+                </div>
+                <div>
+                    <strong>Nature du lot:</strong> {{ affectation.NATURE_LOT|default('-') }}
+                </div>
+                <div>
+                    <strong>Groupe:</strong> {{ affectation.GROUPE|default('-') }}
+                </div>
+                <div>
+                    <strong>ESO Groupe:</strong> {{ affectation.ESO_GROUPE|default('-') }}
+                </div>
+                <div>
+                    <strong>Bâtiment:</strong> {{ affectation.BATIMENT|default('-') }}
+                </div>
+                <div>
+                    <strong>ESO Bâtiment:</strong> {{ affectation.ESO_BATIMENT|default('-') }}
+                </div>
+                <div>
+                    <strong>Escalier:</strong> {{ affectation.ESCALIER|default('-') }}
+                </div>
+                <div>
+                    <strong>ESO Escalier:</strong> {{ affectation.ESO_ESC|default('-') }}
+                </div>
+            </div>
+        </div>
+
+        {# Informations du gardien #}
+        <div style="background: #f7fafc; padding: 25px; border-radius: 12px; margin-bottom: 30px;">
+            <h3 style="color: #4a5568; margin-bottom: 20px; font-size: 1.5rem;">👤 Informations du gardien</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                <div>
+                    <strong>Gardien du lot:</strong> {{ affectation.GARDIEN_LOT|default('-') }}
+                </div>
+                <div>
+                    <strong>ESO Gardien:</strong> {{ affectation.ESO_GARDIEN|default('-') }}
+                </div>
+                <div>
+                    <strong>Téléphone:</strong> 
+                    {% if affectation.GARD_TEL %}
+                        <a href="tel:{{ affectation.GARD_TEL }}" style="color: #4299e1; text-decoration: none;">
+                            {{ affectation.GARD_TEL }}
+                        </a>
+                    {% else %}
+                        -
+                    {% endif %}
+                </div>
+                <div>
+                    <strong>Email:</strong> 
+                    {% if affectation.GARD_MAIL %}
+                        <a href="mailto:{{ affectation.GARD_MAIL }}" style="color: #4299e1; text-decoration: none;">
+                            {{ affectation.GARD_MAIL }}
+                        </a>
+                    {% else %}
+                        -
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {# Informations par groupe #}
+        <div style="background: #f7fafc; padding: 25px; border-radius: 12px; margin-bottom: 30px;">
+            <h3 style="color: #4a5568; margin-bottom: 20px; font-size: 1.5rem;">🏢 Informations par groupe</h3>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden;">
+                    <thead>
+                        <tr style="background: #e2e8f0;">
+                            <th style="padding: 12px; text-align: left; font-weight: 600;">Type</th>
+                            <th style="padding: 12px; text-align: left; font-weight: 600;">RGT</th>
+                            <th style="padding: 12px; text-align: left; font-weight: 600;">RGTL</th>
+                            <th style="padding: 12px; text-align: left; font-weight: 600;">CGLS</th>
+                            <th style="padding: 12px; text-align: left; font-weight: 600;">INLOG</th>
+                            <th style="padding: 12px; text-align: left; font-weight: 600;">TEDL</th>
+                            <th style="padding: 12px; text-align: left; font-weight: 600;">TPROX</th>
+                            <th style="padding: 12px; text-align: left; font-weight: 600;">RVQ</th>
+                            <th style="padding: 12px; text-align: left; font-weight: 600;">Gardien</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; font-weight: 600;">Groupe</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">{{ affectation.RGT_GPE|default('-') }}</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">{{ affectation.RGTL_GPE|default('-') }}</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">{{ affectation.CGLS_GPE|default('-') }}</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">{{ affectation.INLOG_GPE|default('-') }}</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">{{ affectation.TEDL_GPE|default('-') }}</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">{{ affectation.TPROX_GPE|default('-') }}</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">{{ affectation.RVQ_GPE|default('-') }}</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">{{ affectation.GARDIEN_GPE|default('-') }}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; font-weight: 600;">Bâtiment</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">{{ affectation.RGT_BAT|default('-') }}</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">{{ affectation.RGTL_BAT|default('-') }}</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">{{ affectation.CGLS_BAT|default('-') }}</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">{{ affectation.INLOG_BAT|default('-') }}</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">{{ affectation.TEDL_BAT|default('-') }}</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">{{ affectation.TPROX_BAT|default('-') }}</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">{{ affectation.RVQ_BAT|default('-') }}</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">{{ affectation.GARDIEN_BAT|default('-') }}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; font-weight: 600;">Escalier</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">{{ affectation.RGT_ESC|default('-') }}</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">{{ affectation.RGTL_ESC|default('-') }}</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">{{ affectation.CGLS_ESC|default('-') }}</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">{{ affectation.INLOG_ESC|default('-') }}</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">{{ affectation.TEDL_ESC|default('-') }}</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">{{ affectation.TPROX_ESC|default('-') }}</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">{{ affectation.RVQ_ESC|default('-') }}</td>
+                            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">{{ affectation.GARDIEN_ESC|default('-') }}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 12px; font-weight: 600;">Lot</td>
+                            <td style="padding: 12px;">{{ affectation.RGT_LOT|default('-') }}</td>
+                            <td style="padding: 12px;">{{ affectation.RGTL_LOT|default('-') }}</td>
+                            <td style="padding: 12px;">{{ affectation.CGLS_LOT|default('-') }}</td>
+                            <td style="padding: 12px;">{{ affectation.INLOG_LOT|default('-') }}</td>
+                            <td style="padding: 12px;">{{ affectation.TEDL_LOT|default('-') }}</td>
+                            <td style="padding: 12px;">{{ affectation.TPROX_LOT|default('-') }}</td>
+                            <td style="padding: 12px;">{{ affectation.RVQ_LOT|default('-') }}</td>
+                            <td style="padding: 12px;">{{ affectation.GARDIEN_LOT|default('-') }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="admin-content">
+        <div style="text-align: center; padding: 40px; color: #718096;">
+            <h3>Aucune donnée trouvée</h3>
+            <p>Impossible de charger les détails pour le LOT: {{ lot }}</p>
+            <a href="{{ path('admin_liste_affectation') }}" class="btn">← Retour à la liste</a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
