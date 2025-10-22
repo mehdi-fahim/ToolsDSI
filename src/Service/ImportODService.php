@@ -3,17 +3,17 @@
 namespace App\Service;
 
 use Symfony\Component\HttpFoundation\File\UploadedFile;
-use Symfony\Component\HttpFoundation\Session\SessionInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 class ImportODService
 {
     private string $tempDir;
-    private SessionInterface $session;
+    private RequestStack $requestStack;
     private ImportODOracleService $oracleService;
 
-    public function __construct(SessionInterface $session, string $projectDir, ImportODOracleService $oracleService)
+    public function __construct(RequestStack $requestStack, string $projectDir, ImportODOracleService $oracleService)
     {
-        $this->session = $session;
+        $this->requestStack = $requestStack;
         $this->oracleService = $oracleService;
         $this->tempDir = $projectDir . '/var/temp/import_od';
         
@@ -28,7 +28,8 @@ class ImportODService
      */
     public function uploadAndParseCsv(UploadedFile $file): array
     {
-        $sessionId = $this->session->getId();
+        $session = $this->requestStack->getSession();
+        $sessionId = $session->getId();
         $filename = $sessionId . '_' . time() . '.csv';
         $filePath = $this->tempDir . '/' . $filename;
         
@@ -39,8 +40,8 @@ class ImportODService
         $data = $this->parseCsvFile($filePath);
         
         // Sauvegarder les données en session
-        $this->session->set('import_od_file', $filePath);
-        $this->session->set('import_od_data', $data);
+        $session->set('import_od_file', $filePath);
+        $session->set('import_od_data', $data);
         
         return $data;
     }
@@ -85,7 +86,7 @@ class ImportODService
      */
     public function getCsvData(): ?array
     {
-        return $this->session->get('import_od_data');
+        return $this->requestStack->getSession()->get('import_od_data');
     }
 
     /**
@@ -186,13 +187,14 @@ class ImportODService
      */
     public function cleanup(): void
     {
-        $filePath = $this->session->get('import_od_file');
+        $session = $this->requestStack->getSession();
+        $filePath = $session->get('import_od_file');
         if ($filePath && file_exists($filePath)) {
             unlink($filePath);
         }
         
-        $this->session->remove('import_od_file');
-        $this->session->remove('import_od_data');
+        $session->remove('import_od_file');
+        $session->remove('import_od_data');
     }
 
     /**

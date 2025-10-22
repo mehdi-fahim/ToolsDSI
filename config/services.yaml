@@ -95,7 +95,7 @@ services:
     # Configuration pour le service ImportODService
     App\Service\ImportODService:
         arguments:
-            $session: '@Symfony\Component\HttpFoundation\Session\SessionInterface'
+            $requestStack: '@request_stack'
             $projectDir: '%kernel.project_dir%'
             $oracleService: '@App\Service\ImportODOracleService'
 
