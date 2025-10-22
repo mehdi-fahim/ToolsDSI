@@ -67,7 +67,7 @@
                     Vérifiez les données ci-dessous avant de procéder à l'intégration.
                 </p>
                 
-                <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+                <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
                     <form method="POST" action="{{ path('admin_import_od_integrate') }}" style="display: inline;">
                         <button type="submit" class="btn btn-success" onclick="return confirm('Êtes-vous sûr de vouloir intégrer ces données ?')">
                             ✅ Intégrer les données
@@ -77,6 +77,12 @@
                     <a href="{{ path('admin_import_od') }}" class="btn btn-secondary">
                         🔄 Recommencer
                     </a>
+
+                    <form method="POST" action="{{ path('admin_import_od_clear') }}" style="display: inline;" onsubmit="return confirm('Confirmer le vidage de la table OD_A_CHARGER ?')">
+                        <button type="submit" class="btn btn-danger">
+                            🗑️ Vider OD_A_CHARGER
+                        </button>
+                    </form>
                 </div>
             </div>
 

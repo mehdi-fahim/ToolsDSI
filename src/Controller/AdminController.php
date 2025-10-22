@@ -1509,6 +1509,36 @@ class AdminController extends AbstractController
         ]);
     }
 
+    #[Route('/import/od/clear', name: 'admin_import_od_clear', methods: ['POST'])]
+    public function clearOD(SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        $error = null;
+        $success = null;
+
+        try {
+            $this->importODOracleService->clearOdACharger();
+            $success = "Table OD_A_CHARGER vidée avec succès.";
+
+            // Log action
+            $this->userActionLogger->logDataModification('IMPORT_OD', 'CLEAR_BUFFER', [
+                'table' => 'OD_A_CHARGER'
+            ], $session->get('user_id'));
+        } catch (\Throwable $e) {
+            $error = 'Erreur lors du vidage: ' . $e->getMessage();
+        }
+
+        // Revenir sur la page avec message et sans données
+        return $this->render('admin/import_od.html.twig', [
+            'csvData' => null,
+            'error' => $error,
+            'success' => $success
+        ]);
+    }
+
     private function isAdmin(SessionInterface $session): bool
     {
         return $this->isAuthenticated($session) && $session->get('is_admin', false) === true;

@@ -48,6 +48,16 @@ when@test:
                 type: stream
                 path: "%kernel.logs_dir%/%kernel.environment%.log"
                 level: debug
+            user_actions:
+                type: stream
+                path: "%kernel.logs_dir%/user_actions.log"
+                level: info
+                channels: ["user_actions"]
+            system_events:
+                type: stream
+                path: "%kernel.logs_dir%/system_events.log"
+                level: info
+                channels: ["system_events"]
 
 when@prod:
     monolog:
@@ -72,3 +82,13 @@ when@prod:
                 channels: [deprecation]
                 path: php://stderr
                 formatter: monolog.formatter.json
+            user_actions:
+                type: stream
+                path: "%kernel.logs_dir%/user_actions.log"
+                level: info
+                channels: ["user_actions"]
+            system_events:
+                type: stream
+                path: "%kernel.logs_dir%/system_events.log"
+                level: info
+                channels: ["system_events"]

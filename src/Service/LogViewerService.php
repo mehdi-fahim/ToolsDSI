@@ -19,10 +19,10 @@ class LogViewerService
         $logFile = $this->logsDir . '/user_actions.log';
         $logs = $this->parseLogFile($logFile, $limit);
         
-        // Filtrer par utilisateur si spécifié
+        // Filtrer par utilisateur si spécifié (cherche dans la ligne brute pour inclure le contexte)
         if ($userId !== null && $userId !== '') {
             $logs = array_filter($logs, function($log) use ($userId) {
-                return strpos($log['message'], $userId) !== false;
+                return isset($log['raw']) && stripos($log['raw'], $userId) !== false;
             });
         }
         
@@ -37,10 +37,10 @@ class LogViewerService
         $logFile = $this->logsDir . '/system_events.log';
         $logs = $this->parseLogFile($logFile, $limit);
         
-        // Filtrer par utilisateur si spécifié
+        // Filtrer par utilisateur si spécifié (cherche dans la ligne brute pour inclure le contexte)
         if ($userId !== null && $userId !== '') {
             $logs = array_filter($logs, function($log) use ($userId) {
-                return strpos($log['message'], $userId) !== false;
+                return isset($log['raw']) && stripos($log['raw'], $userId) !== false;
             });
         }
         
@@ -55,10 +55,10 @@ class LogViewerService
         $logFile = $this->logsDir . '/dev.log';
         $logs = $this->parseLogFile($logFile, $limit);
         
-        // Filtrer par utilisateur si spécifié
+        // Filtrer par utilisateur si spécifié (cherche dans la ligne brute pour inclure le contexte)
         if ($userId !== null && $userId !== '') {
             $logs = array_filter($logs, function($log) use ($userId) {
-                return strpos($log['message'], $userId) !== false;
+                return isset($log['raw']) && stripos($log['raw'], $userId) !== false;
             });
         }
         
