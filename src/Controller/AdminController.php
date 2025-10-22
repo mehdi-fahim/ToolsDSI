@@ -45,9 +45,9 @@ class AdminController extends AbstractController
         private UserActionLogger $userActionLogger,
         private LogViewerService $logViewerService,
         private \App\Service\ReouvExemptesOracleService $reouvExemptesOracleService,
-        private ?DetailedUserActionLogger $detailedUserActionLogger = null,
         private ImportODService $importODService,
-        private ImportODOracleService $importODOracleService
+        private ImportODOracleService $importODOracleService,
+        private ?DetailedUserActionLogger $detailedUserActionLogger = null
     ) {}
 
     #[Route('', name: 'admin_dashboard', methods: ['GET'])]
