@@ -425,7 +425,7 @@
                         {% endif %}
                         {% if 'admin_reouv_exemptes' in access %}
                         <a href="{{ path('admin_reouv_exemptes') }}">
-                            <span>🔄 Réouv exemptés</span>
+                            <span>Réouv exemptés</span>
                         </a>
                         {% endif %}
                         {% if 'admin_mode_operatoire' in access %}
@@ -433,6 +433,21 @@
                             <span>Mode opératoire</span>
                         </a>
                         {% endif %}
+                    </div>
+                </li>
+                {% endif %}
+
+                {# Menu déroulant Import #}
+                {% if 'admin_import_od' in access %}
+                <li class="sidebar-dropdown">
+                    <div class="dropdown-toggle" onclick="toggleDropdown(this)">
+                        <span style="display: flex; align-items: center; gap: 12px;">📊 <span>Import</span></span>
+                        <span class="dropdown-arrow">▼</span>
+                    </div>
+                    <div class="dropdown-menu">
+                        <a href="{{ path('admin_import_od') }}">
+                            <span>Intégration OD</span>
+                        </a>
                     </div>
                 </li>
                 {% endif %}

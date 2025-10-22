@@ -24,6 +24,8 @@ use App\Service\ModeOperatoireService;
 use App\Service\UserActionLogger;
 use App\Service\LogViewerService;
 use App\Service\DetailedUserActionLogger;
+use App\Service\ImportODService;
+use App\Service\ImportODOracleService;
 
 #[Route('/admin')]
 class AdminController extends AbstractController
@@ -43,7 +45,9 @@ class AdminController extends AbstractController
         private UserActionLogger $userActionLogger,
         private LogViewerService $logViewerService,
         private \App\Service\ReouvExemptesOracleService $reouvExemptesOracleService,
-        private ?DetailedUserActionLogger $detailedUserActionLogger = null
+        private ?DetailedUserActionLogger $detailedUserActionLogger = null,
+        private ImportODService $importODService,
+        private ImportODOracleService $importODOracleService
     ) {}
 
     #[Route('', name: 'admin_dashboard', methods: ['GET'])]
@@ -969,6 +973,7 @@ class AdminController extends AbstractController
             'admin_beckrel_users' => 'Utilisateurs Beckrel',
             'admin_sowell_users' => 'Utilisateurs Sowell',
             'admin_mode_operatoire' => 'Mode opératoire',
+            'admin_import_od' => 'Import OD',
         ];
 
         $isAdminFlag = null;
@@ -1370,6 +1375,138 @@ class AdminController extends AbstractController
             'text' => strlen($value) > 100 ? substr($value, 0, 100) . '...' : $value,
             default => (string) $value
         };
+    }
+
+    #[Route('/import/od', name: 'admin_import_od', methods: ['GET'])]
+    public function importOD(SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        $csvData = $this->importODService->getCsvData();
+        
+        // Si pas de données CSV en session, essayer de récupérer depuis Oracle
+        if (!$csvData) {
+            try {
+                $oracleData = $this->importODOracleService->getOdAChargerData();
+                if (!empty($oracleData)) {
+                    $csvData = [
+                        'headers' => array_keys($oracleData[0]),
+                        'data' => $oracleData,
+                        'total_rows' => count($oracleData)
+                    ];
+                }
+            } catch (\Exception $e) {
+                // Ignorer les erreurs Oracle pour l'affichage initial
+            }
+        }
+        
+        return $this->render('admin/import_od.html.twig', [
+            'csvData' => $csvData
+        ]);
+    }
+
+    #[Route('/import/od/upload', name: 'admin_import_od_upload', methods: ['POST'])]
+    public function uploadOD(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        $error = null;
+        $success = null;
+        $csvData = null;
+
+        if ($request->files->has('csv_file')) {
+            $file = $request->files->get('csv_file');
+            
+            if ($file && $file->isValid()) {
+                try {
+                    // Upload et parse du fichier CSV
+                    $csvData = $this->importODService->uploadAndParseCsv($file);
+                    
+                    // Nettoyer les codes PAESI_CODEXT (supprimer les espaces)
+                    $csvData = $this->importODService->cleanPaesiCodes($csvData);
+                    
+                    // Valider les données
+                    $validationErrors = $this->importODService->validateCsvData($csvData);
+                    
+                    if (empty($validationErrors)) {
+                        // Intégrer les données dans Oracle pour prévisualisation
+                        try {
+                            $this->importODOracleService->clearOdACharger();
+                            $this->importODOracleService->insertDataToOdACharger($csvData);
+                            $this->importODOracleService->cleanPaesiCodes();
+                            
+                            $success = sprintf('Fichier chargé avec succès. %d lignes trouvées et chargées dans Oracle.', $csvData['total_rows']);
+                        } catch (\Exception $e) {
+                            $error = 'Erreur lors du chargement dans Oracle: ' . $e->getMessage();
+                        }
+                    } else {
+                        $error = 'Erreurs de validation: ' . implode('; ', $validationErrors);
+                    }
+                    
+                } catch (\Exception $e) {
+                    $error = 'Erreur lors du chargement du fichier: ' . $e->getMessage();
+                }
+            } else {
+                $error = 'Veuillez sélectionner un fichier CSV valide.';
+            }
+        } else {
+            $error = 'Aucun fichier sélectionné.';
+        }
+
+        return $this->render('admin/import_od.html.twig', [
+            'csvData' => $csvData,
+            'error' => $error,
+            'success' => $success
+        ]);
+    }
+
+    #[Route('/import/od/integrate', name: 'admin_import_od_integrate', methods: ['POST'])]
+    public function integrateOD(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        $userId = $session->get('user_id');
+        $error = null;
+        $success = null;
+
+        try {
+            $result = $this->importODService->integrateData($userId);
+            
+            if ($result['success']) {
+                $success = sprintf(
+                    'Intégration réussie ! %d lignes intégrées.',
+                    $result['integrated_count']
+                );
+                
+                if (!empty($result['errors'])) {
+                    $success .= ' Erreurs: ' . implode('; ', $result['errors']);
+                }
+                
+                // Log de l'action
+                $this->userActionLogger->logDataModification('IMPORT_OD', 'INTEGRATION', [
+                    'integrated_count' => $result['integrated_count'],
+                    'errors' => $result['errors']
+                ], $userId);
+                
+            } else {
+                $error = $result['error'];
+            }
+            
+        } catch (\Exception $e) {
+            $error = 'Erreur lors de l\'intégration: ' . $e->getMessage();
+        }
+
+        return $this->render('admin/import_od.html.twig', [
+            'csvData' => null, // Nettoyer les données après intégration
+            'error' => $error,
+            'success' => $success
+        ]);
     }
 
     private function isAdmin(SessionInterface $session): bool

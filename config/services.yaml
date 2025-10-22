@@ -87,6 +87,18 @@ services:
         arguments:
             $userActionsLogger: '@monolog.logger.user_actions'
 
+    # Configuration pour le service ImportODOracleService
+    App\Service\ImportODOracleService:
+        arguments:
+            $defaultConnection: '@doctrine.dbal.default_connection'
+
+    # Configuration pour le service ImportODService
+    App\Service\ImportODService:
+        arguments:
+            $session: '@session'
+            $projectDir: '%kernel.project_dir%'
+            $oracleService: '@App\Service\ImportODOracleService'
+
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
