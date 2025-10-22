@@ -94,4 +94,4 @@ admin_liste_affectation_detail:
     path: /admin/liste-affectation/detail/{lot}
     controller: App\Controller\AdminController::listeAffectationDetail
     requirements:
-        lot: '[a-zA-Z0-9_-]+'
+        lot: '[a-zA-Z0-9_.-]+'

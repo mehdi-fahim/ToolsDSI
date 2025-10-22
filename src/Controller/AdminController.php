@@ -1553,7 +1553,7 @@ class AdminController extends AbstractController
         $page = (int) $request->query->get('page', 1);
         $search = $request->query->get('search', '');
         $groupe = $request->query->get('groupe', '');
-        $limit = 20; // 20 lignes par page
+        $limit = 50; // 50 lignes par page
 
         try {
             // Récupérer les données Oracle avec pagination et recherche
@@ -1585,7 +1585,7 @@ class AdminController extends AbstractController
                 'pagination' => [
                     'page' => 1,
                     'total' => 0,
-                    'limit' => 20,
+                    'limit' => 50,
                     'totalPages' => 0
                 ],
                 'search' => $search,
@@ -1608,7 +1608,11 @@ class AdminController extends AbstractController
             $affectation = $this->listeAffectationOracleService->getAffectationDetails($lot);
             
             if (!$affectation) {
-                throw $this->createNotFoundException('Affectation non trouvée pour le LOT: ' . $lot);
+                return $this->render('admin/liste_affectation_detail.html.twig', [
+                    'affectation' => null,
+                    'lot' => $lot,
+                    'error' => 'Aucune affectation trouvée pour le LOT: ' . $lot
+                ]);
             }
 
             return $this->render('admin/liste_affectation_detail.html.twig', [
