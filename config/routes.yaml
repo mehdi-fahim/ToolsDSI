@@ -83,15 +83,4 @@ admin_user_show_password:
     path: /admin/show-password
     controller: App\Controller\AdminController::showPassword
 
-# Routes pour la section Import
-admin_import_od:
-    path: /admin/import/od
-    controller: App\Controller\AdminController::importOD
-
-admin_import_od_upload:
-    path: /admin/import/od/upload
-    controller: App\Controller\AdminController::uploadOD
-
-admin_import_od_integrate:
-    path: /admin/import/od/integrate
-    controller: App\Controller\AdminController::integrateOD
+# Routes pour la section Import (gérées par attributs dans AdminController)
