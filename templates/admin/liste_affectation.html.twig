@@ -17,6 +17,9 @@
             <a class="btn btn-secondary" href="{{ path('admin_liste_affectation_export_current', {search: search}) }}" title="Exporter le résultat courant" style="white-space: nowrap;">
                 ⬇️ Export résultat courant
             </a>
+            <a class="btn btn-secondary" href="{{ path('admin_liste_affectation_missing', {search: search}) }}" title="Voir les lots sans contact" style="white-space: nowrap;">
+                ❗ Lots sans contact
+            </a>
             {% endif %}
         </div>
     </div>

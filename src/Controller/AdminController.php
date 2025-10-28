@@ -241,6 +241,36 @@ class AdminController extends AbstractController
         return $response;
     }
 
+    #[Route('/liste-affectation/missing', name: 'admin_liste_affectation_missing', methods: ['GET'])]
+    public function listeAffectationMissing(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        $page = (int) $request->query->get('page', 1);
+        $search = $request->query->get('search', '');
+        $limit = 50;
+
+        $result = $this->listeAffectationOracleService->getListeAffectations($search, '', $page, $limit, true);
+
+        return $this->render('admin/liste_affectation.html.twig', [
+            'data' => $result['data'],
+            'pagination' => [
+                'page' => $result['page'],
+                'total' => $result['total'],
+                'limit' => $result['limit'],
+                'totalPages' => $result['totalPages']
+            ],
+            'search' => $search,
+            'groupe' => '',
+            'groupes' => [],
+            'stats' => null,
+            'hasSearch' => true,
+            'showingMissing' => true
+        ]);
+    }
+
     #[Route('/admin/logement', name: 'admin_logement', methods: ['GET', 'POST'])]
     public function logement(Request $request, SessionInterface $session): Response
     {

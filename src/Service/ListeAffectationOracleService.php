@@ -17,7 +17,7 @@ class ListeAffectationOracleService
     /**
      * Récupère la liste des affectations avec pagination et recherche
      */
-    public function getListeAffectations(string $search = '', string $groupe = '', int $page = 1, int $limit = 20): array
+    public function getListeAffectations(string $search = '', string $groupe = '', int $page = 1, int $limit = 20, bool $onlyMissing = false): array
     {
         $offset = ($page - 1) * $limit;
 
@@ -39,6 +39,10 @@ class ListeAffectationOracleService
         if (!empty($groupe)) {
             $whereConditions[] = "UPPER(GROUPE) = UPPER(:groupe)";
             $params['groupe'] = $groupe;
+        }
+
+        if ($onlyMissing) {
+            $whereConditions[] = "( (GARD_TEL IS NULL OR TRIM(GARD_TEL) = '') AND (GARD_MAIL IS NULL OR TRIM(GARD_MAIL) = '') )";
         }
 
         if (!empty($whereConditions)) {
@@ -294,7 +298,8 @@ class ListeAffectationOracleService
         SELECT 
             COUNT(*) as TOTAL_LOTS,
             COUNT(CASE WHEN GARD_TEL IS NOT NULL AND GARD_TEL != '' THEN 1 END) as LOTS_AVEC_TELEPHONE,
-            COUNT(CASE WHEN GARD_MAIL IS NOT NULL AND GARD_MAIL != '' THEN 1 END) as LOTS_AVEC_EMAIL
+            COUNT(CASE WHEN GARD_MAIL IS NOT NULL AND GARD_MAIL != '' THEN 1 END) as LOTS_AVEC_EMAIL,
+            COUNT(CASE WHEN ( (GARD_TEL IS NULL OR TRIM(GARD_TEL) = '') AND (GARD_MAIL IS NULL OR TRIM(GARD_MAIL) = '') ) THEN 1 END) as LOTS_SANS_CONTACT
         FROM LISTE_V_AFFECTATIONS
         WHERE UPPER(LOT) LIKE UPPER(:search)
         SQL;

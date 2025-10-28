@@ -98,6 +98,10 @@ admin_liste_affectation_export_current:
     path: /admin/liste-affectation/export-current
     controller: App\Controller\AdminController::exportListeAffectationCurrent
 
+admin_liste_affectation_missing:
+    path: /admin/liste-affectation/missing
+    controller: App\Controller\AdminController::listeAffectationMissing
+
 admin_liste_affectation_detail:
     path: /admin/liste-affectation/detail/{lot}
     controller: App\Controller\AdminController::listeAffectationDetail
