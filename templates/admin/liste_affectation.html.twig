@@ -130,7 +130,7 @@
                                 {% endif %}
                             </td>
                             <td>
-                                <a href="{{ path('admin_liste_affectation_detail', {lot: affectation.LOT}) }}" 
+                                <a href="{{ path('admin_liste_affectation_detail', {lot: affectation.LOT|url_encode}) }}" 
                                    class="btn" 
                                    style="padding: 6px 12px; font-size: 12px;">
                                     👁️ Détails

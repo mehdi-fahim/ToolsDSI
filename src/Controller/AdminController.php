@@ -1597,7 +1597,12 @@ class AdminController extends AbstractController
         }
     }
 
-    #[Route('/liste-affectation/detail/{lot}', name: 'admin_liste_affectation_detail', methods: ['GET'])]
+    #[Route(
+        '/liste-affectation/detail/{lot}',
+        name: 'admin_liste_affectation_detail',
+        methods: ['GET'],
+        requirements: ['lot' => '[^/]+' ]
+    )]
     public function listeAffectationDetail(string $lot, SessionInterface $session): Response
     {
         if (!$this->isAuthenticated($session)) {
