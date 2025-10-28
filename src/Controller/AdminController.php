@@ -1660,37 +1660,34 @@ class AdminController extends AbstractController
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ];
 
-        $response = new Response();
-        $response->headers->add($headers);
-
-        $handle = fopen('php://temp', 'w+');
-        // BOM UTF-8 pour Excel
-        fwrite($handle, "\xEF\xBB\xBF");
-        fputcsv($handle, [
-            'AGENCE','GROUPE','ESO_GROUPE','BATIMENT','ESO_BATIMENT','ESCALIER','ESO_ESC','LOT','NATURE_LOT',
-            'RGT_GPE','RGTL_GPE','CGLS_GPE','INLOG_GPE','TEDL_GPE','TPROX_GPE','RVQ_GPE','GARDIEN_GPE',
-            'RGT_BAT','RGTL_BAT','CGLS_BAT','INLOG_BAT','TEDL_BAT','TPROX_BAT','RVQ_BAT','GARDIEN_BAT',
-            'RGT_ESC','RGTL_ESC','CGLS_ESC','INLOG_ESC','TEDL_ESC','TPROX_ESC','RVQ_ESC','GARDIEN_ESC',
-            'RGT_LOT','RGTL_LOT','CGLS_LOT','INLOG_LOT','TEDL_LOT','TPROX_LOT','RVQ_LOT','GARDIEN_LOT',
-            'ESO_GARDIEN','GARD_TEL','GARD_MAIL'
-        ], ';');
-
-        foreach ($this->listeAffectationOracleService->getAllAffectationsForExport() as $row) {
-            fputcsv($handle, [
-                $row['AGENCE'] ?? '', $row['GROUPE'] ?? '', $row['ESO_GROUPE'] ?? '', $row['BATIMENT'] ?? '', $row['ESO_BATIMENT'] ?? '', $row['ESCALIER'] ?? '', $row['ESO_ESC'] ?? '', $row['LOT'] ?? '', $row['NATURE_LOT'] ?? '',
-                $row['RGT_GPE'] ?? '', $row['RGTL_GPE'] ?? '', $row['CGLS_GPE'] ?? '', $row['INLOG_GPE'] ?? '', $row['TEDL_GPE'] ?? '', $row['TPROX_GPE'] ?? '', $row['RVQ_GPE'] ?? '', $row['GARDIEN_GPE'] ?? '',
-                $row['RGT_BAT'] ?? '', $row['RGTL_BAT'] ?? '', $row['CGLS_BAT'] ?? '', $row['INLOG_BAT'] ?? '', $row['TEDL_BAT'] ?? '', $row['TPROX_BAT'] ?? '', $row['RVQ_BAT'] ?? '', $row['GARDIEN_BAT'] ?? '',
-                $row['RGT_ESC'] ?? '', $row['RGTL_ESC'] ?? '', $row['CGLS_ESC'] ?? '', $row['INLOG_ESC'] ?? '', $row['TEDL_ESC'] ?? '', $row['TPROX_ESC'] ?? '', $row['RVQ_ESC'] ?? '', $row['GARDIEN_ESC'] ?? '',
-                $row['RGT_LOT'] ?? '', $row['RGTL_LOT'] ?? '', $row['CGLS_LOT'] ?? '', $row['INLOG_LOT'] ?? '', $row['TEDL_LOT'] ?? '', $row['TPROX_LOT'] ?? '', $row['RVQ_LOT'] ?? '', $row['GARDIEN_LOT'] ?? '',
-                $row['ESO_GARDIEN'] ?? '', $row['GARD_TEL'] ?? '', $row['GARD_MAIL'] ?? '',
+        $response = new \Symfony\Component\HttpFoundation\StreamedResponse(function () {
+            set_time_limit(0);
+            $out = fopen('php://output', 'w');
+            // BOM UTF-8 pour Excel
+            fwrite($out, "\xEF\xBB\xBF");
+            fputcsv($out, [
+                'AGENCE','GROUPE','ESO_GROUPE','BATIMENT','ESO_BATIMENT','ESCALIER','ESO_ESC','LOT','NATURE_LOT',
+                'RGT_GPE','RGTL_GPE','CGLS_GPE','INLOG_GPE','TEDL_GPE','TPROX_GPE','RVQ_GPE','GARDIEN_GPE',
+                'RGT_BAT','RGTL_BAT','CGLS_BAT','INLOG_BAT','TEDL_BAT','TPROX_BAT','RVQ_BAT','GARDIEN_BAT',
+                'RGT_ESC','RGTL_ESC','CGLS_ESC','INLOG_ESC','TEDL_ESC','TPROX_ESC','RVQ_ESC','GARDIEN_ESC',
+                'RGT_LOT','RGTL_LOT','CGLS_LOT','INLOG_LOT','TEDL_LOT','TPROX_LOT','RVQ_LOT','GARDIEN_LOT',
+                'ESO_GARDIEN','GARD_TEL','GARD_MAIL'
             ], ';');
-        }
 
-        rewind($handle);
-        $content = stream_get_contents($handle);
-        fclose($handle);
+            foreach ($this->listeAffectationOracleService->getAllAffectationsForExport() as $row) {
+                fputcsv($out, [
+                    $row['AGENCE'] ?? '', $row['GROUPE'] ?? '', $row['ESO_GROUPE'] ?? '', $row['BATIMENT'] ?? '', $row['ESO_BATIMENT'] ?? '', $row['ESCALIER'] ?? '', $row['ESO_ESC'] ?? '', $row['LOT'] ?? '', $row['NATURE_LOT'] ?? '',
+                    $row['RGT_GPE'] ?? '', $row['RGTL_GPE'] ?? '', $row['CGLS_GPE'] ?? '', $row['INLOG_GPE'] ?? '', $row['TEDL_GPE'] ?? '', $row['TPROX_GPE'] ?? '', $row['RVQ_GPE'] ?? '', $row['GARDIEN_GPE'] ?? '',
+                    $row['RGT_BAT'] ?? '', $row['RGTL_BAT'] ?? '', $row['CGLS_BAT'] ?? '', $row['INLOG_BAT'] ?? '', $row['TEDL_BAT'] ?? '', $row['TPROX_BAT'] ?? '', $row['RVQ_BAT'] ?? '', $row['GARDIEN_BAT'] ?? '',
+                    $row['RGT_ESC'] ?? '', $row['RGTL_ESC'] ?? '', $row['CGLS_ESC'] ?? '', $row['INLOG_ESC'] ?? '', $row['TEDL_ESC'] ?? '', $row['TPROX_ESC'] ?? '', $row['RVQ_ESC'] ?? '', $row['GARDIEN_ESC'] ?? '',
+                    $row['RGT_LOT'] ?? '', $row['RGTL_LOT'] ?? '', $row['CGLS_LOT'] ?? '', $row['INLOG_LOT'] ?? '', $row['TEDL_LOT'] ?? '', $row['TPROX_LOT'] ?? '', $row['RVQ_LOT'] ?? '', $row['GARDIEN_LOT'] ?? '',
+                    $row['ESO_GARDIEN'] ?? '', $row['GARD_TEL'] ?? '', $row['GARD_MAIL'] ?? '',
+                ], ';');
+            }
 
-        $response->setContent($content);
+            fclose($out);
+        });
+        $response->headers->add($headers);
         return $response;
     }
 
@@ -1715,36 +1712,32 @@ class AdminController extends AbstractController
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ];
 
-        $response = new Response();
-        $response->headers->add($headers);
-
-        $handle = fopen('php://temp', 'w+');
-        fwrite($handle, "\xEF\xBB\xBF");
-        fputcsv($handle, [
-            'AGENCE','GROUPE','ESO_GROUPE','BATIMENT','ESO_BATIMENT','ESCALIER','ESO_ESC','LOT','NATURE_LOT',
-            'RGT_GPE','RGTL_GPE','CGLS_GPE','INLOG_GPE','TEDL_GPE','TPROX_GPE','RVQ_GPE','GARDIEN_GPE',
-            'RGT_BAT','RGTL_BAT','CGLS_BAT','INLOG_BAT','TEDL_BAT','TPROX_BAT','RVQ_BAT','GARDIEN_BAT',
-            'RGT_ESC','RGTL_ESC','CGLS_ESC','INLOG_ESC','TEDL_ESC','TPROX_ESC','RVQ_ESC','GARDIEN_ESC',
-            'RGT_LOT','RGTL_LOT','CGLS_LOT','INLOG_LOT','TEDL_LOT','TPROX_LOT','RVQ_LOT','GARDIEN_LOT',
-            'ESO_GARDIEN','GARD_TEL','GARD_MAIL'
-        ], ';');
-
-        foreach ($this->listeAffectationOracleService->getAffectationsForExportBySearch($search) as $row) {
-            fputcsv($handle, [
-                $row['AGENCE'] ?? '', $row['GROUPE'] ?? '', $row['ESO_GROUPE'] ?? '', $row['BATIMENT'] ?? '', $row['ESO_BATIMENT'] ?? '', $row['ESCALIER'] ?? '', $row['ESO_ESC'] ?? '', $row['LOT'] ?? '', $row['NATURE_LOT'] ?? '',
-                $row['RGT_GPE'] ?? '', $row['RGTL_GPE'] ?? '', $row['CGLS_GPE'] ?? '', $row['INLOG_GPE'] ?? '', $row['TEDL_GPE'] ?? '', $row['TPROX_GPE'] ?? '', $row['RVQ_GPE'] ?? '', $row['GARDIEN_GPE'] ?? '',
-                $row['RGT_BAT'] ?? '', $row['RGTL_BAT'] ?? '', $row['CGLS_BAT'] ?? '', $row['INLOG_BAT'] ?? '', $row['TEDL_BAT'] ?? '', $row['TPROX_BAT'] ?? '', $row['RVQ_BAT'] ?? '', $row['GARDIEN_BAT'] ?? '',
-                $row['RGT_ESC'] ?? '', $row['RGTL_ESC'] ?? '', $row['CGLS_ESC'] ?? '', $row['INLOG_ESC'] ?? '', $row['TEDL_ESC'] ?? '', $row['TPROX_ESC'] ?? '', $row['RVQ_ESC'] ?? '', $row['GARDIEN_ESC'] ?? '',
-                $row['RGT_LOT'] ?? '', $row['RGTL_LOT'] ?? '', $row['CGLS_LOT'] ?? '', $row['INLOG_LOT'] ?? '', $row['TEDL_LOT'] ?? '', $row['TPROX_LOT'] ?? '', $row['RVQ_LOT'] ?? '', $row['GARDIEN_LOT'] ?? '',
-                $row['ESO_GARDIEN'] ?? '', $row['GARD_TEL'] ?? '', $row['GARD_MAIL'] ?? '',
+        $response = new \Symfony\Component\HttpFoundation\StreamedResponse(function () use ($search) {
+            set_time_limit(0);
+            $out = fopen('php://output', 'w');
+            fwrite($out, "\xEF\xBB\xBF");
+            fputcsv($out, [
+                'AGENCE','GROUPE','ESO_GROUPE','BATIMENT','ESO_BATIMENT','ESCALIER','ESO_ESC','LOT','NATURE_LOT',
+                'RGT_GPE','RGTL_GPE','CGLS_GPE','INLOG_GPE','TEDL_GPE','TPROX_GPE','RVQ_GPE','GARDIEN_GPE',
+                'RGT_BAT','RGTL_BAT','CGLS_BAT','INLOG_BAT','TEDL_BAT','TPROX_BAT','RVQ_BAT','GARDIEN_BAT',
+                'RGT_ESC','RGTL_ESC','CGLS_ESC','INLOG_ESC','TEDL_ESC','TPROX_ESC','RVQ_ESC','GARDIEN_ESC',
+                'RGT_LOT','RGTL_LOT','CGLS_LOT','INLOG_LOT','TEDL_LOT','TPROX_LOT','RVQ_LOT','GARDIEN_LOT',
+                'ESO_GARDIEN','GARD_TEL','GARD_MAIL'
             ], ';');
-        }
 
-        rewind($handle);
-        $content = stream_get_contents($handle);
-        fclose($handle);
-
-        $response->setContent($content);
+            foreach ($this->listeAffectationOracleService->getAffectationsForExportBySearch($search) as $row) {
+                fputcsv($out, [
+                    $row['AGENCE'] ?? '', $row['GROUPE'] ?? '', $row['ESO_GROUPE'] ?? '', $row['BATIMENT'] ?? '', $row['ESO_BATIMENT'] ?? '', $row['ESCALIER'] ?? '', $row['ESO_ESC'] ?? '', $row['LOT'] ?? '', $row['NATURE_LOT'] ?? '',
+                    $row['RGT_GPE'] ?? '', $row['RGTL_GPE'] ?? '', $row['CGLS_GPE'] ?? '', $row['INLOG_GPE'] ?? '', $row['TEDL_GPE'] ?? '', $row['TPROX_GPE'] ?? '', $row['RVQ_GPE'] ?? '', $row['GARDIEN_GPE'] ?? '',
+                    $row['RGT_BAT'] ?? '', $row['RGTL_BAT'] ?? '', $row['CGLS_BAT'] ?? '', $row['INLOG_BAT'] ?? '', $row['TEDL_BAT'] ?? '', $row['TPROX_BAT'] ?? '', $row['RVQ_BAT'] ?? '', $row['GARDIEN_BAT'] ?? '',
+                    $row['RGT_ESC'] ?? '', $row['RGTL_ESC'] ?? '', $row['CGLS_ESC'] ?? '', $row['INLOG_ESC'] ?? '', $row['TEDL_ESC'] ?? '', $row['TPROX_ESC'] ?? '', $row['RVQ_ESC'] ?? '', $row['GARDIEN_ESC'] ?? '',
+                    $row['RGT_LOT'] ?? '', $row['RGTL_LOT'] ?? '', $row['CGLS_LOT'] ?? '', $row['INLOG_LOT'] ?? '', $row['TEDL_LOT'] ?? '', $row['TPROX_LOT'] ?? '', $row['RVQ_LOT'] ?? '', $row['GARDIEN_LOT'] ?? '',
+                    $row['ESO_GARDIEN'] ?? '', $row['GARD_TEL'] ?? '', $row['GARD_MAIL'] ?? '',
+                ], ';');
+            }
+            fclose($out);
+        });
+        $response->headers->add($headers);
         return $response;
     }
     #[Route(

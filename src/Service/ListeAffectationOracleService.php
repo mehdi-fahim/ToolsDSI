@@ -42,7 +42,7 @@ class ListeAffectationOracleService
         }
 
         if ($onlyMissing) {
-            $whereConditions[] = "( (GARD_TEL IS NULL OR TRIM(GARD_TEL) = '') AND (GARD_MAIL IS NULL OR TRIM(GARD_MAIL) = '') )";
+            $whereConditions[] = "( (GARD_TEL IS NULL OR TRIM(GARD_TEL) = '') OR (GARD_MAIL IS NULL OR TRIM(GARD_MAIL) = '') )";
         }
 
         if (!empty($whereConditions)) {
