@@ -36,11 +36,7 @@ class SystemOracleService
           AND d.object_type = 'TABLE'
         ORDER BY d.object_name
         SQL;
-        try {
-            return $this->defaultConnection->executeQuery($sql)->fetchAllAssociative();
-        } catch (\Throwable $e) {
-            return [];
-        }
+        return $this->defaultConnection->executeQuery($sql)->fetchAllAssociative();
     }
 
     /**
@@ -69,11 +65,7 @@ class SystemOracleService
           AND d.object_type = 'TABLE'
         ORDER BY d.object_name
         SQL;
-        try {
-            return $this->defaultConnection->executeQuery($sql)->fetchAllAssociative();
-        } catch (\Throwable $e) {
-            return [];
-        }
+        return $this->defaultConnection->executeQuery($sql)->fetchAllAssociative();
     }
 
     /**
@@ -102,11 +94,7 @@ class SystemOracleService
           AND d.object_type = 'TABLE'
         ORDER BY d.object_name
         SQL;
-        try {
-            return $this->defaultConnection->executeQuery($sql)->fetchAllAssociative();
-        } catch (\Throwable $e) {
-            return [];
-        }
+        return $this->defaultConnection->executeQuery($sql)->fetchAllAssociative();
     }
 
     /**
@@ -115,13 +103,17 @@ class SystemOracleService
     public function getLockedTables(): array
     {
         foreach (['GV_DBA', 'V_DBA', 'V_ALL'] as $variant) {
-            $rows = match ($variant) {
-                'GV_DBA' => $this->getLockedTablesGV_DBA(),
-                'V_DBA' => $this->getLockedTablesV_DBA(),
-                default => $this->getLockedTablesV_ALL(),
-            };
-            if (!empty($rows)) {
-                return $rows;
+            try {
+                $rows = match ($variant) {
+                    'GV_DBA' => $this->getLockedTablesGV_DBA(),
+                    'V_DBA' => $this->getLockedTablesV_DBA(),
+                    default => $this->getLockedTablesV_ALL(),
+                };
+                if (!empty($rows)) {
+                    return $rows;
+                }
+            } catch (\Throwable $e) {
+                // continue to next variant
             }
         }
         return [];
