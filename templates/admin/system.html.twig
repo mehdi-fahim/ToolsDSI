@@ -16,8 +16,11 @@
             {% endfor %}
         {% endfor %}
 
-        <div style="display:flex; gap:10px; margin-bottom:16px;">
-            <a class="btn" href="{{ path('admin_system', {action: 'list'}) }}">🔍 Lister les verrous</a>
+        <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap: wrap;">
+            <a class="btn" href="{{ path('admin_system', {action: 'list', variant: 'gv_dba'}) }}" title="GV$ + DBA_OBJECTS">🔍 Lister (GV$ + DBA)</a>
+            <a class="btn" href="{{ path('admin_system', {action: 'list', variant: 'v_dba'}) }}" title="V$ + DBA_OBJECTS">🔍 Lister (V$ + DBA)</a>
+            <a class="btn" href="{{ path('admin_system', {action: 'list', variant: 'v_all'}) }}" title="V$ + ALL_OBJECTS">🔍 Lister (V$ + ALL)</a>
+            <a class="btn btn-secondary" href="{{ path('admin_system', {action: 'list'}) }}" title="Auto">🔁 Auto</a>
             {% if locks is defined and locks|length > 0 %}
             <form method="POST" action="{{ path('admin_system_kill_all') }}">
                 <button type="submit" class="btn btn-secondary" onclick="return confirm('Confirmer la suppression de TOUTES les sessions verrouillant ?');">🗑️ Tuer toutes les sessions</button>
