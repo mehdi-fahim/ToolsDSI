@@ -91,11 +91,47 @@ class ListeAffectationOracleService
     public function getAllAffectationsForExport(): iterable
     {
         $sql = <<<SQL
-        SELECT
+        SELECT 
             AGENCE,
             GROUPE,
+            ESO_GROUPE,
+            BATIMENT,
+            ESO_BATIMENT,
+            ESCALIER,
+            ESO_ESC,
             LOT,
             NATURE_LOT,
+            RGT_GPE,
+            RGTL_GPE,
+            CGLS_GPE,
+            INLOG_GPE,
+            TEDL_GPE,
+            TPROX_GPE,
+            RVQ_GPE,
+            GARDIEN_GPE,
+            RGT_BAT,
+            RGTL_BAT,
+            CGLS_BAT,
+            INLOG_BAT,
+            TEDL_BAT,
+            TPROX_BAT,
+            RVQ_BAT,
+            GARDIEN_BAT,
+            RGT_ESC,
+            RGTL_ESC,
+            CGLS_ESC,
+            INLOG_ESC,
+            TEDL_ESC,
+            TPROX_ESC,
+            RVQ_ESC,
+            GARDIEN_ESC,
+            RGT_LOT,
+            RGTL_LOT,
+            CGLS_LOT,
+            INLOG_LOT,
+            TEDL_LOT,
+            TPROX_LOT,
+            RVQ_LOT,
             GARDIEN_LOT,
             ESO_GARDIEN,
             GARD_TEL,
@@ -105,6 +141,66 @@ class ListeAffectationOracleService
         SQL;
 
         return $this->connection->executeQuery($sql)->iterateAssociative();
+    }
+
+    /**
+     * Récupère les affectations correspondant à une recherche (pour export courant)
+     */
+    public function getAffectationsForExportBySearch(string $search): iterable
+    {
+        $sql = <<<SQL
+        SELECT 
+            AGENCE,
+            GROUPE,
+            ESO_GROUPE,
+            BATIMENT,
+            ESO_BATIMENT,
+            ESCALIER,
+            ESO_ESC,
+            LOT,
+            NATURE_LOT,
+            RGT_GPE,
+            RGTL_GPE,
+            CGLS_GPE,
+            INLOG_GPE,
+            TEDL_GPE,
+            TPROX_GPE,
+            RVQ_GPE,
+            GARDIEN_GPE,
+            RGT_BAT,
+            RGTL_BAT,
+            CGLS_BAT,
+            INLOG_BAT,
+            TEDL_BAT,
+            TPROX_BAT,
+            RVQ_BAT,
+            GARDIEN_BAT,
+            RGT_ESC,
+            RGTL_ESC,
+            CGLS_ESC,
+            INLOG_ESC,
+            TEDL_ESC,
+            TPROX_ESC,
+            RVQ_ESC,
+            GARDIEN_ESC,
+            RGT_LOT,
+            RGTL_LOT,
+            CGLS_LOT,
+            INLOG_LOT,
+            TEDL_LOT,
+            TPROX_LOT,
+            RVQ_LOT,
+            GARDIEN_LOT,
+            ESO_GARDIEN,
+            GARD_TEL,
+            GARD_MAIL
+        FROM LISTE_V_AFFECTATIONS
+        WHERE UPPER(LOT) LIKE UPPER(:search)
+        ORDER BY AGENCE, GROUPE, LOT
+        SQL;
+
+        $param = ['search' => $search . '%'];
+        return $this->connection->executeQuery($sql, $param)->iterateAssociative();
     }
 
     /**

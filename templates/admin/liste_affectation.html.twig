@@ -9,10 +9,15 @@
             <h1>📋 Liste d'affectation</h1>
             <p>Gestion des affectations par agence et lot</p>
         </div>
-        <div>
+        <div style="display:flex; gap: 10px;">
             <a class="btn" href="{{ path('admin_liste_affectation_export') }}" title="Exporter tout (CSV pour Excel)" style="white-space: nowrap;">
-                ⬇️ Export total des affectations
+                ⬇️ Export total
             </a>
+            {% if hasSearch and search %}
+            <a class="btn btn-secondary" href="{{ path('admin_liste_affectation_export_current', {search: search}) }}" title="Exporter le résultat courant" style="white-space: nowrap;">
+                ⬇️ Export résultat courant
+            </a>
+            {% endif %}
         </div>
     </div>
 
@@ -24,7 +29,7 @@
 
     <div class="admin-content">
         {# Statistiques #}
-        {% if stats %}
+        {% if stats and hasSearch %}
         <div class="stats" style="margin-bottom: 30px;">
             <div class="stat-card">
                 <h3>{{ stats.TOTAL_LOTS|default(0) }}</h3>
@@ -73,6 +78,7 @@
         </div>
 
         {# Tableau des affectations #}
+        {% if hasSearch %}
         <div class="table-container">
             <table class="admin-table">
                 <thead>
@@ -133,6 +139,11 @@
                 </tbody>
             </table>
         </div>
+        {% else %}
+        <div style="text-align: center; padding: 30px; color: #718096;">
+            Saisissez un code (LC4010, LC4010.01, LC4010.01.01) puis lancez la recherche.
+        </div>
+        {% endif %}
 
         {# Pagination #}
         {% if pagination.totalPages > 1 %}
