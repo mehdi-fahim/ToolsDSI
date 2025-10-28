@@ -16,24 +16,25 @@ class SystemOracleService
     public function getLockedTables(): array
     {
         $sql = <<<SQL
-        SELECT
+        SELECT DISTINCT
             s.sid,
             s.serial# AS serial,
             NVL(s.username, 'SYS') AS username,
             s.osuser,
-            s.status,
+            DECODE(l.block, 0, 'Not Blocking', 1, 'Blocking', 2, 'Global') AS status,
             s.machine,
             s.program,
-            o.owner,
-            o.object_name,
-            l.type,
-            l.lmode,
-            l.request
-        FROM v$lock l
-        JOIN v$session s ON l.sid = s.sid
-        LEFT JOIN dba_objects o ON o.object_id = l.id1
-        WHERE l.block != 0 OR l.request != 0
-        ORDER BY s.sid
+            d.owner,
+            d.object_name
+        FROM gv$locked_object v,
+             dba_objects d,
+             gv$lock l,
+             gv$session s
+        WHERE v.object_id = d.object_id
+          AND v.object_id = l.id1
+          AND v.session_id = s.sid
+          AND d.object_type = 'TABLE'
+        ORDER BY d.object_name
         SQL;
 
         try {
