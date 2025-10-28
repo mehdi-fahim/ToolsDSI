@@ -4,9 +4,16 @@
 
 {% block content %}
 <div class="admin-container">
-    <div class="admin-header">
-        <h1>📋 Liste d'affectation</h1>
-        <p>Gestion des affectations par agence et lot</p>
+    <div class="admin-header" style="display:flex; justify-content: space-between; align-items: center; gap: 16px;">
+        <div>
+            <h1>📋 Liste d'affectation</h1>
+            <p>Gestion des affectations par agence et lot</p>
+        </div>
+        <div>
+            <a class="btn" href="{{ path('admin_liste_affectation_export') }}" title="Exporter tout (CSV pour Excel)" style="white-space: nowrap;">
+                ⬇️ Export total des affectations
+            </a>
+        </div>
     </div>
 
     {% if error %}
@@ -48,22 +55,12 @@
                 <input type="text" 
                        name="search" 
                        value="{{ search }}" 
-                       placeholder="Rechercher par LOT..." 
+                       placeholder="Rechercher par code (ex: LC4010, LC4010.01, LC4010.01.01)" 
                        class="search-input"
-                       style="flex: 1; min-width: 250px;"
+                       style="flex: 1; min-width: 320px;"
                        id="searchInput">
-                
-                <select name="groupe" class="search-input" style="flex: 0 0 200px;" id="groupeSelect">
-                    <option value="">Tous les groupes</option>
-                    {% for groupeOption in groupes %}
-                        <option value="{{ groupeOption }}" {% if groupe == groupeOption %}selected{% endif %}>
-                            {{ groupeOption }}
-                        </option>
-                    {% endfor %}
-                </select>
-                
                 <button type="submit" class="btn" id="searchBtn">🔍 Rechercher</button>
-                {% if search or groupe %}
+                {% if search %}
                     <a href="{{ path('admin_liste_affectation') }}" class="btn btn-secondary">❌ Effacer</a>
                 {% endif %}
             </form>
@@ -87,7 +84,7 @@
                         <th>Gardien du lot</th>
                         <th>Téléphone</th>
                         <th>Email</th>
-                        <th>Actions</th>
+                        <th>ESO Gardien</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -129,13 +126,7 @@
                                     -
                                 {% endif %}
                             </td>
-                            <td>
-                                <a href="{{ path('admin_liste_affectation_detail_qs', {lot: affectation.LOT}) }}" 
-                                   class="btn" 
-                                   style="padding: 6px 12px; font-size: 12px;">
-                                    👁️ Détails
-                                </a>
-                            </td>
+                            <td>{{ affectation.ESO_GARDIEN|default('-') }}</td>
                         </tr>
                         {% endfor %}
                     {% endif %}

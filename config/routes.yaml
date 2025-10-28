@@ -90,6 +90,10 @@ admin_liste_affectation:
     path: /admin/liste-affectation
     controller: App\Controller\AdminController::listeAffectation
 
+admin_liste_affectation_export:
+    path: /admin/liste-affectation/export
+    controller: App\Controller\AdminController::exportListeAffectation
+
 admin_liste_affectation_detail:
     path: /admin/liste-affectation/detail/{lot}
     controller: App\Controller\AdminController::listeAffectationDetail

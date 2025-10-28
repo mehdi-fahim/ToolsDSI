@@ -1597,6 +1597,49 @@ class AdminController extends AbstractController
         }
     }
 
+    #[Route('/liste-affectation/export', name: 'admin_liste_affectation_export', methods: ['GET'])]
+    public function exportListeAffectation(SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        $datetime = (new \DateTimeImmutable())->format('Ymd_His');
+        $filename = "liste_affectations_{$datetime}.csv";
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+
+        $response = new Response();
+        $response->headers->add($headers);
+
+        $handle = fopen('php://temp', 'w+');
+        // BOM UTF-8 pour Excel
+        fwrite($handle, "\xEF\xBB\xBF");
+        fputcsv($handle, ['AGENCE','GROUPE','LOT','NATURE_LOT','GARDIEN_LOT','ESO_GARDIEN','GARD_TEL','GARD_MAIL'], ';');
+
+        foreach ($this->listeAffectationOracleService->getAllAffectationsForExport() as $row) {
+            fputcsv($handle, [
+                $row['AGENCE'] ?? '',
+                $row['GROUPE'] ?? '',
+                $row['LOT'] ?? '',
+                $row['NATURE_LOT'] ?? '',
+                $row['GARDIEN_LOT'] ?? '',
+                $row['ESO_GARDIEN'] ?? '',
+                $row['GARD_TEL'] ?? '',
+                $row['GARD_MAIL'] ?? '',
+            ], ';');
+        }
+
+        rewind($handle);
+        $content = stream_get_contents($handle);
+        fclose($handle);
+
+        $response->setContent($content);
+        return $response;
+    }
     #[Route(
         '/liste-affectation/detail/{lot}',
         name: 'admin_liste_affectation_detail',

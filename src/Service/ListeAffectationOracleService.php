@@ -31,8 +31,9 @@ class ListeAffectationOracleService
         $params = [];
 
         if (!empty($search)) {
+            // Recherche par préfixe: groupe (LC4010), bâtiment (LC4010.01), escalier (LC4010.01.01)
             $whereConditions[] = "UPPER(LOT) LIKE UPPER(:search)";
-            $params['search'] = '%' . $search . '%';
+            $params['search'] = $search . '%';
         }
 
         if (!empty($groupe)) {
@@ -58,6 +59,7 @@ class ListeAffectationOracleService
             LOT,
             NATURE_LOT,
             GARDIEN_LOT,
+            ESO_GARDIEN,
             GARD_TEL,
             GARD_MAIL
         $baseSql
@@ -81,6 +83,28 @@ class ListeAffectationOracleService
             'limit' => $limit,
             'totalPages' => (int) $totalPages
         ];
+    }
+
+    /**
+     * Récupère toutes les affectations (pour export)
+     */
+    public function getAllAffectationsForExport(): iterable
+    {
+        $sql = <<<SQL
+        SELECT
+            AGENCE,
+            GROUPE,
+            LOT,
+            NATURE_LOT,
+            GARDIEN_LOT,
+            ESO_GARDIEN,
+            GARD_TEL,
+            GARD_MAIL
+        FROM LISTE_V_AFFECTATIONS
+        ORDER BY AGENCE, GROUPE, LOT
+        SQL;
+
+        return $this->connection->executeQuery($sql)->iterateAssociative();
     }
 
     /**
