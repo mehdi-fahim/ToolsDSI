@@ -102,6 +102,17 @@ class SystemOracleService
      */
     public function getLockedTables(): array
     {
+        // If a custom view is configured, try it first
+        $custom = getenv('LOCKS_VIEW');
+        if ($custom) {
+            try {
+                $rows = $this->getLockedTablesFromCustomView($custom);
+                if (!empty($rows)) { return $rows; }
+            } catch (\Throwable $e) {
+                // continue with fallbacks
+            }
+        }
+
         foreach (['GV_DBA', 'V_DBA', 'V_ALL'] as $variant) {
             try {
                 $rows = match ($variant) {
@@ -117,6 +128,16 @@ class SystemOracleService
             }
         }
         return [];
+    }
+
+    /**
+     * Utilise une vue personnalisée fournie par la DSI (paramètre env LOCKS_VIEW)
+     * La vue doit exposer au minimum: SID, SERIAL#, OBJECT_NAME, OSUSER, STATUS
+     */
+    public function getLockedTablesFromCustomView(string $viewName): array
+    {
+        $sql = "SELECT sid, serial# AS serial, object_name, osuser, status FROM " . $viewName;
+        return $this->defaultConnection->executeQuery($sql)->fetchAllAssociative();
     }
 
     /**
