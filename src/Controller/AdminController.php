@@ -1557,7 +1557,7 @@ class AdminController extends AbstractController
 
         try {
             // Ne pas charger la liste par défaut: attendre une recherche
-            if ($search === '') {
+            if ($search === '' || strlen($search) < 5) { // ex: "LC4010" longueur minimale
                 return $this->render('admin/liste_affectation.html.twig', [
                     'data' => [],
                     'pagination' => [
@@ -1570,15 +1570,16 @@ class AdminController extends AbstractController
                     'groupe' => $groupe,
                     'groupes' => [],
                     'stats' => null,
-                    'hasSearch' => false
+                    'hasSearch' => false,
+                    'minSearchMsg' => 'Veuillez saisir au moins 5 caractères (ex: LC4010)'
                 ]);
             }
 
             // Récupérer les données Oracle avec pagination et recherche
             $result = $this->listeAffectationOracleService->getListeAffectations($search, $groupe, $page, $limit);
 
-            // Récupérer les statistiques (optionnel)
-            $stats = $this->listeAffectationOracleService->getAffectationStats();
+            // Statistiques filtrées
+            $stats = $this->listeAffectationOracleService->getAffectationStatsBySearch($search);
 
             return $this->render('admin/liste_affectation.html.twig', [
                 'data' => $result['data'],

@@ -31,9 +31,9 @@ class ListeAffectationOracleService
         $params = [];
 
         if (!empty($search)) {
-            // Recherche par préfixe: groupe (LC4010), bâtiment (LC4010.01), escalier (LC4010.01.01)
-            $whereConditions[] = "UPPER(LOT) LIKE UPPER(:search)";
-            $params['search'] = $search . '%';
+            // Recherche par préfixe sans UPPER sur la colonne pour aider l'index
+            $whereConditions[] = "LOT LIKE :search";
+            $params['search'] = strtoupper($search) . '%';
         }
 
         if (!empty($groupe)) {
@@ -183,7 +183,7 @@ class ListeAffectationOracleService
             TPROX_ESC,
             RVQ_ESC,
             GARDIEN_ESC,
-            RGT_LOT,
+            RGT_LOT
             RGTL_LOT,
             CGLS_LOT,
             INLOG_LOT,
@@ -199,7 +199,7 @@ class ListeAffectationOracleService
         ORDER BY AGENCE, GROUPE, LOT
         SQL;
 
-        $param = ['search' => $search . '%'];
+        $param = ['search' => strtoupper($search) . '%'];
         return $this->connection->executeQuery($sql, $param)->iterateAssociative();
     }
 
@@ -282,6 +282,25 @@ class ListeAffectationOracleService
 
         return $this->connection
             ->executeQuery($sql)
+            ->fetchAssociative();
+    }
+
+    /**
+     * Statistiques filtrées par préfixe de LOT
+     */
+    public function getAffectationStatsBySearch(string $search): array
+    {
+        $sql = <<<SQL
+        SELECT 
+            COUNT(*) as TOTAL_LOTS,
+            COUNT(CASE WHEN GARD_TEL IS NOT NULL AND GARD_TEL != '' THEN 1 END) as LOTS_AVEC_TELEPHONE,
+            COUNT(CASE WHEN GARD_MAIL IS NOT NULL AND GARD_MAIL != '' THEN 1 END) as LOTS_AVEC_EMAIL
+        FROM LISTE_V_AFFECTATIONS
+        WHERE UPPER(LOT) LIKE UPPER(:search)
+        SQL;
+
+        return $this->connection
+            ->executeQuery($sql, ['search' => strtoupper($search) . '%'])
             ->fetchAssociative();
     }
 
