@@ -95,3 +95,8 @@ admin_liste_affectation_detail:
     controller: App\Controller\AdminController::listeAffectationDetail
     requirements:
         lot: '[^/]+'
+
+# Fallback route using querystring to avoid issues with dots in LOT values
+admin_liste_affectation_detail_qs:
+    path: /admin/liste-affectation/detail
+    controller: App\Controller\AdminController::listeAffectationDetail

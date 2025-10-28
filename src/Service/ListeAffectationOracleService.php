@@ -54,13 +54,14 @@ class ListeAffectationOracleService
         $sql = <<<SQL
         SELECT
             AGENCE,
+            GROUPE,
             LOT,
             NATURE_LOT,
             GARDIEN_LOT,
             GARD_TEL,
             GARD_MAIL
         $baseSql
-        ORDER BY AGENCE, LOT
+        ORDER BY AGENCE, GROUPE, LOT
         OFFSET :offset ROWS FETCH NEXT :limit ROWS ONLY
         SQL;
 
@@ -151,11 +152,11 @@ class ListeAffectationOracleService
     {
         $sql = <<<SQL
         SELECT 
-            COUNT(*) as total_lots,
-            COUNT(DISTINCT AGENCE) as total_agences,
-            COUNT(CASE WHEN GARDIEN_LOT IS NOT NULL AND GARDIEN_LOT != '' THEN 1 END) as lots_avec_gardien,
-            COUNT(CASE WHEN GARD_TEL IS NOT NULL AND GARD_TEL != '' THEN 1 END) as lots_avec_telephone,
-            COUNT(CASE WHEN GARD_MAIL IS NOT NULL AND GARD_MAIL != '' THEN 1 END) as lots_avec_email
+            COUNT(*) as TOTAL_LOTS,
+            COUNT(DISTINCT AGENCE) as TOTAL_AGENCES,
+            COUNT(CASE WHEN GARDIEN_LOT IS NOT NULL AND GARDIEN_LOT != '' THEN 1 END) as LOTS_AVEC_GARDIEN,
+            COUNT(CASE WHEN GARD_TEL IS NOT NULL AND GARD_TEL != '' THEN 1 END) as LOTS_AVEC_TELEPHONE,
+            COUNT(CASE WHEN GARD_MAIL IS NOT NULL AND GARD_MAIL != '' THEN 1 END) as LOTS_AVEC_EMAIL
         FROM LISTE_V_AFFECTATIONS
         SQL;
 

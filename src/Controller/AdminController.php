@@ -1603,10 +1603,19 @@ class AdminController extends AbstractController
         methods: ['GET'],
         requirements: ['lot' => '[^/]+' ]
     )]
-    public function listeAffectationDetail(string $lot, SessionInterface $session): Response
+    #[Route(
+        '/liste-affectation/detail',
+        name: 'admin_liste_affectation_detail_qs',
+        methods: ['GET']
+    )]
+    public function listeAffectationDetail(string $lot = null, SessionInterface $session, Request $request): Response
     {
         if (!$this->isAuthenticated($session)) {
             return $this->redirectToRoute('login');
+        }
+
+        if ($lot === null || $lot === '') {
+            $lot = (string) $request->query->get('lot', '');
         }
 
         try {
