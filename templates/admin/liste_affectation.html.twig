@@ -47,9 +47,9 @@
                 <p>Lots avec email</p>
             </div>
         </div>
-        {% if stats.TOTAL_LOTS != stats.LOTS_AVEC_TELEPHONE or stats.TOTAL_LOTS != stats.LOTS_AVEC_EMAIL %}
+        {% if stats.LOTS_SANS_CONTACT and stats.LOTS_SANS_CONTACT > 0 %}
             <div style="background:#fffaf0;color:#975a16;border-left:4px solid #d69e2e;padding:12px 16px;border-radius:8px;margin-bottom:16px;">
-                Attention: certains lots n'ont pas de téléphone ou d'email renseigné.
+                {{ stats.LOTS_SANS_CONTACT }} lot(s) sans téléphone et sans email.
             </div>
         {% endif %}
         {% endif %}
