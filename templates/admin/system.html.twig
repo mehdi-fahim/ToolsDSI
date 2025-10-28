@@ -10,23 +10,65 @@
     </div>
 
     <div class="admin-content">
-        <div style="background:#fff3cd;border:2px solid #ffc107;padding:40px;border-radius:12px;text-align:center;color:#856404;box-shadow:0 4px 6px rgba(0,0,0,0.1);">
-            <div style="font-size:64px;margin-bottom:20px;">🚧</div>
-            <h2 style="margin:0 0 16px 0;color:#856404;">Fonctionnalité en développement</h2>
-            <p style="font-size:18px;margin:0;line-height:1.6;">
-                La gestion des tables verrouillées Oracle sera bientôt disponible.<br>
-                Cette fonctionnalité permettra de visualiser et gérer les sessions Oracle actives.
-            </p>
-            <div style="margin-top:32px;padding-top:24px;border-top:1px solid #ffc107;">
-                <p style="font-size:14px;color:#856404;margin:0;">
-                    <strong>Fonctionnalités à venir :</strong><br>
-                    ✓ Affichage des sessions Oracle actives<br>
-                    ✓ Détection des objets verrouillés<br>
-                    ✓ Gestion des sessions bloquantes<br>
-                    ✓ Suppression de sessions individuelles ou en masse
-                </p>
-            </div>
+        {% for label, messages in app.flashes %}
+            {% for msg in messages %}
+            <div style="background:#ebf8ff;color:#2b6cb0;border-left:4px solid #4299e1;padding:10px 14px;border-radius:8px;margin-bottom:12px;">{{ msg }}</div>
+            {% endfor %}
+        {% endfor %}
+
+        <div style="display:flex; gap:10px; margin-bottom:16px;">
+            <a class="btn" href="{{ path('admin_system', {action: 'list'}) }}">🔍 Lister les verrous</a>
+            {% if locks is defined and locks|length > 0 %}
+            <form method="POST" action="{{ path('admin_system_kill_all') }}">
+                <button type="submit" class="btn btn-secondary" onclick="return confirm('Confirmer la suppression de TOUTES les sessions verrouillant ?');">🗑️ Tuer toutes les sessions</button>
+            </form>
+            {% endif %}
         </div>
+
+        {% if message %}
+            <div style="text-align:center;color:#718096;">{{ message }}</div>
+        {% endif %}
+
+        {% if locks is defined and locks|length > 0 %}
+        <div class="table-container">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>SID</th>
+                        <th>Serial</th>
+                        <th>Username</th>
+                        <th>OS User</th>
+                        <th>Status</th>
+                        <th>Machine</th>
+                        <th>Programme</th>
+                        <th>Objet</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in locks %}
+                    <tr>
+                        <td>{{ row.sid }}</td>
+                        <td>{{ row.serial ?? row['serial#'] }}</td>
+                        <td>{{ row.username|default('-') }}</td>
+                        <td>{{ row.osuser|default('-') }}</td>
+                        <td>{{ row.status|default('-') }}</td>
+                        <td>{{ row.machine|default('-') }}</td>
+                        <td>{{ row.program|default('-') }}</td>
+                        <td>{{ row.owner|default('') }} {{ row.object_name|default('') }}</td>
+                        <td>
+                            <form method="POST" action="{{ path('admin_system_kill') }}" onsubmit="return confirm('Tuer la session {{ row.sid }}/{{ row.serial ?? row['serial#'] }} ?');" style="display:inline;">
+                                <input type="hidden" name="sid" value="{{ row.sid }}" />
+                                <input type="hidden" name="serial" value="{{ row.serial ?? row['serial#'] }}" />
+                                <button type="submit" class="btn" style="padding:6px 10px;">🗑️ Tuer</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

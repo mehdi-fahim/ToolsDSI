@@ -11,27 +11,37 @@ class SystemOracleService
     }
 
     /**
-     * Récupère la liste des tables locker
+     * Récupère la liste des verrous (sessions et objets potentiellement lockés)
      */
     public function getLockedTables(): array
     {
-        // Retourner des données de test pour éviter les erreurs Oracle
-        return [
-            [
-                'sid' => '123',
-                'serial#' => '456',
-                'object_name' => 'Session de test',
-                'osuser' => 'SYSTEM',
-                'status' => 'ACTIVE'
-            ],
-            [
-                'sid' => '789',
-                'serial#' => '012',
-                'object_name' => 'Session utilisateur',
-                'osuser' => 'PCH',
-                'status' => 'ACTIVE'
-            ]
-        ];
+        $sql = <<<SQL
+        SELECT
+            s.sid,
+            s.serial# AS serial,
+            NVL(s.username, 'SYS') AS username,
+            s.osuser,
+            s.status,
+            s.machine,
+            s.program,
+            o.owner,
+            o.object_name,
+            l.type,
+            l.lmode,
+            l.request
+        FROM v$lock l
+        JOIN v$session s ON l.sid = s.sid
+        LEFT JOIN dba_objects o ON o.object_id = l.id1
+        WHERE l.block != 0 OR l.request != 0
+        ORDER BY s.sid
+        SQL;
+
+        try {
+            return $this->defaultConnection->executeQuery($sql)->fetchAllAssociative();
+        } catch (\Throwable $e) {
+            // En cas d'erreur (droits manquants), renvoyer tableau vide
+            return [];
+        }
     }
 
     /**
@@ -39,9 +49,14 @@ class SystemOracleService
      */
     public function killSession(int $sid, int $serial): bool
     {
-        // Simulation pour éviter les erreurs Oracle
-        // En mode test, on simule toujours un succès
-        return true;
+        $sql = "ALTER SYSTEM KILL SESSION :sess IMMEDIATE";
+        $sessionId = $sid . ',' . $serial;
+        try {
+            $this->defaultConnection->executeStatement($sql, ['sess' => $sessionId]);
+            return true;
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 
     /**
@@ -51,20 +66,17 @@ class SystemOracleService
     {
         $lockedTables = $this->getLockedTables();
         $results = [];
-        
         foreach ($lockedTables as $session) {
-            $sid = (int)$session['sid'];
-            $serial = (int)$session['serial#'];
-            
-            // Simulation pour éviter les erreurs Oracle
+            $sid = (int)($session['sid'] ?? 0);
+            $serial = (int)($session['serial'] ?? ($session['serial#'] ?? 0));
+            $success = $this->killSession($sid, $serial);
             $results[] = [
                 'sid' => $sid,
                 'serial' => $serial,
-                'object_name' => $session['object_name'],
-                'success' => true
+                'object_name' => $session['object_name'] ?? null,
+                'success' => $success
             ];
         }
-        
         return $results;
     }
 }
