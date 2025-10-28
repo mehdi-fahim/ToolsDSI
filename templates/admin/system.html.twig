@@ -28,6 +28,9 @@
             {% endif %}
         </div>
 
+        {% if error %}
+            <div style="background:#fed7d7;color:#c53030;border-left:4px solid #e53e3e;padding:10px 14px;border-radius:8px;margin-bottom:12px;white-space:pre-wrap;">{{ error }}</div>
+        {% endif %}
         {% if message %}
             <div style="text-align:center;color:#718096;">{{ message }}</div>
         {% endif %}

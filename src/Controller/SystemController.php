@@ -29,13 +29,17 @@ class SystemController extends AbstractController
         $locks = [];
 
         if ($action === 'list') {
-            $locks = match ($variant) {
-                'gv_dba' => $this->systemOracleService->getLockedTablesGV_DBA(),
-                'v_dba' => $this->systemOracleService->getLockedTablesV_DBA(),
-                'v_all' => $this->systemOracleService->getLockedTablesV_ALL(),
-                default => $this->systemOracleService->getLockedTables(),
-            };
-            if (!$locks) { $message = 'Aucun verrou détecté.'; }
+            try {
+                $locks = match ($variant) {
+                    'gv_dba' => $this->systemOracleService->getLockedTablesGV_DBA(),
+                    'v_dba' => $this->systemOracleService->getLockedTablesV_DBA(),
+                    'v_all' => $this->systemOracleService->getLockedTablesV_ALL(),
+                    default => $this->systemOracleService->getLockedTables(),
+                };
+                if (!$locks) { $message = 'Aucun verrou détecté (réponse vide).'; }
+            } catch (\Throwable $e) {
+                $error = 'Erreur SQL: ' . $e->getMessage();
+            }
         }
 
         return $this->render('admin/system.html.twig', [
