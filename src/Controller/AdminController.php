@@ -27,6 +27,8 @@ use App\Service\DetailedUserActionLogger;
 use App\Service\ImportODService;
 use App\Service\ImportODOracleService;
 use App\Service\ListeAffectationOracleService;
+use App\Service\InseeOracleService;
+use App\Service\IntitulesCBOracleService;
 
 #[Route('/admin')]
 class AdminController extends AbstractController
@@ -49,6 +51,8 @@ class AdminController extends AbstractController
         private ImportODService $importODService,
         private ImportODOracleService $importODOracleService,
         private ListeAffectationOracleService $listeAffectationOracleService,
+        private InseeOracleService $inseeOracleService,
+        private IntitulesCBOracleService $intitulesCBOracleService,
         private ?DetailedUserActionLogger $detailedUserActionLogger = null
     ) {}
 
@@ -1195,6 +1199,51 @@ class AdminController extends AbstractController
         }
 
         return $this->render('admin/traitement_gl.html.twig');
+    }
+
+    #[Route('/admin/traitement-gl/insee', name: 'admin_traitement_gl_insee', methods: ['GET'])]
+    public function traitementGlInsee(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        // Par défaut, reprendre l'année 2022 comme dans le code fourni, avec possibilité de la passer en query string
+        $annee = (int) ($request->query->get('annee', 2022));
+        $csv = $this->inseeOracleService->generateCsv($annee);
+
+        $filename = sprintf('insee_%s.csv', (new \DateTimeImmutable())->format('Ymd_His'));
+
+        return new Response(
+            $csv,
+            200,
+            [
+                'Content-Type' => 'text/csv; charset=UTF-8',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                'Cache-Control' => 'no-store',
+            ]
+        );
+    }
+
+    #[Route('/admin/traitement-gl/intitules-cb', name: 'admin_traitement_gl_intitules_cb', methods: ['GET'])]
+    public function traitementGlIntitulesCb(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        $csv = $this->intitulesCBOracleService->generateCsvForToday();
+        $filename = sprintf('intitules_cb_%s.csv', (new \DateTimeImmutable())->format('Ymd_His'));
+
+        return new Response(
+            $csv,
+            200,
+            [
+                'Content-Type' => 'text/csv; charset=UTF-8',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                'Cache-Control' => 'no-store',
+            ]
+        );
     }
 
     #[Route('/admin/beckrel', name: 'admin_beckrel_users', methods: ['GET', 'POST'])]
