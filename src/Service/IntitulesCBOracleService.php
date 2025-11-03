@@ -8,10 +8,9 @@ class IntitulesCBOracleService
 {
     private Connection $connection;
 
-    public function __construct(Connection $etudesConnection)
+    public function __construct(Connection $defaultConnection)
     {
-        // This argument is autowired from doctrine.dbal.etudes_connection
-        $this->connection = $etudesConnection;
+        $this->connection = $defaultConnection;
     }
 
     public function generateCsvForToday(): string

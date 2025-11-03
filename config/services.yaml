@@ -104,6 +104,16 @@ services:
             $projectDir: '%kernel.project_dir%'
             $oracleService: '@App\Service\ImportODOracleService'
 
+    # Service INSEE (connexion Oracle par défaut)
+    App\Service\InseeOracleService:
+        arguments:
+            $etudesConnection: '@doctrine.dbal.etudes_connection'
+
+    # Service Intitulés CB (connexion Oracle ETUDES)
+    App\Service\IntitulesCBOracleService:
+        arguments:
+            $defaultConnection: '@doctrine.dbal.default_connection'
+
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

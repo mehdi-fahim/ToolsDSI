@@ -8,9 +8,9 @@ class InseeOracleService
 {
     private Connection $connection;
 
-    public function __construct(Connection $defaultConnection)
+    public function __construct(Connection $etudesConnection)
     {
-        $this->connection = $defaultConnection;
+        $this->connection = $etudesConnection;
     }
 
     public function generateCsv(int $annee): string
