@@ -82,6 +82,9 @@ services:
         arguments:
             $kernelLogsDir: '%kernel.logs_dir%'
 
+    # Log des accès/CRUD des routes admin_*
+    App\EventListener\UserActionRequestListener: ~
+
     # Configuration pour le service DetailedUserActionLogger
     App\Service\DetailedUserActionLogger:
         arguments:

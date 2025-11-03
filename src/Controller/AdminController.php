@@ -1498,18 +1498,20 @@ class AdminController extends AbstractController
         $from = (string) $request->query->get('from', '');
         $to = (string) $request->query->get('to', '');
         $limit = (int) $request->query->get('limit', 200);
+        $page = (int) $request->query->get('page', 1);
 
-        $entries = $this->logViewerService->getUserActionHistory(
+        $result = $this->logViewerService->getUserActionHistory(
             $user !== '' ? $user : null,
             $action !== '' ? $action : null,
             $ip !== '' ? $ip : null,
             $from !== '' ? $from : null,
             $to !== '' ? $to : null,
-            $limit > 0 ? $limit : 200
+            $limit > 0 ? $limit : 200,
+            $page > 0 ? $page : 1
         );
 
         return $this->render('admin/history.html.twig', [
-            'entries' => $entries,
+            'entries' => $result['data'],
             'filters' => [
                 'user_id' => $user,
                 'action' => $action,
@@ -1517,6 +1519,9 @@ class AdminController extends AbstractController
                 'from' => $from,
                 'to' => $to,
                 'limit' => $limit,
+                'page' => $result['page'],
+                'total' => $result['total'],
+                'totalPages' => $result['totalPages'],
             ],
         ]);
     }

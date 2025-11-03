@@ -115,7 +115,15 @@ class LogViewerService
     /**
      * Historique filtré des actions utilisateur (par user, action, ip, période)
      */
-    public function getUserActionHistory(?string $userId, ?string $action, ?string $ip, ?string $fromDate, ?string $toDate, int $limit = 200): array
+    public function getUserActionHistory(
+        ?string $userId,
+        ?string $action,
+        ?string $ip,
+        ?string $fromDate,
+        ?string $toDate,
+        int $limit = 200,
+        int $page = 1
+    ): array
     {
         $logFile = $this->logsDir . '/user_actions.log';
         if (!file_exists($logFile)) {
@@ -128,6 +136,7 @@ class LogViewerService
         $results = [];
         $fromTs = $fromDate ? strtotime($fromDate . ' 00:00:00') : null;
         $toTs = $toDate ? strtotime($toDate . ' 23:59:59') : null;
+        $matched = [];
 
         foreach ($lines as $line) {
             $parsed = $this->parseLogLine($line);
@@ -162,13 +171,22 @@ class LogViewerService
 
             // Enrichir avec des champs structurés (user_id, action, ip, route, entity, entity_id, summary)
             $enriched = $this->enrichParsedEntry($parsed);
-            $results[] = $enriched;
-            if (count($results) >= $limit) {
-                break;
-            }
+            $matched[] = $enriched;
         }
 
-        return $results;
+        // Pagination
+        $total = count($matched);
+        $page = max(1, $page);
+        $offset = ($page - 1) * $limit;
+        $paged = array_slice($matched, $offset, $limit);
+
+        return [
+            'data' => $paged,
+            'total' => $total,
+            'page' => $page,
+            'limit' => $limit,
+            'totalPages' => (int) ceil($total / max(1, $limit)),
+        ];
     }
 
     /**
@@ -180,8 +198,9 @@ class LogViewerService
         $message = (string)($parsed['message'] ?? '');
 
         $parsed['user_id'] = $this->extractField($raw, ['user_id','user']);
-        $parsed['ip'] = $this->extractField($raw, ['ip','client_ip','remote_ip']);
-        $parsed['route'] = $this->extractField($raw, ['route','path','page']);
+        $parsed['ip'] = $this->extractField($raw, ['ip','client_ip','remote_ip']) ?: $this->extractIpFallback($raw);
+        // Route: chercher clés puis fallback sur motifs admin_*
+        $parsed['route'] = $this->extractField($raw, ['route','_route','path','page']) ?: $this->extractRouteFallback($raw, $message);
         $parsed['entity'] = $this->extractField($raw, ['entity','target','resource']);
         $parsed['entity_id'] = $this->extractField($raw, ['id','entity_id','target_id']);
         $parsed['action'] = $this->extractField($raw, ['action','event','verb']) ?: $this->guessActionFromText($message);
@@ -225,6 +244,26 @@ class LogViewerService
         $clean = preg_replace('/\{.*\}$/s', '', $message) ?? $message;
         $clean = trim($clean);
         return strlen($clean) > 200 ? substr($clean, 0, 200) . '…' : $clean;
+    }
+
+    private function extractIpFallback(string $text): ?string
+    {
+        if (preg_match('/\b(\d{1,3}\.){3}\d{1,3}\b/', $text, $m)) {
+            return $m[0];
+        }
+        return null;
+    }
+
+    private function extractRouteFallback(string $raw, string $message): ?string
+    {
+        // Chercher un motif de route Symfony typique admin_xxx
+        if (preg_match('/\b(admin_[a-z0-9_\-]+)/i', $raw, $m)) {
+            return $m[1];
+        }
+        if (preg_match('/\b(admin_[a-z0-9_\-]+)/i', $message, $m)) {
+            return $m[1];
+        }
+        return null;
     }
 
     /**
