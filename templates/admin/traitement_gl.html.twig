@@ -15,8 +15,8 @@
     <h2 style="font-size:1.2rem;color:#232946;font-weight:700;margin-bottom:12px;">Génération des plans d'office</h2>
     <p style="color:#4a5568;margin-bottom:16px;">Lancer la génération ou récupérer le dernier fichier produit.</p>
     <div style="display:flex;gap:10px;flex-wrap:wrap;">
-      <button type="button" class="btn btn-primary">⚙️ Générer</button>
-      <button type="button" class="btn">⬇️ Obtenir le fichier</button>
+      <a href="{{ path('admin_traitement_gl_plans_generer') }}" class="btn btn-primary">⚙️ Générer</a>
+      <a href="{{ path('admin_traitement_gl_plans_obtenir') }}" class="btn">⬇️ Obtenir le fichier</a>
     </div>
   </div>
 

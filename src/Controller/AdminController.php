@@ -29,6 +29,7 @@ use App\Service\ImportODOracleService;
 use App\Service\ListeAffectationOracleService;
 use App\Service\InseeOracleService;
 use App\Service\IntitulesCBOracleService;
+use App\Service\PlansOfficeOracleService;
 
 #[Route('/admin')]
 class AdminController extends AbstractController
@@ -53,6 +54,7 @@ class AdminController extends AbstractController
         private ListeAffectationOracleService $listeAffectationOracleService,
         private InseeOracleService $inseeOracleService,
         private IntitulesCBOracleService $intitulesCBOracleService,
+        private PlansOfficeOracleService $plansOfficeOracleService,
         private ?DetailedUserActionLogger $detailedUserActionLogger = null
     ) {}
 
@@ -1213,6 +1215,50 @@ class AdminController extends AbstractController
         $csv = $this->inseeOracleService->generateCsv($annee);
 
         $filename = sprintf('insee_%s.csv', (new \DateTimeImmutable())->format('Ymd_His'));
+
+        return new Response(
+            $csv,
+            200,
+            [
+                'Content-Type' => 'text/csv; charset=UTF-8',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                'Cache-Control' => 'no-store',
+            ]
+        );
+    }
+
+    #[Route('/admin/traitement-gl/plans/generer', name: 'admin_traitement_gl_plans_generer', methods: ['GET'])]
+    public function traitementGlPlansGenerer(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        $username = (string) strtoupper((string) $session->get('user_id', '')); // même logique de session que le reste de l'app
+        if ($username === '') {
+            $this->addFlash('error', 'Utilisateur non authentifié');
+            return $this->redirectToRoute('admin_traitement_gl');
+        }
+
+        try {
+            $this->plansOfficeOracleService->triggerGeneration($username);
+            $this->addFlash('success', "Génération des plans d'office déclenchée.");
+        } catch (\Throwable $e) {
+            $this->addFlash('error', "Erreur lors du déclenchement: " . $e->getMessage());
+        }
+
+        return $this->redirectToRoute('admin_traitement_gl');
+    }
+
+    #[Route('/admin/traitement-gl/plans/obtenir', name: 'admin_traitement_gl_plans_obtenir', methods: ['GET'])]
+    public function traitementGlPlansObtenir(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        $csv = $this->plansOfficeOracleService->exportPlansCsv();
+        $filename = sprintf('plans_office_%s.csv', (new \DateTimeImmutable())->format('Ymd_His'));
 
         return new Response(
             $csv,
