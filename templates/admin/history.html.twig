@@ -3,7 +3,7 @@
 {% block title %}Historique des actions{% endblock %}
 
 {% block content %}
-<div style="max-width: 1400px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px;">
+<div style="max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px;">
   <div style="background:#fff;border-radius:15px;box-shadow:0 8px 32px rgba(0,0,0,0.08);border:1px solid #eef2f7;padding:20px;">
     <h1 style="font-size:1.4rem;color:#232946;font-weight:700;margin-bottom:12px;">Historique des actions</h1>
     <form method="get" action="{{ path('admin_history') }}" style="display:grid;grid-template-columns:repeat(7,1fr);gap:10px;align-items:end;">
@@ -44,7 +44,7 @@
 
   <div style="background:#fff;border-radius:15px;box-shadow:0 8px 32px rgba(0,0,0,0.08);border:1px solid #eef2f7;padding:16px;">
     <div class="table-container">
-      <table class="admin-table" style="min-width: 1200px;">
+      <table class="admin-table">
         <thead>
           <tr>
             <th>Date</th>
@@ -52,7 +52,6 @@
             <th>Action</th>
             <th>Route / Entité</th>
             <th>IP</th>
-            <th>Détails</th>
           </tr>
         </thead>
         <tbody>
@@ -74,10 +73,9 @@
                 </div>
               </td>
               <td>{{ e.ip ?? '-' }}</td>
-              <td style="white-space: pre-wrap;">{{ e.summary ?? e.message }}</td>
             </tr>
           {% else %}
-            <tr><td colspan="6" style="text-align:center;color:#6b7280;">Aucun résultat</td></tr>
+            <tr><td colspan="5" style="text-align:center;color:#6b7280;">Aucun résultat</td></tr>
           {% endfor %}
         </tbody>
       </table>
