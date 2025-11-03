@@ -1497,7 +1497,7 @@ class AdminController extends AbstractController
         $ip = trim((string) $request->query->get('ip', ''));
         $from = (string) $request->query->get('from', '');
         $to = (string) $request->query->get('to', '');
-        $limit = (int) $request->query->get('limit', 200);
+        $limit = (int) $request->query->get('limit', 40);
         $page = (int) $request->query->get('page', 1);
 
         $result = $this->logViewerService->getUserActionHistory(
@@ -1506,7 +1506,7 @@ class AdminController extends AbstractController
             $ip !== '' ? $ip : null,
             $from !== '' ? $from : null,
             $to !== '' ? $to : null,
-            $limit > 0 ? $limit : 200,
+            $limit > 0 ? $limit : 40,
             $page > 0 ? $page : 1
         );
 
@@ -1524,6 +1524,28 @@ class AdminController extends AbstractController
                 'totalPages' => $result['totalPages'],
             ],
         ]);
+    }
+
+    #[Route('/admin/history/purge', name: 'admin_history_purge', methods: ['POST'])]
+    public function historyPurge(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        // Optionnel: sécuriser par droit admin_history
+        $access = (array) $session->get('page_access', []);
+        if (!in_array('admin_history', $access, true)) {
+            return $this->redirectToRoute('login');
+        }
+
+        $days = (int) $request->request->get('days', 30);
+        $days = $days > 0 ? $days : 30;
+
+        $stats = $this->logViewerService->purgeUserActionsOlderThan($days);
+        $this->addFlash('success', sprintf('Purge effectuée: %d supprimé(s) (> %d jours), %d conservé(s).', $stats['purged'], $days, $stats['kept']));
+
+        return $this->redirectToRoute('admin_history');
     }
 
 

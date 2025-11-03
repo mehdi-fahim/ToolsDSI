@@ -353,4 +353,52 @@ class LogViewerService
         
         return $uniqueUsers;
     }
+
+    /**
+     * Purge les lignes de user_actions.log antérieures à $days jours.
+     * Retourne un tableau avec total, kept, purged.
+     */
+    public function purgeUserActionsOlderThan(int $days): array
+    {
+        $logFile = $this->logsDir . '/user_actions.log';
+        if (!file_exists($logFile) || $days <= 0) {
+            return ['total' => 0, 'kept' => 0, 'purged' => 0];
+        }
+
+        $threshold = strtotime(sprintf('-%d days', $days));
+        $lines = file($logFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [];
+        $total = count($lines);
+        $keptLines = [];
+
+        foreach ($lines as $line) {
+            $ts = $this->extractTimestampFromLine($line);
+            if ($ts === null || $ts >= $threshold) {
+                $keptLines[] = $line;
+            }
+        }
+
+        file_put_contents($logFile, implode(PHP_EOL, $keptLines) . (empty($keptLines) ? '' : PHP_EOL));
+
+        $kept = count($keptLines);
+        return [
+            'total' => $total,
+            'kept' => $kept,
+            'purged' => max(0, $total - $kept),
+        ];
+    }
+
+    private function extractTimestampFromLine(string $line): ?int
+    {
+        // Format monolog par défaut: [YYYY-MM-DD HH:MM:SS] channel.level: message
+        if (preg_match('/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]/', $line, $m)) {
+            $ts = strtotime($m[1]);
+            return $ts === false ? null : $ts;
+        }
+        // JSON-like context with "timestamp":"YYYY-MM-DD HH:MM:SS"
+        if (preg_match('/\"timestamp\"\s*:\s*\"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\"/', $line, $m)) {
+            $ts = strtotime($m[1]);
+            return $ts === false ? null : $ts;
+        }
+        return null;
+    }
 }
