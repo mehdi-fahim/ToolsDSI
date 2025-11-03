@@ -160,13 +160,71 @@ class LogViewerService
                 continue;
             }
 
-            $results[] = $parsed;
+            // Enrichir avec des champs structurés (user_id, action, ip, route, entity, entity_id, summary)
+            $enriched = $this->enrichParsedEntry($parsed);
+            $results[] = $enriched;
             if (count($results) >= $limit) {
                 break;
             }
         }
 
         return $results;
+    }
+
+    /**
+     * Extrait des informations structurées depuis une entrée parsée.
+     */
+    private function enrichParsedEntry(array $parsed): array
+    {
+        $raw = (string)($parsed['raw'] ?? '');
+        $message = (string)($parsed['message'] ?? '');
+
+        $parsed['user_id'] = $this->extractField($raw, ['user_id','user']);
+        $parsed['ip'] = $this->extractField($raw, ['ip','client_ip','remote_ip']);
+        $parsed['route'] = $this->extractField($raw, ['route','path','page']);
+        $parsed['entity'] = $this->extractField($raw, ['entity','target','resource']);
+        $parsed['entity_id'] = $this->extractField($raw, ['id','entity_id','target_id']);
+        $parsed['action'] = $this->extractField($raw, ['action','event','verb']) ?: $this->guessActionFromText($message);
+        $parsed['summary'] = $this->buildSummary($message);
+
+        return $parsed;
+    }
+
+    private function extractField(string $text, array $keys): ?string
+    {
+        foreach ($keys as $key) {
+            // JSON-like: "key":"value"
+            if (preg_match('/"' . preg_quote($key, '/') . '"\s*:\s*"([^"]+)"/i', $text, $m)) {
+                return $m[1];
+            }
+            // JSON-like numeric: "key": 123
+            if (preg_match('/"' . preg_quote($key, '/') . '"\s*:\s*([0-9A-Za-z_\-\.]+)/i', $text, $m)) {
+                return $m[1];
+            }
+            // key=value
+            if (preg_match('/\b' . preg_quote($key, '/') . '=([^\s,;]+)/i', $text, $m)) {
+                return trim($m[1], '\"');
+            }
+        }
+        return null;
+    }
+
+    private function guessActionFromText(string $text): ?string
+    {
+        $l = strtolower($text);
+        if (str_contains($l, 'create') || str_contains($l, 'création') || str_contains($l, 'created')) return 'create';
+        if (str_contains($l, 'update') || str_contains($l, 'modification') || str_contains($l, 'updated')) return 'update';
+        if (str_contains($l, 'delete') || str_contains($l, 'suppression') || str_contains($l, 'deleted')) return 'delete';
+        if (str_contains($l, 'view') || str_contains($l, 'consultation') || str_contains($l, 'access')) return 'view';
+        return null;
+    }
+
+    private function buildSummary(string $message): string
+    {
+        // Supprimer les gros blocs JSON/contexts pour un aperçu court
+        $clean = preg_replace('/\{.*\}$/s', '', $message) ?? $message;
+        $clean = trim($clean);
+        return strlen($clean) > 200 ? substr($clean, 0, 200) . '…' : $clean;
     }
 
     /**

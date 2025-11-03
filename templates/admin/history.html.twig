@@ -44,19 +44,36 @@
         <thead>
           <tr>
             <th>Date</th>
-            <th>Niveau</th>
-            <th>Message</th>
+            <th>Utilisateur</th>
+            <th>Action</th>
+            <th>Route / Entité</th>
+            <th>IP</th>
+            <th>Détails</th>
           </tr>
         </thead>
         <tbody>
           {% for e in entries %}
+            {% set action = (e.action ?? '')|lower %}
+            {% set badgeBg = action == 'create' ? '#10b981' : (action == 'update' ? '#f59e0b' : (action == 'delete' ? '#ef4444' : '#3b82f6')) %}
             <tr>
               <td>{{ e.timestamp }}</td>
-              <td>{{ e.level|upper }}</td>
-              <td style="white-space: pre-wrap;">{{ e.message }}</td>
+              <td>{{ e.user_id ?? '-' }}</td>
+              <td>
+                <span style="display:inline-block;padding:4px 8px;border-radius:999px;color:#fff;background: {{ badgeBg }};font-size:12px;text-transform:uppercase;">
+                  {{ action ?: 'view' }}
+                </span>
+              </td>
+              <td>
+                <div style="display:flex;flex-direction:column;gap:2px;">
+                  <span style="color:#111827;">{{ e.route ?? '-' }}</span>
+                  {% if e.entity %}<span style="color:#6b7280;font-size:12px;">{{ e.entity }}{% if e.entity_id %} #{{ e.entity_id }}{% endif %}</span>{% endif %}
+                </div>
+              </td>
+              <td>{{ e.ip ?? '-' }}</td>
+              <td style="white-space: pre-wrap;">{{ e.summary ?? e.message }}</td>
             </tr>
           {% else %}
-            <tr><td colspan="3" style="text-align:center;color:#6b7280;">Aucun résultat</td></tr>
+            <tr><td colspan="6" style="text-align:center;color:#6b7280;">Aucun résultat</td></tr>
           {% endfor %}
         </tbody>
       </table>
