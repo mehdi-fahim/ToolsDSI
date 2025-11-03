@@ -1,0 +1,41 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Traitement GL - Gestion{% endblock %}
+
+{% block content %}
+<div style="max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+    <h1 style="font-size: 1.6rem; color: #232946; font-weight: 700;">Traitement GL</h1>
+    <div style="display: flex; gap: 10px;">
+      <a href="{{ path('admin_dashboard') }}" class="btn btn-secondary">🏠 Dashboard</a>
+    </div>
+  </div>
+
+  <div style="background:#fff;border-radius:15px;box-shadow:0 8px 32px rgba(0,0,0,0.08);border:1px solid #eef2f7;padding:24px;">
+    <h2 style="font-size:1.2rem;color:#232946;font-weight:700;margin-bottom:12px;">Génération des plans d'office</h2>
+    <p style="color:#4a5568;margin-bottom:16px;">Lancer la génération ou récupérer le dernier fichier produit.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button type="button" class="btn btn-primary">⚙️ Générer</button>
+      <button type="button" class="btn">⬇️ Obtenir le fichier</button>
+    </div>
+  </div>
+
+  <div style="background:#fff;border-radius:15px;box-shadow:0 8px 32px rgba(0,0,0,0.08);border:1px solid #eef2f7;padding:24px;">
+    <h2 style="font-size:1.2rem;color:#232946;font-weight:700;margin-bottom:12px;">Génération des intitulés pour paiement CB</h2>
+    <p style="color:#4a5568;margin-bottom:16px;">Récupérer le fichier des intitulés pour paiements carte bancaire.</p>
+    <div>
+      <button type="button" class="btn">⬇️ Obtenir le fichier</button>
+    </div>
+  </div>
+
+  <div style="background:#fff;border-radius:15px;box-shadow:0 8px 32px rgba(0,0,0,0.08);border:1px solid #eef2f7;padding:24px;">
+    <h2 style="font-size:1.2rem;color:#232946;font-weight:700;margin-bottom:12px;">Extraction Trimestrielle INSEE</h2>
+    <p style="color:#4a5568;margin-bottom:16px;">Exporter les données trimestrielles à destination de l'INSEE.</p>
+    <div>
+      <button type="button" class="btn">⬇️ Obtenir le fichier</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+

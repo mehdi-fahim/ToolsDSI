@@ -1007,6 +1007,7 @@ class AdminController extends AbstractController
             'admin_mode_operatoire' => 'Mode opératoire',
             'admin_import_od' => 'Import OD',
             'admin_liste_affectation' => 'Liste d\'affectation',
+            'admin_traitement_gl' => 'Traitement GL',
         ];
 
         $isAdminFlag = null;
@@ -1184,6 +1185,16 @@ class AdminController extends AbstractController
             'error' => $error,
             'success' => $success,
         ]);
+    }
+
+    #[Route('/admin/traitement-gl', name: 'admin_traitement_gl', methods: ['GET'])]
+    public function traitementGl(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        return $this->render('admin/traitement_gl.html.twig');
     }
 
     #[Route('/admin/beckrel', name: 'admin_beckrel_users', methods: ['GET', 'POST'])]
