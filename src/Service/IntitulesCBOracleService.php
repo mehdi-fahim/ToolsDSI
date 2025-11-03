@@ -19,19 +19,22 @@ class IntitulesCBOracleService
     {
         $sql = "SELECT caint_num AS NO_INTITULE, nom, mdp AS CLE FROM internet_intitules WHERE TRUNC(datecre) = TRUNC(SYSDATE) ORDER BY caint_num";
 
-        // Tenter sur la base par défaut; si la procédure n'existe pas, basculer sur ETUDES
+        // Appeler la procédure avec un argument vide
         try {
             $this->defaultConnection->executeStatement('BEGIN INS_INTERNET_INTITULE(:p); END;', ['p' => '']);
             $rows = $this->defaultConnection->executeQuery($sql)->fetchAllAssociative();
             return $this->toCsv($rows);
         } catch (\Throwable $e) {
-            // Cas fréquent: procédure absente sur la base par défaut
+            // Fallback: connexion ETUDES
             try {
                 $this->etudesConnection->executeStatement('BEGIN INS_INTERNET_INTITULE(:p); END;', ['p' => '']);
                 $rows = $this->etudesConnection->executeQuery($sql)->fetchAllAssociative();
                 return $this->toCsv($rows);
             } catch (\Throwable $e2) {
-                throw $e2; // remonter l'erreur originale si la seconde tentative échoue aussi
+                // Dernier essai: qualifier le schéma ETUDES
+                $this->etudesConnection->executeStatement('BEGIN ETUDES.INS_INTERNET_INTITULE(:p); END;', ['p' => '']);
+                $rows = $this->etudesConnection->executeQuery($sql)->fetchAllAssociative();
+                return $this->toCsv($rows);
             }
         }
     }
