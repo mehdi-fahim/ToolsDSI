@@ -113,6 +113,7 @@ services:
     App\Service\IntitulesCBOracleService:
         arguments:
             $defaultConnection: '@doctrine.dbal.default_connection'
+            $etudesConnection: '@doctrine.dbal.etudes_connection'
 
 
     # add more service definitions when explicit configuration is needed

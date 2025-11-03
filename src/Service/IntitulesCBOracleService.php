@@ -6,24 +6,34 @@ use Doctrine\DBAL\Connection;
 
 class IntitulesCBOracleService
 {
-    private Connection $connection;
+    private Connection $defaultConnection;
+    private Connection $etudesConnection;
 
-    public function __construct(Connection $defaultConnection)
+    public function __construct(Connection $defaultConnection, Connection $etudesConnection)
     {
-        $this->connection = $defaultConnection;
+        $this->defaultConnection = $defaultConnection;
+        $this->etudesConnection = $etudesConnection;
     }
 
     public function generateCsvForToday(): string
     {
-        // Appel de la procédure stockée INS_INTERNET_INTITULE
-        // La procédure ne prend pas de paramètres utiles ici ("" dans le code VB)
-        $this->connection->executeStatement('BEGIN INS_INTERNET_INTITULE(:p); END;', [
-            'p' => ''
-        ]);
-
         $sql = "SELECT caint_num AS NO_INTITULE, nom, mdp AS CLE FROM internet_intitules WHERE TRUNC(datecre) = TRUNC(SYSDATE) ORDER BY caint_num";
-        $rows = $this->connection->executeQuery($sql)->fetchAllAssociative();
-        return $this->toCsv($rows);
+
+        // Tenter sur la base par défaut; si la procédure n'existe pas, basculer sur ETUDES
+        try {
+            $this->defaultConnection->executeStatement('BEGIN INS_INTERNET_INTITULE(:p); END;', ['p' => '']);
+            $rows = $this->defaultConnection->executeQuery($sql)->fetchAllAssociative();
+            return $this->toCsv($rows);
+        } catch (\Throwable $e) {
+            // Cas fréquent: procédure absente sur la base par défaut
+            try {
+                $this->etudesConnection->executeStatement('BEGIN INS_INTERNET_INTITULE(:p); END;', ['p' => '']);
+                $rows = $this->etudesConnection->executeQuery($sql)->fetchAllAssociative();
+                return $this->toCsv($rows);
+            } catch (\Throwable $e2) {
+                throw $e2; // remonter l'erreur originale si la seconde tentative échoue aussi
+            }
+        }
     }
 
     private function toCsv(array $rows): string
