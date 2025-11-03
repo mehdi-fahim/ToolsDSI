@@ -1005,6 +1005,7 @@ class AdminController extends AbstractController
             'admin_user_unlock' => 'Débloquer MDP',
             'admin_system' => 'Système',
             'admin_logs' => 'Logs',
+            'admin_history' => 'Historique',
             'admin_user_access' => 'Administration',
             'admin_proposition' => 'Proposition (Suppression)',
             'admin_reouv_exemptes' => 'Réouv exemptés',
@@ -1481,6 +1482,42 @@ class AdminController extends AbstractController
             'limit' => $limit,
             'userId' => $userId,
             'uniqueUsers' => $uniqueUsers,
+        ]);
+    }
+
+    #[Route('/admin/history', name: 'admin_history', methods: ['GET'])]
+    public function history(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        $user = trim((string) $request->query->get('user_id', ''));
+        $action = trim((string) $request->query->get('action', ''));
+        $ip = trim((string) $request->query->get('ip', ''));
+        $from = (string) $request->query->get('from', '');
+        $to = (string) $request->query->get('to', '');
+        $limit = (int) $request->query->get('limit', 200);
+
+        $entries = $this->logViewerService->getUserActionHistory(
+            $user !== '' ? $user : null,
+            $action !== '' ? $action : null,
+            $ip !== '' ? $ip : null,
+            $from !== '' ? $from : null,
+            $to !== '' ? $to : null,
+            $limit > 0 ? $limit : 200
+        );
+
+        return $this->render('admin/history.html.twig', [
+            'entries' => $entries,
+            'filters' => [
+                'user_id' => $user,
+                'action' => $action,
+                'ip' => $ip,
+                'from' => $from,
+                'to' => $to,
+                'limit' => $limit,
+            ],
         ]);
     }
 

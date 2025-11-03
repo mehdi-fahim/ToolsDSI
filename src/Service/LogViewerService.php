@@ -113,6 +113,63 @@ class LogViewerService
     }
 
     /**
+     * Historique filtré des actions utilisateur (par user, action, ip, période)
+     */
+    public function getUserActionHistory(?string $userId, ?string $action, ?string $ip, ?string $fromDate, ?string $toDate, int $limit = 200): array
+    {
+        $logFile = $this->logsDir . '/user_actions.log';
+        if (!file_exists($logFile)) {
+            return [];
+        }
+
+        $lines = file($logFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        $lines = array_reverse($lines); // récents d'abord
+
+        $results = [];
+        $fromTs = $fromDate ? strtotime($fromDate . ' 00:00:00') : null;
+        $toTs = $toDate ? strtotime($toDate . ' 23:59:59') : null;
+
+        foreach ($lines as $line) {
+            $parsed = $this->parseLogLine($line);
+
+            // Filtre période
+            $ts = isset($parsed['timestamp']) ? strtotime($parsed['timestamp']) : null;
+            if ($fromTs && $ts && $ts < $fromTs) {
+                continue;
+            }
+            if ($toTs && $ts && $ts > $toTs) {
+                continue;
+            }
+
+            $raw = $parsed['raw'] ?? '';
+            $msg = strtolower((string)($parsed['message'] ?? ''));
+            $rawLower = strtolower($raw);
+
+            // Filtre user
+            if ($userId && stripos($raw, $userId) === false) {
+                continue;
+            }
+
+            // Filtre action (recherche dans message brut)
+            if ($action && $action !== '' && strpos($msg, strtolower($action)) === false) {
+                continue;
+            }
+
+            // Filtre IP
+            if ($ip && $ip !== '' && strpos($rawLower, strtolower($ip)) === false) {
+                continue;
+            }
+
+            $results[] = $parsed;
+            if (count($results) >= $limit) {
+                break;
+            }
+        }
+
+        return $results;
+    }
+
+    /**
      * Récupère les statistiques des logs
      */
     public function getLogStats(): array
