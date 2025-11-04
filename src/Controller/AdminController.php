@@ -356,6 +356,10 @@ class AdminController extends AbstractController
                         if ($numeroDemande === '') { $error = 'Numéro de demande requis.'; break; }
                         if ($demandeurTiers === '') { $error = 'Le code tiers du demandeur est requis pour la mise à jour.'; break; }
                         $this->logementOracleService->updateRole($numeroDemande, 'CAND', $demandeurTiers, $demandeurDebut ?: null, $demandeurFin ?: null);
+                        // Si on a supprimé la date de fin pour ce CAND, clôturer les autres CAND de la même demande
+                        if ($demandeurFin === '' || $demandeurFin === null) {
+                            $this->logementOracleService->closeOtherCandidatesAndKeepOneOpen($numeroDemande, $demandeurTiers);
+                        }
                         $success = 'Modification du demandeur effectuée';
                         break;
                     case 'update_codemandeur':

@@ -96,6 +96,25 @@ class LogementOracleService
             'tiers' => $tiers,
         ]);
     }
+
+    /**
+     * Quand on supprime la date de fin d'un CAND, clôturer les autres CAND de la même demande
+     * et garder uniquement ce tiers sans date de fin.
+     */
+    public function closeOtherCandidatesAndKeepOneOpen(string $numeroDemande, string $tiersToKeep): void
+    {
+        // Ouvrir le tiers sélectionné (date fin NULL)
+        $this->defaultConnection->executeStatement(
+            "UPDATE ACPAR SET ACPAR_DTFPAR = NULL WHERE ACDOS_NUM = :num AND ACTPA_COD = 'CAND' AND TOTIE_COD = :tiers",
+            ['num' => $numeroDemande, 'tiers' => $tiersToKeep]
+        );
+
+        // Clôturer les autres candidats (si pas déjà clôturés)
+        $this->defaultConnection->executeStatement(
+            "UPDATE ACPAR SET ACPAR_DTFPAR = SYSDATE WHERE ACDOS_NUM = :num AND ACTPA_COD = 'CAND' AND TOTIE_COD <> :tiers AND (ACPAR_DTFPAR IS NULL OR ACPAR_DTFPAR > SYSDATE)",
+            ['num' => $numeroDemande, 'tiers' => $tiersToKeep]
+        );
+    }
 }
 
 
