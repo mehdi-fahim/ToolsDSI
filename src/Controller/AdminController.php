@@ -866,7 +866,13 @@ class AdminController extends AbstractController
         $message = null;
         $error = null;
         $userInfo = null;
-        $userId = $request->request->get('user_id', '');
+        $userId = (string) $request->request->get('user_id', '');
+
+        if ($userId === '') {
+            $userId = (string) $request->query->get('user_id', '');
+        }
+
+        $userId = strtoupper(trim($userId));
 
         if ($request->isMethod('POST')) {
             if (empty($userId)) {
