@@ -19,6 +19,7 @@ class ExtractionOracleService
      */
     public function generateCsvForGroup(string $groupeSi, array $selectedFields): string
     {
+        $selectedFields = array_values(array_unique($selectedFields));
         $sql = $this->buildExtractionQuery($groupeSi, $selectedFields);
         
         try {
@@ -308,7 +309,7 @@ class ExtractionOracleService
         // En-têtes
         $headers = [];
         foreach ($selectedFields as $field) {
-            $headers[] = $this->getFieldLabel($field);
+            $headers[] = $this->sanitizeLabel($this->getFieldLabel($field));
         }
         fputcsv($output, $headers, ';');
 
@@ -441,6 +442,21 @@ class ExtractionOracleService
      */
     public function getQueryForDisplay(string $groupeSi, array $selectedFields): string
     {
-        return $this->buildExtractionQuery($groupeSi, $selectedFields);
+        return $this->buildExtractionQuery($groupeSi, array_values(array_unique($selectedFields)));
+    }
+
+    /**
+     * Supprime les accents et normalise les libellés pour l'export CSV
+     */
+    private function sanitizeLabel(string $label): string
+    {
+        $normalized = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $label);
+        if ($normalized === false) {
+            $normalized = $label;
+        }
+
+        $normalized = preg_replace('/\s+/', ' ', $normalized ?? $label);
+
+        return trim($normalized ?? $label);
     }
 } 

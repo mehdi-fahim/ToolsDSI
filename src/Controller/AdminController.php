@@ -931,6 +931,9 @@ class AdminController extends AbstractController
 
         $groupeSi = $request->request->get('groupe_si', '');
         $selectedFields = $request->request->all('fields') ?? [];
+        if (!empty($selectedFields)) {
+            $selectedFields = array_values(array_unique($selectedFields));
+        }
         $error = null;
         $success = null;
         $query = null;
@@ -944,7 +947,7 @@ class AdminController extends AbstractController
                 try {
                     $csv = $this->extractionOracleService->generateCsvForGroup($groupeSi, $selectedFields);
                     
-                    if ($this->isSuperAdmin($session)) {
+                    if ($this->isAdmin($session)) {
                         $query = $this->extractionOracleService->getQueryForDisplay($groupeSi, $selectedFields);
                     }
                     
@@ -965,19 +968,22 @@ class AdminController extends AbstractController
             'error' => $error,
             'success' => $success,
             'query' => $query,
-            'isSuperAdmin' => $this->isSuperAdmin($session)
+            'canViewQuery' => $this->isAdmin($session)
         ]);
     }
 
     #[Route('/admin/extraction/query', name: 'admin_extraction_query', methods: ['POST'])]
     public function extractionQuery(Request $request, SessionInterface $session): Response
     {
-        if (!$this->isSuperAdmin($session)) {
+        if (!$this->isAdmin($session)) {
             return new JsonResponse(['error' => 'Accès non autorisé'], 403);
         }
 
         $groupeSi = $request->request->get('groupe_si', '');
         $selectedFields = $request->request->all('fields') ?? [];
+        if (!empty($selectedFields)) {
+            $selectedFields = array_values(array_unique($selectedFields));
+        }
 
         // Permettre l'affichage de la requête même si le groupe SI est vide
         // Mais on garde la vérification pour les champs sélectionnés
