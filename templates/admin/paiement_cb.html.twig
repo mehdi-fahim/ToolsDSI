@@ -74,7 +74,7 @@
                                     <td>{{ row.MDP }}</td>
                                     <td>
                                         {% if row.DATECRE is defined and row.DATECRE %}
-                                            {{ row.DATECRE|date('d/m/Y H:i') }}
+                                            {{ row.DATECRE }}
                                         {% else %}
                                             <span style="color:#a0aec0;">-</span>
                                         {% endif %}
