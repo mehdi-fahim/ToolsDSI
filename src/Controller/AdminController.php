@@ -927,6 +927,50 @@ class AdminController extends AbstractController
         ]);
     }
 
+    #[Route('/admin/change-password', name: 'admin_change_password', methods: ['POST'])]
+    public function changePassword(Request $request, SessionInterface $session): JsonResponse
+    {
+        if (!$this->isAuthenticated($session)) {
+            return new JsonResponse(['error' => 'Session expirée. Merci de vous reconnecter.'], 401);
+        }
+
+        $newPassword = trim((string) $request->request->get('new_password', ''));
+        $confirmPassword = trim((string) $request->request->get('confirm_password', ''));
+
+        if ($newPassword === '' || $confirmPassword === '') {
+            return new JsonResponse(['error' => 'Merci de saisir et confirmer le nouveau mot de passe.'], 400);
+        }
+
+        if ($newPassword !== $confirmPassword) {
+            return new JsonResponse(['error' => 'Les mots de passe ne correspondent pas.'], 400);
+        }
+
+        $userId = (string) $session->get('user_id', '');
+
+        if ($userId === '') {
+            return new JsonResponse(['error' => 'Utilisateur introuvable en session.'], 400);
+        }
+
+        if (strlen($newPassword) < 4) {
+            return new JsonResponse(['error' => 'Le mot de passe doit contenir au moins 4 caractères.'], 400);
+        }
+
+        try {
+            $changed = $this->motDePasseOracleService->changerMotDePasse($userId, $newPassword);
+            if (!$changed) {
+                return new JsonResponse(['error' => 'Impossible de mettre à jour le mot de passe.'], 500);
+            }
+
+            $this->userActionLogger->logDataModification('UTILISATEUR', 'CHANGE_PASSWORD', [
+                'user_id' => $userId
+            ], $userId);
+
+            return new JsonResponse(['success' => 'Votre mot de passe a été mis à jour avec succès.']);
+        } catch (\Throwable $e) {
+            return new JsonResponse(['error' => 'Erreur lors de la mise à jour du mot de passe: ' . $e->getMessage()], 500);
+        }
+    }
+
 
     #[Route('/admin/extraction', name: 'admin_extraction', methods: ['GET', 'POST'])]
     public function extraction(Request $request, SessionInterface $session): Response

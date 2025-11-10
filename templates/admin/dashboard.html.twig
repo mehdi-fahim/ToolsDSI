@@ -24,11 +24,162 @@
         </div>
 
         <div style="margin-top: 36px; display: flex; flex-wrap: wrap; gap: 12px;">
-            <a href="{{ path('admin_user_unlock', { user_id: app.session.get('user_id') }) }}"
-               class="btn btn-secondary"
-               style="background: #4299e1; border-color: #4299e1; color: #fff; padding: 12px 20px; font-size: 1rem;">
+            <button type="button"
+                    id="openPasswordModalBtn"
+                    class="btn btn-secondary"
+                    style="background: #4299e1; border-color: #4299e1; color: #fff; padding: 12px 20px; font-size: 1rem;">
                 🔐 Modifier mon mot de passe
-            </a>
+            </button>
+        </div>
+    </div>
+
+    <div id="changePasswordModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 1200;">
+        <div style="background: #ffffff; border-radius: 16px; max-width: 420px; width: 90%; margin: 10% auto; padding: 28px; box-shadow: 0 16px 40px rgba(35,41,70,0.25); position: relative;">
+            <button type="button"
+                    id="closePasswordModalBtn"
+                    style="position: absolute; top: 14px; right: 14px; background: none; border: none; font-size: 22px; color: #a0aec0; cursor: pointer;">
+                &times;
+            </button>
+            <h2 style="margin: 0 0 16px; font-size: 1.35rem; color: #232946; font-weight: 700;">Modifier mon mot de passe</h2>
+            <p style="margin: 0 0 20px; color: #4a5568; font-size: 0.95rem;">
+                Choisissez un nouveau mot de passe pour votre compte ULIS. Il sera appliqué immédiatement.
+            </p>
+            <form id="changePasswordForm" style="display: flex; flex-direction: column; gap: 18px;">
+                <div>
+                    <label for="newPasswordInput" style="display: block; margin-bottom: 6px; color: #4a5568; font-weight: 600;">Nouveau mot de passe</label>
+                    <input type="password"
+                           id="newPasswordInput"
+                           name="new_password"
+                           autocomplete="new-password"
+                           style="width: 100%; padding: 12px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1rem;"
+                           required>
+                </div>
+                <div>
+                    <label for="confirmPasswordInput" style="display: block; margin-bottom: 6px; color: #4a5568; font-weight: 600;">Confirmer le mot de passe</label>
+                    <input type="password"
+                           id="confirmPasswordInput"
+                           name="confirm_password"
+                           autocomplete="new-password"
+                           style="width: 100%; padding: 12px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1rem;"
+                           required>
+                </div>
+                <div id="passwordStatusMessage" style="display: none; padding: 10px 12px; border-radius: 8px; font-size: 0.95rem;"></div>
+                <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 10px;">
+                    <button type="button" id="cancelPasswordBtn" class="btn btn-secondary" style="padding: 10px 18px;">Annuler</button>
+                    <button type="submit" id="submitPasswordBtn" class="btn btn-primary" style="padding: 10px 18px;">Mettre à jour</button>
+                </div>
+            </form>
         </div>
     </div>
 {% endblock %} 
+
+{% block javascript %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const modal = document.getElementById('changePasswordModal');
+    const openBtn = document.getElementById('openPasswordModalBtn');
+    const closeBtn = document.getElementById('closePasswordModalBtn');
+    const cancelBtn = document.getElementById('cancelPasswordBtn');
+    const form = document.getElementById('changePasswordForm');
+    const statusMessage = document.getElementById('passwordStatusMessage');
+    const submitBtn = document.getElementById('submitPasswordBtn');
+    const newPasswordInput = document.getElementById('newPasswordInput');
+    const confirmPasswordInput = document.getElementById('confirmPasswordInput');
+
+    function openModal() {
+        modal.style.display = 'block';
+        statusMessage.style.display = 'none';
+        statusMessage.textContent = '';
+        statusMessage.className = '';
+        newPasswordInput.value = '';
+        confirmPasswordInput.value = '';
+        newPasswordInput.focus();
+    }
+
+    function closeModal() {
+        modal.style.display = 'none';
+    }
+
+    openBtn.addEventListener('click', openModal);
+    closeBtn.addEventListener('click', closeModal);
+    cancelBtn.addEventListener('click', closeModal);
+
+    modal.addEventListener('click', function (event) {
+        if (event.target === modal) {
+            closeModal();
+        }
+    });
+
+    form.addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        statusMessage.style.display = 'none';
+        statusMessage.textContent = '';
+        statusMessage.className = '';
+
+        const password = newPasswordInput.value.trim();
+        const confirmPassword = confirmPasswordInput.value.trim();
+
+        if (password.length < 4) {
+            statusMessage.style.display = 'block';
+            statusMessage.style.background = '#fff5f5';
+            statusMessage.style.color = '#c53030';
+            statusMessage.textContent = 'Le mot de passe doit contenir au moins 4 caractères.';
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            statusMessage.style.display = 'block';
+            statusMessage.style.background = '#fff5f5';
+            statusMessage.style.color = '#c53030';
+            statusMessage.textContent = 'Les mots de passe ne correspondent pas.';
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Mise à jour...';
+
+        const formData = new FormData();
+        formData.append('new_password', password);
+        formData.append('confirm_password', confirmPassword);
+
+        fetch('{{ path('admin_change_password') }}', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                statusMessage.style.display = 'block';
+                statusMessage.style.background = '#fff5f5';
+                statusMessage.style.color = '#c53030';
+                statusMessage.textContent = data.error;
+            } else if (data.success) {
+                statusMessage.style.display = 'block';
+                statusMessage.style.background = '#f0fff4';
+                statusMessage.style.color = '#2f855a';
+                statusMessage.textContent = data.success;
+                setTimeout(() => {
+                    closeModal();
+                }, 1200);
+            } else {
+                statusMessage.style.display = 'block';
+                statusMessage.style.background = '#fff5f5';
+                statusMessage.style.color = '#c53030';
+                statusMessage.textContent = 'Réponse inattendue du serveur.';
+            }
+        })
+        .catch(() => {
+            statusMessage.style.display = 'block';
+            statusMessage.style.background = '#fff5f5';
+            statusMessage.style.color = '#c53030';
+            statusMessage.textContent = 'Erreur réseau. Merci de réessayer.';
+        })
+        .finally(() => {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Mettre à jour';
+        });
+    });
+});
+</script>
+{% endblock %}

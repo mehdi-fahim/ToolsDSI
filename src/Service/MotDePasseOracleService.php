@@ -73,6 +73,28 @@ SQL;
         }
     }
 
+    public function changerMotDePasse(string $userId, string $nouveauMotDePasse): bool
+    {
+        $sql = <<<SQL
+UPDATE MGUTI
+SET MGUTI_MOTP = :nouveauMotDePasse,
+    MGUTI_TEMMDP = 0
+WHERE MGUTI_COD = upper(:userId)
+SQL;
+
+        try {
+            $affected = $this->connection
+                ->executeStatement($sql, [
+                    'nouveauMotDePasse' => strtoupper($nouveauMotDePasse),
+                    'userId' => strtoupper($userId)
+                ]);
+
+            return $affected > 0;
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
     public function verifierUtilisateurExiste(string $userId): bool
     {
         $sql = <<<SQL
