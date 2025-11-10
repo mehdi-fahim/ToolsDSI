@@ -980,11 +980,25 @@ class AdminController extends AbstractController
 
         $existingSearch = trim((string) $request->query->get('existing_search', ''));
         $missingSearch = trim((string) $request->query->get('missing_search', ''));
+        $existingPage = max(1, (int) $request->query->get('existing_page', 1));
+        $missingPage = max(1, (int) $request->query->get('missing_page', 1));
+        $activeTab = (string) $request->query->get('tab', 'existing');
+        if (!in_array($activeTab, ['existing', 'missing'], true)) {
+            $activeTab = 'existing';
+        }
+
+        $perPage = 25;
 
         if ($request->isMethod('POST')) {
             $action = (string) $request->request->get('action', '');
             $existingSearch = trim((string) $request->request->get('existing_search', $existingSearch));
             $missingSearch = trim((string) $request->request->get('missing_search', $missingSearch));
+            $existingPage = max(1, (int) $request->request->get('existing_page', $existingPage));
+            $missingPage = max(1, (int) $request->request->get('missing_page', $missingPage));
+            $activeTab = (string) $request->request->get('tab', $activeTab);
+            if (!in_array($activeTab, ['existing', 'missing'], true)) {
+                $activeTab = 'existing';
+            }
 
             $rowsToInsert = [];
             if ($action === 'import_selected') {
@@ -1037,21 +1051,60 @@ class AdminController extends AbstractController
             return $this->redirectToRoute('admin_import_paiement_cb', [
                 'existing_search' => $existingSearch,
                 'missing_search' => $missingSearch,
+                'existing_page' => $existingPage,
+                'missing_page' => $missingPage,
+                'tab' => $action === 'import_selected' || $action === 'import_all' ? 'missing' : $activeTab,
             ]);
         }
 
-        $existing = [];
-        $missing = [];
+        $existingResult = [
+            'data' => [],
+            'pagination' => [
+                'page' => $existingPage,
+                'limit' => $perPage,
+                'total' => 0,
+                'totalPages' => 1,
+            ],
+        ];
+        $missingResult = [
+            'data' => [],
+            'pagination' => [
+                'page' => $missingPage,
+                'limit' => $perPage,
+                'total' => 0,
+                'totalPages' => 1,
+            ],
+        ];
         $error = null;
 
         try {
-            $existing = $this->intitulesCBOracleService->fetchExistingIntitules($existingSearch);
+            $existingResult = $this->intitulesCBOracleService->fetchExistingIntitulesPaginated($existingSearch, $existingPage, $perPage);
+            $existingPagination = $existingResult['pagination'];
+            if ($existingPagination['totalPages'] > 0 && $existingPage > $existingPagination['totalPages']) {
+                return $this->redirectToRoute('admin_import_paiement_cb', [
+                    'existing_search' => $existingSearch,
+                    'missing_search' => $missingSearch,
+                    'existing_page' => $existingPagination['totalPages'],
+                    'missing_page' => $missingPage,
+                    'tab' => $activeTab,
+                ]);
+            }
         } catch (\Throwable $e) {
             $error = 'Erreur lors du chargement des intitulés existants: ' . $e->getMessage();
         }
 
         try {
-            $missing = $this->intitulesCBOracleService->fetchMissingIntitules($missingSearch);
+            $missingResult = $this->intitulesCBOracleService->fetchMissingIntitulesPaginated($missingSearch, $missingPage, $perPage);
+            $missingPagination = $missingResult['pagination'];
+            if ($missingPagination['totalPages'] > 0 && $missingPage > $missingPagination['totalPages']) {
+                return $this->redirectToRoute('admin_import_paiement_cb', [
+                    'existing_search' => $existingSearch,
+                    'missing_search' => $missingSearch,
+                    'existing_page' => $existingPage,
+                    'missing_page' => $missingPagination['totalPages'],
+                    'tab' => $activeTab,
+                ]);
+            }
         } catch (\Throwable $e) {
             $error = ($error ? $error . ' ' : '') . 'Erreur lors du chargement des intitulés manquants: ' . $e->getMessage();
         }
@@ -1061,10 +1114,15 @@ class AdminController extends AbstractController
         }
 
         return $this->render('admin/paiement_cb.html.twig', [
-            'existing' => $existing,
-            'missing' => $missing,
+            'existing' => $existingResult['data'],
+            'missing' => $missingResult['data'],
+            'existingPagination' => $existingResult['pagination'],
+            'missingPagination' => $missingResult['pagination'],
             'existingSearch' => $existingSearch,
             'missingSearch' => $missingSearch,
+            'existingPage' => $existingResult['pagination']['page'],
+            'missingPage' => $missingResult['pagination']['page'],
+            'activeTab' => $activeTab,
         ]);
     }
 

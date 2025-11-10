@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\ParameterType;
 
 class IntitulesCBOracleService
 {
@@ -16,35 +17,70 @@ class IntitulesCBOracleService
     }
 
     /**
-     * Récupère les intitulés déjà présents dans la table INTERNET_INTITULES
+     * Récupère les intitulés déjà présents dans la table INTERNET_INTITULES (avec pagination)
      */
-    public function fetchExistingIntitules(?string $search = null): array
+    public function fetchExistingIntitulesPaginated(?string $search, int $page, int $limit): array
     {
-        $sql = <<<SQL
+        $page = max(1, $page);
+        $limit = max(1, $limit);
+        $offset = ($page - 1) * $limit;
+
+        $baseSql = 'FROM etudes.internet_intitules';
+        $where = '';
+        $params = [];
+        $types = [];
+
+        if ($search !== null && $search !== '') {
+            $where = " WHERE (TO_CHAR(caint_num) LIKE :search OR UPPER(nom) LIKE :search)";
+            $params['search'] = '%' . strtoupper($search) . '%';
+            $types['search'] = \PDO::PARAM_STR;
+        }
+
+        $countSql = "SELECT COUNT(*) {$baseSql}{$where}";
+        $dataSql = <<<SQL
 SELECT
     caint_num AS CAINT_NUM,
     nom AS NOM,
     mdp AS MDP,
     datecre AS DATECRE
-FROM etudes.internet_intitules
+{$baseSql}{$where}
+ORDER BY caint_num
+OFFSET :offset ROWS FETCH NEXT :limit ROWS ONLY
 SQL;
 
-        $params = [];
-        if ($search !== null && $search !== '') {
-            $sql .= " WHERE (TO_CHAR(caint_num) LIKE :search OR UPPER(nom) LIKE :search)";
-            $params['search'] = '%' . strtoupper($search) . '%';
-        }
+        $paramsWithPagination = $params + [
+            'offset' => $offset,
+            'limit' => $limit,
+        ];
+        $typesWithPagination = $types + [
+            'offset' => ParameterType::INTEGER,
+            'limit' => ParameterType::INTEGER,
+        ];
 
-        $sql .= " ORDER BY caint_num";
+        $data = $this->queryWithFallback($dataSql, $paramsWithPagination, preferEtudes: true, types: $typesWithPagination);
+        $total = (int) $this->querySingleValueWithFallback($countSql, $params, preferEtudes: true, types: $types);
+        $totalPages = (int) max(1, ceil($total / $limit));
 
-        return $this->queryWithFallback($sql, $params, preferEtudes: true);
+        return [
+            'data' => $data,
+            'pagination' => [
+                'page' => $page,
+                'limit' => $limit,
+                'total' => $total,
+                'totalPages' => $totalPages,
+            ],
+        ];
     }
 
     /**
-     * Récupère les intitulés présents dans GL mais absents d'INTERNET_INTITULES
+     * Récupère les intitulés présents dans GL mais absents d'INTERNET_INTITULES (avec pagination)
      */
-    public function fetchMissingIntitules(?string $search = null): array
+    public function fetchMissingIntitulesPaginated(?string $search, int $page, int $limit): array
     {
+        $page = max(1, $page);
+        $limit = max(1, $limit);
+        $offset = ($page - 1) * $limit;
+
         $baseSql = <<<SQL
 SELECT DISTINCT
     g3.caint_num AS CAINT_NUM,
@@ -69,14 +105,51 @@ SQL;
         $outerSql = "SELECT CAINT_NUM, NOM, MDP, DATECRE FROM ({$baseSql}) t";
 
         $params = [];
+        $types = [];
         if ($search !== null && $search !== '') {
             $outerSql .= " WHERE (TO_CHAR(t.CAINT_NUM) LIKE :search OR UPPER(t.NOM) LIKE :search)";
             $params['search'] = '%' . strtoupper($search) . '%';
+            $types['search'] = \PDO::PARAM_STR;
         }
 
-        $outerSql .= " ORDER BY t.CAINT_NUM";
+        $countSql = "SELECT COUNT(*) FROM ({$outerSql})";
 
-        return $this->queryWithFallback($outerSql, $params, preferEtudes: false);
+        $dataSql = $outerSql . " ORDER BY t.CAINT_NUM OFFSET :offset ROWS FETCH NEXT :limit ROWS ONLY";
+        $paramsWithPagination = $params + [
+            'offset' => $offset,
+            'limit' => $limit,
+        ];
+        $typesWithPagination = $types + [
+            'offset' => ParameterType::INTEGER,
+            'limit' => ParameterType::INTEGER,
+        ];
+
+        $data = $this->queryWithFallback($dataSql, $paramsWithPagination, preferEtudes: false, types: $typesWithPagination);
+        $total = (int) $this->querySingleValueWithFallback($countSql, $params, preferEtudes: false, types: $types);
+        $totalPages = (int) max(1, ceil($total / $limit));
+
+        return [
+            'data' => $data,
+            'pagination' => [
+                'page' => $page,
+                'limit' => $limit,
+                'total' => $total,
+                'totalPages' => $totalPages,
+            ],
+        ];
+    }
+
+    /**
+     * Raccourcis sans pagination (compatibilité)
+     */
+    public function fetchExistingIntitules(?string $search = null): array
+    {
+        return $this->fetchExistingIntitulesPaginated($search, 1, 10000)['data'];
+    }
+
+    public function fetchMissingIntitules(?string $search = null): array
+    {
+        return $this->fetchMissingIntitulesPaginated($search, 1, 10000)['data'];
     }
 
     /**
@@ -153,7 +226,7 @@ SQL;
         }
     }
 
-    private function queryWithFallback(string $sql, array $params = [], bool $preferEtudes = true): array
+    private function queryWithFallback(string $sql, array $params = [], bool $preferEtudes = true, array $types = []): array
     {
         $connections = $preferEtudes
             ? [$this->etudesConnection, $this->defaultConnection]
@@ -162,7 +235,7 @@ SQL;
         $lastException = null;
         foreach ($connections as $connection) {
             try {
-                return $connection->executeQuery($sql, $params)->fetchAllAssociative();
+                return $connection->executeQuery($sql, $params, $types)->fetchAllAssociative();
             } catch (\Throwable $e) {
                 $lastException = $e;
             }
@@ -171,14 +244,32 @@ SQL;
         throw $lastException ?? new \RuntimeException('Impossible d\'exécuter la requête.');
     }
 
-    private function executeStatementWithFallback(string $sql, array $params = []): int
+    private function querySingleValueWithFallback(string $sql, array $params = [], bool $preferEtudes = true, array $types = [])
+    {
+        $connections = $preferEtudes
+            ? [$this->etudesConnection, $this->defaultConnection]
+            : [$this->defaultConnection, $this->etudesConnection];
+
+        $lastException = null;
+        foreach ($connections as $connection) {
+            try {
+                return $connection->executeQuery($sql, $params, $types)->fetchOne();
+            } catch (\Throwable $e) {
+                $lastException = $e;
+            }
+        }
+
+        throw $lastException ?? new \RuntimeException('Impossible d\'exécuter la requête.');
+    }
+
+    private function executeStatementWithFallback(string $sql, array $params = [], array $types = []): int
     {
         $connections = [$this->etudesConnection, $this->defaultConnection];
         $lastException = null;
 
         foreach ($connections as $connection) {
             try {
-                return $connection->executeStatement($sql, $params);
+                return $connection->executeStatement($sql, $params, $types);
             } catch (\Throwable $e) {
                 $lastException = $e;
             }

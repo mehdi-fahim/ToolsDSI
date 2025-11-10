@@ -32,11 +32,29 @@
             {% endfor %}
         {% endfor %}
 
-        <div style="background: #ffffff; border-radius: 14px; box-shadow: 0 4px 12px rgba(35,41,70,0.08); padding: 24px;">
+        {% set queryParams = app.request.query.all %}
+
+        <div style="display:flex; gap: 12px; border-bottom: 2px solid #e2e8f0; margin-bottom: 18px;">
+            {% set existingTabParams = queryParams|merge({'tab': 'existing', 'existing_page': 1}) %}
+            {% set missingTabParams = queryParams|merge({'tab': 'missing', 'missing_page': 1}) %}
+            <a href="{{ path('admin_import_paiement_cb', existingTabParams) }}"
+               class="tab-link {{ activeTab == 'existing' ? 'active' : '' }}">
+                Intitulés existants
+            </a>
+            <a href="{{ path('admin_import_paiement_cb', missingTabParams) }}"
+               class="tab-link {{ activeTab == 'missing' ? 'active' : '' }}">
+                Intitulés manquants
+            </a>
+        </div>
+
+        <div class="tab-panel {{ activeTab == 'existing' ? 'active' : '' }}" data-tab="existing">
             <div style="display:flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 18px;">
                 <h2 style="color: #2d3748; font-size: 1.4rem; margin: 0;">📄 Intitulés existants (ETUDES.INTERNET_INTITULES)</h2>
                 <form method="GET" action="{{ path('admin_import_paiement_cb') }}" style="display:flex; gap: 12px; align-items: center; flex-wrap: wrap;">
                     <input type="hidden" name="missing_search" value="{{ missingSearch }}">
+                    <input type="hidden" name="missing_page" value="{{ missingPagination.page }}">
+                    <input type="hidden" name="tab" value="existing">
+                    <input type="hidden" name="existing_page" value="1">
                     <input type="text"
                            name="existing_search"
                            value="{{ existingSearch }}"
@@ -85,13 +103,40 @@
                     </tbody>
                 </table>
             </div>
+
+            {% set ep = existingPagination %}
+            {% if ep.total > ep.limit %}
+                <div class="pagination" style="margin-top: 18px;">
+                    {% set firstParams = queryParams|merge({'existing_page': 1, 'tab': 'existing'}) %}
+                    {% set prevParams = queryParams|merge({'existing_page': ep.page - 1, 'tab': 'existing'}) %}
+                    {% set nextParams = queryParams|merge({'existing_page': ep.page + 1, 'tab': 'existing'}) %}
+                    {% set lastParams = queryParams|merge({'existing_page': ep.totalPages, 'tab': 'existing'}) %}
+
+                    <a class="btn btn-secondary {{ ep.page == 1 ? 'disabled' : '' }}"
+                       href="{{ ep.page == 1 ? '#' : path('admin_import_paiement_cb', firstParams) }}">⏮️ Première</a>
+                    <a class="btn btn-secondary {{ ep.page == 1 ? 'disabled' : '' }}"
+                       href="{{ ep.page == 1 ? '#' : path('admin_import_paiement_cb', prevParams) }}">« Précédent</a>
+                    <span class="pagination-info">Page {{ ep.page }} sur {{ ep.totalPages }} • {{ ep.total }} résultat(s)</span>
+                    <a class="btn btn-secondary {{ ep.page == ep.totalPages ? 'disabled' : '' }}"
+                       href="{{ ep.page == ep.totalPages ? '#' : path('admin_import_paiement_cb', nextParams) }}">Suivant »</a>
+                    <a class="btn btn-secondary {{ ep.page == ep.totalPages ? 'disabled' : '' }}"
+                       href="{{ ep.page == ep.totalPages ? '#' : path('admin_import_paiement_cb', lastParams) }}">Dernière ⏭️</a>
+                </div>
+            {% else %}
+                <div style="margin-top: 12px; color: #718096; font-size: 0.95rem;">
+                    {{ ep.total }} résultat(s) affiché(s).
+                </div>
+            {% endif %}
         </div>
 
-        <div style="background: #ffffff; border-radius: 14px; box-shadow: 0 4px 12px rgba(35,41,70,0.08); padding: 24px;">
+        <div class="tab-panel {{ activeTab == 'missing' ? 'active' : '' }}" data-tab="missing">
             <div style="display:flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 18px;">
                 <h2 style="color: #2d3748; font-size: 1.4rem; margin: 0;">🧩 Intitulés manquants</h2>
                 <form method="GET" action="{{ path('admin_import_paiement_cb') }}" style="display:flex; gap: 12px; align-items: center; flex-wrap: wrap;">
                     <input type="hidden" name="existing_search" value="{{ existingSearch }}">
+                    <input type="hidden" name="existing_page" value="{{ existingPagination.page }}">
+                    <input type="hidden" name="tab" value="missing">
+                    <input type="hidden" name="missing_page" value="1">
                     <input type="text"
                            name="missing_search"
                            value="{{ missingSearch }}"
@@ -108,6 +153,9 @@
                 <input type="hidden" name="action" value="import_selected">
                 <input type="hidden" name="existing_search" value="{{ existingSearch }}">
                 <input type="hidden" name="missing_search" value="{{ missingSearch }}">
+                <input type="hidden" name="existing_page" value="{{ existingPagination.page }}">
+                <input type="hidden" name="missing_page" value="{{ missingPagination.page }}">
+                <input type="hidden" name="tab" value="missing">
 
                 <div class="table-container" style="overflow-x: auto;">
                     <table class="admin-table">
@@ -157,10 +205,37 @@
                 <input type="hidden" name="action" value="import_all">
                 <input type="hidden" name="existing_search" value="{{ existingSearch }}">
                 <input type="hidden" name="missing_search" value="{{ missingSearch }}">
+                <input type="hidden" name="existing_page" value="{{ existingPagination.page }}">
+                <input type="hidden" name="missing_page" value="{{ missingPagination.page }}">
+                <input type="hidden" name="tab" value="missing">
                 <button type="submit" class="btn btn-secondary" onclick="return confirm('Confirmer l\'import de tous les intitulés manquants ?');">
                     📥 Importer tout le résultat
                 </button>
             </form>
+
+            {% set mp = missingPagination %}
+            {% if mp.total > mp.limit %}
+                <div class="pagination" style="margin-top: 18px;">
+                    {% set firstParamsM = queryParams|merge({'missing_page': 1, 'tab': 'missing'}) %}
+                    {% set prevParamsM = queryParams|merge({'missing_page': mp.page - 1, 'tab': 'missing'}) %}
+                    {% set nextParamsM = queryParams|merge({'missing_page': mp.page + 1, 'tab': 'missing'}) %}
+                    {% set lastParamsM = queryParams|merge({'missing_page': mp.totalPages, 'tab': 'missing'}) %}
+
+                    <a class="btn btn-secondary {{ mp.page == 1 ? 'disabled' : '' }}"
+                       href="{{ mp.page == 1 ? '#' : path('admin_import_paiement_cb', firstParamsM) }}">⏮️ Première</a>
+                    <a class="btn btn-secondary {{ mp.page == 1 ? 'disabled' : '' }}"
+                       href="{{ mp.page == 1 ? '#' : path('admin_import_paiement_cb', prevParamsM) }}">« Précédent</a>
+                    <span class="pagination-info">Page {{ mp.page }} sur {{ mp.totalPages }} • {{ mp.total }} résultat(s)</span>
+                    <a class="btn btn-secondary {{ mp.page == mp.totalPages ? 'disabled' : '' }}"
+                       href="{{ mp.page == mp.totalPages ? '#' : path('admin_import_paiement_cb', nextParamsM) }}">Suivant »</a>
+                    <a class="btn btn-secondary {{ mp.page == mp.totalPages ? 'disabled' : '' }}"
+                       href="{{ mp.page == mp.totalPages ? '#' : path('admin_import_paiement_cb', lastParamsM) }}">Dernière ⏭️</a>
+                </div>
+            {% else %}
+                <div style="margin-top: 12px; color: #718096; font-size: 0.95rem;">
+                    {{ mp.total }} résultat(s) affiché(s).
+                </div>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -180,5 +255,54 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 </script>
+
+<style>
+    .tab-link {
+        padding: 10px 16px;
+        border-bottom: 3px solid transparent;
+        text-decoration: none;
+        color: #4a5568;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+
+    .tab-link:hover {
+        color: #2b6cb0;
+    }
+
+    .tab-link.active {
+        color: #2b6cb0;
+        border-color: #4299e1;
+    }
+
+    .tab-panel {
+        display: none;
+        background: #ffffff;
+        border-radius: 14px;
+        box-shadow: 0 4px 12px rgba(35,41,70,0.08);
+        padding: 24px;
+    }
+
+    .tab-panel.active {
+        display: block;
+    }
+
+    .pagination {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .pagination .btn.disabled {
+        pointer-events: none;
+        opacity: 0.6;
+    }
+
+    .pagination-info {
+        color: #4a5568;
+        font-weight: 600;
+    }
+</style>
 {% endblock %}
 
