@@ -255,10 +255,32 @@ class AdminController extends AbstractController
         }
 
         $page = (int) $request->query->get('page', 1);
-        $search = $request->query->get('search', '');
+        $search = trim((string) $request->query->get('search', ''));
+        $esoGardien = trim((string) $request->query->get('eso', ''));
+        $gardien = trim((string) $request->query->get('gardien', ''));
         $limit = 50;
+        $hasLotSearch = $search !== '' && strlen($search) >= 5;
+        $hasEsoSearch = $esoGardien !== '' && strlen($esoGardien) >= 3;
+        $hasGardienSearch = $gardien !== '' && strlen($gardien) >= 3;
+        $hasFilters = $hasLotSearch || $hasEsoSearch || $hasGardienSearch;
 
-        $result = $this->listeAffectationOracleService->getListeAffectations($search, '', $page, $limit, true);
+        if (!$hasFilters) {
+            return $this->redirectToRoute('admin_liste_affectation');
+        }
+
+        $searchFilter = $hasLotSearch ? $search : '';
+        $esoFilter = $hasEsoSearch ? $esoGardien : '';
+        $gardienFilter = $hasGardienSearch ? $gardien : '';
+
+        $result = $this->listeAffectationOracleService->getListeAffectations(
+            $searchFilter,
+            '',
+            $page,
+            $limit,
+            true,
+            $esoFilter,
+            $gardienFilter
+        );
 
         return $this->render('admin/liste_affectation.html.twig', [
             'data' => $result['data'],
@@ -269,6 +291,8 @@ class AdminController extends AbstractController
                 'totalPages' => $result['totalPages']
             ],
             'search' => $search,
+            'eso' => $esoGardien,
+            'gardien' => $gardien,
             'groupe' => '',
             'groupes' => [],
             'stats' => null,
@@ -1755,13 +1779,23 @@ class AdminController extends AbstractController
 
         // Récupérer les paramètres de pagination et recherche
         $page = (int) $request->query->get('page', 1);
-        $search = $request->query->get('search', '');
+        $search = trim((string) $request->query->get('search', ''));
+        $esoGardien = trim((string) $request->query->get('eso', ''));
+        $gardien = trim((string) $request->query->get('gardien', ''));
         $groupe = $request->query->get('groupe', '');
         $limit = 50; // 50 lignes par page
 
+        $hasLotSearch = $search !== '' && strlen($search) >= 5;
+        $hasEsoSearch = $esoGardien !== '' && strlen($esoGardien) >= 3;
+        $hasGardienSearch = $gardien !== '' && strlen($gardien) >= 3;
+        $hasFilters = $hasLotSearch || $hasEsoSearch || $hasGardienSearch;
+        $searchFilter = $hasLotSearch ? $search : '';
+        $esoFilter = $hasEsoSearch ? $esoGardien : '';
+        $gardienFilter = $hasGardienSearch ? $gardien : '';
+
         try {
             // Ne pas charger la liste par défaut: attendre une recherche
-            if ($search === '' || strlen($search) < 5) { // ex: "LC4010" longueur minimale
+            if (!$hasFilters) {
                 return $this->render('admin/liste_affectation.html.twig', [
                     'data' => [],
                     'pagination' => [
@@ -1771,19 +1805,29 @@ class AdminController extends AbstractController
                         'totalPages' => 0
                     ],
                     'search' => $search,
+                    'eso' => $esoGardien,
+                    'gardien' => $gardien,
                     'groupe' => $groupe,
                     'groupes' => [],
                     'stats' => null,
                     'hasSearch' => false,
-                    'minSearchMsg' => 'Veuillez saisir au moins 5 caractères (ex: LC4010)'
+                    'minSearchMsg' => 'Saisissez au moins 5 caractères pour le lot ou 3 caractères pour l\'ESO / le gardien.'
                 ]);
             }
 
             // Récupérer les données Oracle avec pagination et recherche
-            $result = $this->listeAffectationOracleService->getListeAffectations($search, $groupe, $page, $limit);
+            $result = $this->listeAffectationOracleService->getListeAffectations(
+                $searchFilter,
+                $groupe,
+                $page,
+                $limit,
+                false,
+                $esoFilter,
+                $gardienFilter
+            );
 
             // Statistiques filtrées
-            $stats = $this->listeAffectationOracleService->getAffectationStatsBySearch($search);
+            $stats = $this->listeAffectationOracleService->getAffectationStatsBySearch($searchFilter, $esoFilter, $gardienFilter);
 
             return $this->render('admin/liste_affectation.html.twig', [
                 'data' => $result['data'],
@@ -1794,6 +1838,8 @@ class AdminController extends AbstractController
                     'totalPages' => $result['totalPages']
                 ],
                 'search' => $search,
+                'eso' => $esoGardien,
+                'gardien' => $gardien,
                 'groupe' => $groupe,
                 'groupes' => [],
                 'stats' => $stats,
@@ -1810,11 +1856,13 @@ class AdminController extends AbstractController
                     'totalPages' => 0
                 ],
                 'search' => $search,
+                'eso' => $esoGardien,
+                'gardien' => $gardien,
                 'groupe' => $groupe,
                 'groupes' => [],
                 'stats' => [],
                 'error' => 'Erreur lors du chargement des données: ' . $e->getMessage(),
-                'hasSearch' => $search !== ''
+                'hasSearch' => $hasFilters
             ]);
         }
     }
@@ -1872,21 +1920,41 @@ class AdminController extends AbstractController
             return $this->redirectToRoute('login');
         }
 
-        $search = (string) $request->query->get('search', '');
-        if ($search === '') {
-            // Pas de recherche -> rediriger sur la page liste
+        $search = trim((string) $request->query->get('search', ''));
+        $esoGardien = trim((string) $request->query->get('eso', ''));
+        $gardien = trim((string) $request->query->get('gardien', ''));
+
+        $hasLotSearch = $search !== '' && strlen($search) >= 5;
+        $hasEsoSearch = $esoGardien !== '' && strlen($esoGardien) >= 3;
+        $hasGardienSearch = $gardien !== '' && strlen($gardien) >= 3;
+
+        if (!$hasLotSearch && !$hasEsoSearch && !$hasGardienSearch) {
+            // Pas de filtre -> rediriger sur la page liste
             return $this->redirectToRoute('admin_liste_affectation');
         }
 
+        $searchFilter = $hasLotSearch ? $search : '';
+        $esoFilter = $hasEsoSearch ? $esoGardien : '';
+        $gardienFilter = $hasGardienSearch ? $gardien : '';
+
         $datetime = (new \DateTimeImmutable())->format('Ymd_His');
-        $filename = "liste_affectations_{$search}_{$datetime}.csv";
+        $filterTokens = array_filter([$searchFilter, $esoFilter, $gardienFilter], static fn (string $value): bool => $value !== '');
+        $filterTokens = array_map(
+            static function (string $value): string {
+                $value = str_replace(' ', '_', $value);
+                return preg_replace('/[^A-Za-z0-9_-]+/', '', $value) ?? '';
+            },
+            $filterTokens
+        );
+        $filterLabel = $filterTokens !== [] ? implode('-', $filterTokens) : 'filtre';
+        $filename = "liste_affectations_{$filterLabel}_{$datetime}.csv";
 
         $headers = [
             'Content-Type' => 'text/csv; charset=UTF-8',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ];
 
-        $response = new \Symfony\Component\HttpFoundation\StreamedResponse(function () use ($search) {
+        $response = new \Symfony\Component\HttpFoundation\StreamedResponse(function () use ($searchFilter, $esoFilter, $gardienFilter) {
             set_time_limit(0);
             $out = fopen('php://output', 'w');
             fwrite($out, "\xEF\xBB\xBF");
@@ -1899,7 +1967,7 @@ class AdminController extends AbstractController
                 'ESO_GARDIEN','GARD_TEL','GARD_MAIL'
             ], ';');
 
-            foreach ($this->listeAffectationOracleService->getAffectationsForExportBySearch($search) as $row) {
+            foreach ($this->listeAffectationOracleService->getAffectationsForExportBySearch($searchFilter, $esoFilter, $gardienFilter) as $row) {
                 fputcsv($out, [
                     $row['AGENCE'] ?? '', $row['GROUPE'] ?? '', $row['ESO_GROUPE'] ?? '', $row['BATIMENT'] ?? '', $row['ESO_BATIMENT'] ?? '', $row['ESCALIER'] ?? '', $row['ESO_ESC'] ?? '', $row['LOT'] ?? '', $row['NATURE_LOT'] ?? '',
                     $row['RGT_GPE'] ?? '', $row['RGTL_GPE'] ?? '', $row['CGLS_GPE'] ?? '', $row['INLOG_GPE'] ?? '', $row['TEDL_GPE'] ?? '', $row['TPROX_GPE'] ?? '', $row['RVQ_GPE'] ?? '', $row['GARDIEN_GPE'] ?? '',

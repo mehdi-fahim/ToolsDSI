@@ -9,15 +9,23 @@
             <h1>📋 Liste d'affectation</h1>
             <p>Gestion des affectations par agence et lot</p>
         </div>
-        <div style="display:flex; gap: 10px;">
+        <div style="display:flex; gap: 10px; flex-wrap: wrap;">
             <a class="btn" href="{{ path('admin_liste_affectation_export') }}" title="Exporter tout (CSV pour Excel)" style="white-space: nowrap;">
                 ⬇️ Export total
             </a>
-            {% if hasSearch and search %}
-            <a class="btn btn-secondary" href="{{ path('admin_liste_affectation_export_current', {search: search}) }}" title="Exporter le résultat courant" style="white-space: nowrap;">
+            {% if hasSearch %}
+            <a class="btn btn-secondary" href="{{ path('admin_liste_affectation_export_current', {
+                search: search,
+                eso: eso,
+                gardien: gardien
+            }) }}" title="Exporter le résultat courant" style="white-space: nowrap;">
                 ⬇️ Export résultat courant
             </a>
-            <a class="btn btn-secondary" href="{{ path('admin_liste_affectation_missing', {search: search}) }}" title="Voir les lots sans contact" style="white-space: nowrap;">
+            <a class="btn btn-secondary" href="{{ path('admin_liste_affectation_missing', {
+                search: search,
+                eso: eso,
+                gardien: gardien
+            }) }}" title="Voir les lots sans contact" style="white-space: nowrap;">
                 ❗ Lots sans contact
             </a>
             {% endif %}
@@ -60,12 +68,24 @@
                 <input type="text" 
                        name="search" 
                        value="{{ search }}" 
-                       placeholder="Rechercher par code (ex: LC4010, LC4010.01, LC4010.01.01)" 
+                       placeholder="Rechercher par lot (ex: LC4010)" 
                        class="search-input"
-                       style="flex: 1; min-width: 320px;"
+                       style="flex: 1; min-width: 260px;"
                        id="searchInput">
+                <input type="text"
+                       name="eso"
+                       value="{{ eso }}"
+                       placeholder="ESO gardien"
+                       class="search-input"
+                       style="flex: 0 1 200px; min-width: 180px;">
+                <input type="text"
+                       name="gardien"
+                       value="{{ gardien }}"
+                       placeholder="Nom du gardien"
+                       class="search-input"
+                       style="flex: 0 1 220px; min-width: 200px;">
                 <button type="submit" class="btn" id="searchBtn">🔍 Rechercher</button>
-                {% if search %}
+                {% if search or eso or gardien %}
                     <a href="{{ path('admin_liste_affectation') }}" class="btn btn-secondary">❌ Effacer</a>
                 {% endif %}
             </form>
@@ -153,12 +173,12 @@
         <div class="pagination">
             {# Première page #}
             {% if pagination.page > 1 %}
-                <a href="{{ path('admin_liste_affectation', {page: 1, search: search, groupe: groupe}) }}" class="btn btn-secondary" style="padding: 8px 12px; font-size: 14px;">⏮️ Première</a>
+                <a href="{{ path('admin_liste_affectation', {page: 1, search: search, groupe: groupe, eso: eso, gardien: gardien}) }}" class="btn btn-secondary" style="padding: 8px 12px; font-size: 14px;">⏮️ Première</a>
             {% endif %}
             
             {# Page précédente #}
             {% if pagination.page > 1 %}
-                <a href="{{ path('admin_liste_affectation', {page: pagination.page - 1, search: search, groupe: groupe}) }}" class="btn btn-secondary" style="padding: 8px 12px; font-size: 14px;">« Précédent</a>
+                <a href="{{ path('admin_liste_affectation', {page: pagination.page - 1, search: search, groupe: groupe, eso: eso, gardien: gardien}) }}" class="btn btn-secondary" style="padding: 8px 12px; font-size: 14px;">« Précédent</a>
             {% endif %}
             
             {# Page actuelle #}
@@ -168,12 +188,12 @@
             
             {# Page suivante #}
             {% if pagination.page < pagination.totalPages %}
-                <a href="{{ path('admin_liste_affectation', {page: pagination.page + 1, search: search, groupe: groupe}) }}" class="btn btn-secondary" style="padding: 8px 12px; font-size: 14px;">Suivant »</a>
+                <a href="{{ path('admin_liste_affectation', {page: pagination.page + 1, search: search, groupe: groupe, eso: eso, gardien: gardien}) }}" class="btn btn-secondary" style="padding: 8px 12px; font-size: 14px;">Suivant »</a>
             {% endif %}
             
             {# Dernière page #}
             {% if pagination.page < pagination.totalPages %}
-                <a href="{{ path('admin_liste_affectation', {page: pagination.totalPages, search: search, groupe: groupe}) }}" class="btn btn-secondary" style="padding: 8px 12px; font-size: 14px;">Dernière ⏭️</a>
+                <a href="{{ path('admin_liste_affectation', {page: pagination.totalPages, search: search, groupe: groupe, eso: eso, gardien: gardien}) }}" class="btn btn-secondary" style="padding: 8px 12px; font-size: 14px;">Dernière ⏭️</a>
             {% endif %}
         </div>
         {% endif %}
@@ -333,9 +353,11 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Recherche automatique lors de la sélection d'un groupe
-    groupeSelect.addEventListener('change', function() {
-        searchForm.submit();
-    });
+    if (groupeSelect) {
+        groupeSelect.addEventListener('change', function() {
+            searchForm.submit();
+        });
+    }
     
     // Recherche automatique avec délai lors de la saisie (optionnel)
     let searchTimeout;

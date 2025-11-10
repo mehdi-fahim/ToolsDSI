@@ -17,7 +17,15 @@ class ListeAffectationOracleService
     /**
      * Récupère la liste des affectations avec pagination et recherche
      */
-    public function getListeAffectations(string $search = '', string $groupe = '', int $page = 1, int $limit = 20, bool $onlyMissing = false): array
+    public function getListeAffectations(
+        string $search = '',
+        string $groupe = '',
+        int $page = 1,
+        int $limit = 20,
+        bool $onlyMissing = false,
+        ?string $esoGardien = null,
+        ?string $gardien = null
+    ): array
     {
         $offset = ($page - 1) * $limit;
 
@@ -43,6 +51,16 @@ class ListeAffectationOracleService
 
         if ($onlyMissing) {
             $whereConditions[] = "( (GARD_TEL IS NULL OR TRIM(GARD_TEL) = '') OR (GARD_MAIL IS NULL OR TRIM(GARD_MAIL) = '') )";
+        }
+
+        if (!empty($esoGardien)) {
+            $whereConditions[] = "UPPER(ESO_GARDIEN) LIKE :esoGardien";
+            $params['esoGardien'] = '%' . strtoupper($esoGardien) . '%';
+        }
+
+        if (!empty($gardien)) {
+            $whereConditions[] = "UPPER(GARDIEN_LOT) LIKE :gardien";
+            $params['gardien'] = '%' . strtoupper($gardien) . '%';
         }
 
         if (!empty($whereConditions)) {
@@ -150,9 +168,9 @@ class ListeAffectationOracleService
     /**
      * Récupère les affectations correspondant à une recherche (pour export courant)
      */
-    public function getAffectationsForExportBySearch(string $search): iterable
+    public function getAffectationsForExportBySearch(string $search = '', ?string $esoGardien = null, ?string $gardien = null): iterable
     {
-        $sql = <<<SQL
+        $selectSql = <<<SQL
         SELECT 
             AGENCE,
             GROUPE,
@@ -187,7 +205,7 @@ class ListeAffectationOracleService
             TPROX_ESC,
             RVQ_ESC,
             GARDIEN_ESC,
-            RGT_LOT
+            RGT_LOT,
             RGTL_LOT,
             CGLS_LOT,
             INLOG_LOT,
@@ -198,13 +216,35 @@ class ListeAffectationOracleService
             ESO_GARDIEN,
             GARD_TEL,
             GARD_MAIL
-        FROM LISTE_V_AFFECTATIONS
-        WHERE UPPER(LOT) LIKE UPPER(:search)
-        ORDER BY AGENCE, GROUPE, LOT
         SQL;
 
-        $param = ['search' => strtoupper($search) . '%'];
-        return $this->connection->executeQuery($sql, $param)->iterateAssociative();
+        $baseSql = 'FROM LISTE_V_AFFECTATIONS';
+
+        $whereConditions = [];
+        $params = [];
+
+        if (!empty($search)) {
+            $whereConditions[] = "LOT LIKE :search";
+            $params['search'] = strtoupper($search) . '%';
+        }
+
+        if (!empty($esoGardien)) {
+            $whereConditions[] = "UPPER(ESO_GARDIEN) LIKE :esoGardien";
+            $params['esoGardien'] = '%' . strtoupper($esoGardien) . '%';
+        }
+
+        if (!empty($gardien)) {
+            $whereConditions[] = "UPPER(GARDIEN_LOT) LIKE :gardien";
+            $params['gardien'] = '%' . strtoupper($gardien) . '%';
+        }
+
+        if (!empty($whereConditions)) {
+            $baseSql .= ' WHERE ' . implode(' AND ', $whereConditions);
+        }
+
+        $sql = $selectSql . ' ' . $baseSql . ' ORDER BY AGENCE, GROUPE, LOT';
+
+        return $this->connection->executeQuery($sql, $params)->iterateAssociative();
     }
 
     /**
@@ -290,9 +330,9 @@ class ListeAffectationOracleService
     }
 
     /**
-     * Statistiques filtrées par préfixe de LOT
+     * Statistiques filtrées par critères
      */
-    public function getAffectationStatsBySearch(string $search): array
+    public function getAffectationStatsBySearch(string $search = '', ?string $esoGardien = null, ?string $gardien = null): array
     {
         $sql = <<<SQL
         SELECT 
@@ -301,11 +341,32 @@ class ListeAffectationOracleService
             COUNT(CASE WHEN TRIM(GARD_MAIL) IS NOT NULL THEN 1 END) as LOTS_AVEC_EMAIL,
             COUNT(CASE WHEN (TRIM(GARD_TEL) IS NULL AND TRIM(GARD_MAIL) IS NULL) THEN 1 END) as LOTS_SANS_CONTACT
         FROM LISTE_V_AFFECTATIONS
-        WHERE LOT LIKE :search
         SQL;
 
+        $whereConditions = [];
+        $params = [];
+
+        if (!empty($search)) {
+            $whereConditions[] = "LOT LIKE :search";
+            $params['search'] = strtoupper($search) . '%';
+        }
+
+        if (!empty($esoGardien)) {
+            $whereConditions[] = "UPPER(ESO_GARDIEN) LIKE :esoGardien";
+            $params['esoGardien'] = '%' . strtoupper($esoGardien) . '%';
+        }
+
+        if (!empty($gardien)) {
+            $whereConditions[] = "UPPER(GARDIEN_LOT) LIKE :gardien";
+            $params['gardien'] = '%' . strtoupper($gardien) . '%';
+        }
+
+        if (!empty($whereConditions)) {
+            $sql .= ' WHERE ' . implode(' AND ', $whereConditions);
+        }
+
         return $this->connection
-            ->executeQuery($sql, ['search' => strtoupper($search) . '%'])
+            ->executeQuery($sql, $params)
             ->fetchAssociative();
     }
 
