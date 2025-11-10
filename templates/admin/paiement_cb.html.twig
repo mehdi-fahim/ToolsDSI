@@ -134,11 +134,7 @@
                                         <td>
                                             <input type="checkbox"
                                                    name="selected[]"
-                                                   value="{{ {
-                                                        'CAINT_NUM': row.CAINT_NUM,
-                                                        'NOM': row.NOM,
-                                                        'MDP': row.MDP
-                                                   }|json_encode|e('html_attr') }}">
+                                                   value="{{ row.CAINT_NUM }}|{{ row.NOM|e('html_attr') }}|{{ row.MDP|e('html_attr') }}">
                                         </td>
                                         <td>{{ row.CAINT_NUM }}</td>
                                         <td>{{ row.NOM }}</td>

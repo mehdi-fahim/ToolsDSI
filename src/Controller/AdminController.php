@@ -993,12 +993,13 @@ class AdminController extends AbstractController
                     $this->addFlash('error', 'Sélectionnez au moins un intitulé à importer.');
                 } else {
                     foreach ($selected as $payload) {
-                        $decoded = json_decode((string) $payload, true);
-                        if (is_array($decoded) && isset($decoded['CAINT_NUM'], $decoded['NOM'], $decoded['MDP'])) {
+                        $parts = explode('|', (string) $payload, 3);
+                        if (count($parts) === 3) {
+                            [$caintNum, $nom, $mdp] = $parts;
                             $rowsToInsert[] = [
-                                'CAINT_NUM' => $decoded['CAINT_NUM'],
-                                'NOM' => $decoded['NOM'],
-                                'MDP' => $decoded['MDP'],
+                                'CAINT_NUM' => trim($caintNum),
+                                'NOM' => trim($nom),
+                                'MDP' => trim($mdp),
                             ];
                         }
                     }
