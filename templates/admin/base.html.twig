@@ -448,16 +448,24 @@
                 {% endif %}
 
                 {# Menu déroulant Import #}
-                {% if 'admin_import_od' in access %}
+                {% set hasImportAccess = ('admin_import_od' in access) or ('admin_import_paiement_cb' in access) %}
+                {% if hasImportAccess %}
                 <li class="sidebar-dropdown">
                     <div class="dropdown-toggle" onclick="toggleDropdown(this)">
                         <span style="display: flex; align-items: center; gap: 12px;">📤 <span>Import</span></span>
                         <span class="dropdown-arrow">▼</span>
                     </div>
                     <div class="dropdown-menu">
+                        {% if 'admin_import_od' in access %}
                         <a href="{{ path('admin_import_od') }}">
                             <span>Intégration OD</span>
                         </a>
+                        {% endif %}
+                        {% if 'admin_import_paiement_cb' in access %}
+                        <a href="{{ path('admin_import_paiement_cb') }}">
+                            <span>Paiement CB</span>
+                        </a>
+                        {% endif %}
                     </div>
                 </li>
                 {% endif %}

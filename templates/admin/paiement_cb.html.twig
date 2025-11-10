@@ -1,0 +1,188 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Import Paiement CB{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="admin-header" style="display:flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;">
+        <div>
+            <h1>💳 Import Paiement CB</h1>
+            <p>Consultation et mise à jour des intitulés Internet pour le paiement CB</p>
+        </div>
+        <div style="display:flex; gap: 10px; flex-wrap: wrap;">
+            <a href="{{ path('admin_dashboard') }}" class="btn btn-secondary">🏠 Dashboard</a>
+            <a href="{{ path('admin_import_paiement_cb_export') }}" class="btn" title="Exporter tous les intitulés (sans en-tête)">
+                ⬇️ Exporter les intitulés
+            </a>
+        </div>
+    </div>
+
+    <div class="admin-content" style="display: flex; flex-direction: column; gap: 24px;">
+        {% for label, messages in app.flashes %}
+            {% for message in messages %}
+                <div style="
+                    background: {{ label == 'success' ? '#c6f6d5' : (label == 'error' ? '#fed7d7' : '#ebf8ff') }};
+                    color: {{ label == 'success' ? '#22543d' : (label == 'error' ? '#742a2a' : '#2c5282') }};
+                    padding: 14px 18px;
+                    border-radius: 8px;
+                    border-left: 4px solid {{ label == 'success' ? '#38a169' : (label == 'error' ? '#e53e3e' : '#4299e1') }};
+                ">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endfor %}
+
+        <div style="background: #ffffff; border-radius: 14px; box-shadow: 0 4px 12px rgba(35,41,70,0.08); padding: 24px;">
+            <div style="display:flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 18px;">
+                <h2 style="color: #2d3748; font-size: 1.4rem; margin: 0;">📄 Intitulés existants (ETUDES.INTERNET_INTITULES)</h2>
+                <form method="GET" action="{{ path('admin_import_paiement_cb') }}" style="display:flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                    <input type="hidden" name="missing_search" value="{{ missingSearch }}">
+                    <input type="text"
+                           name="existing_search"
+                           value="{{ existingSearch }}"
+                           placeholder="Recherche sur le n° d'intitulé ou le nom"
+                           style="padding: 10px 14px; border: 2px solid #e2e8f0; border-radius: 8px; min-width: 240px;">
+                    <button type="submit" class="btn">🔍 Rechercher</button>
+                    {% if existingSearch %}
+                        <a href="{{ path('admin_import_paiement_cb', { missing_search: missingSearch }) }}" class="btn btn-secondary">❌ Effacer</a>
+                    {% endif %}
+                </form>
+            </div>
+
+            <div class="table-container" style="overflow-x: auto;">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th style="min-width: 120px;">N° Intitulé</th>
+                            <th style="min-width: 220px;">Nom</th>
+                            <th style="min-width: 120px;">Mot de passe</th>
+                            <th style="min-width: 160px;">Date création</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if existing is empty %}
+                            <tr>
+                                <td colspan="4" style="text-align:center; color:#718096; padding: 24px;">
+                                    Aucun intitulé trouvé.
+                                </td>
+                            </tr>
+                        {% else %}
+                            {% for row in existing %}
+                                <tr>
+                                    <td>{{ row.CAINT_NUM }}</td>
+                                    <td>{{ row.NOM }}</td>
+                                    <td>{{ row.MDP }}</td>
+                                    <td>
+                                        {% if row.DATECRE is defined and row.DATECRE %}
+                                            {{ row.DATECRE|date('d/m/Y H:i') }}
+                                        {% else %}
+                                            <span style="color:#a0aec0;">-</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div style="background: #ffffff; border-radius: 14px; box-shadow: 0 4px 12px rgba(35,41,70,0.08); padding: 24px;">
+            <div style="display:flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 18px;">
+                <h2 style="color: #2d3748; font-size: 1.4rem; margin: 0;">🧩 Intitulés manquants</h2>
+                <form method="GET" action="{{ path('admin_import_paiement_cb') }}" style="display:flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                    <input type="hidden" name="existing_search" value="{{ existingSearch }}">
+                    <input type="text"
+                           name="missing_search"
+                           value="{{ missingSearch }}"
+                           placeholder="Recherche sur le n° d'intitulé ou le nom"
+                           style="padding: 10px 14px; border: 2px solid #e2e8f0; border-radius: 8px; min-width: 240px;">
+                    <button type="submit" class="btn btn-secondary">🔍 Rechercher</button>
+                    {% if missingSearch %}
+                        <a href="{{ path('admin_import_paiement_cb', { existing_search: existingSearch }) }}" class="btn btn-secondary">❌ Effacer</a>
+                    {% endif %}
+                </form>
+            </div>
+
+            <form method="POST" action="{{ path('admin_import_paiement_cb') }}" id="importSelectedForm">
+                <input type="hidden" name="action" value="import_selected">
+                <input type="hidden" name="existing_search" value="{{ existingSearch }}">
+                <input type="hidden" name="missing_search" value="{{ missingSearch }}">
+
+                <div class="table-container" style="overflow-x: auto;">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px;">
+                                    <input type="checkbox" id="selectAllMissing" title="Tout sélectionner">
+                                </th>
+                                <th style="min-width: 120px;">N° Intitulé</th>
+                                <th style="min-width: 220px;">Nom</th>
+                                <th style="min-width: 120px;">Mot de passe</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if missing is empty %}
+                                <tr>
+                                    <td colspan="4" style="text-align:center; color:#718096; padding: 24px;">
+                                        Aucun intitulé manquant détecté.
+                                    </td>
+                                </tr>
+                            {% else %}
+                                {% for row in missing %}
+                                    <tr>
+                                        <td>
+                                            <input type="checkbox"
+                                                   name="selected[]"
+                                                   value="{{ {
+                                                        'CAINT_NUM': row.CAINT_NUM,
+                                                        'NOM': row.NOM,
+                                                        'MDP': row.MDP
+                                                   }|json_encode|e('html_attr') }}">
+                                        </td>
+                                        <td>{{ row.CAINT_NUM }}</td>
+                                        <td>{{ row.NOM }}</td>
+                                        <td>{{ row.MDP }}</td>
+                                    </tr>
+                                {% endfor %}
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="display:flex; gap: 12px; margin-top: 18px; flex-wrap: wrap;">
+                    <button type="submit" class="btn btn-success">
+                        ✅ Importer la sélection
+                    </button>
+                </div>
+            </form>
+
+            <form method="POST" action="{{ path('admin_import_paiement_cb') }}" style="margin-top: 12px;">
+                <input type="hidden" name="action" value="import_all">
+                <input type="hidden" name="existing_search" value="{{ existingSearch }}">
+                <input type="hidden" name="missing_search" value="{{ missingSearch }}">
+                <button type="submit" class="btn btn-secondary" onclick="return confirm('Confirmer l\'import de tous les intitulés manquants ?');">
+                    📥 Importer tout le résultat
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const selectAll = document.getElementById('selectAllMissing');
+    if (!selectAll) {
+        return;
+    }
+
+    const checkboxes = document.querySelectorAll('input[name="selected[]"]');
+    selectAll.addEventListener('change', function () {
+        checkboxes.forEach(cb => {
+            cb.checked = selectAll.checked;
+        });
+    });
+});
+</script>
+{% endblock %}
+

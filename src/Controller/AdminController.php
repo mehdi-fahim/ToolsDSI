@@ -971,6 +971,123 @@ class AdminController extends AbstractController
         }
     }
 
+    #[Route('/import/paiement-cb', name: 'admin_import_paiement_cb', methods: ['GET', 'POST'])]
+    public function paiementCb(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        $existingSearch = trim((string) $request->query->get('existing_search', ''));
+        $missingSearch = trim((string) $request->query->get('missing_search', ''));
+
+        if ($request->isMethod('POST')) {
+            $action = (string) $request->request->get('action', '');
+            $existingSearch = trim((string) $request->request->get('existing_search', $existingSearch));
+            $missingSearch = trim((string) $request->request->get('missing_search', $missingSearch));
+
+            $rowsToInsert = [];
+            if ($action === 'import_selected') {
+                $selected = $request->request->all('selected');
+                if (empty($selected)) {
+                    $this->addFlash('error', 'Sélectionnez au moins un intitulé à importer.');
+                } else {
+                    foreach ($selected as $payload) {
+                        $decoded = json_decode((string) $payload, true);
+                        if (is_array($decoded) && isset($decoded['CAINT_NUM'], $decoded['NOM'], $decoded['MDP'])) {
+                            $rowsToInsert[] = [
+                                'CAINT_NUM' => $decoded['CAINT_NUM'],
+                                'NOM' => $decoded['NOM'],
+                                'MDP' => $decoded['MDP'],
+                            ];
+                        }
+                    }
+                    if (empty($rowsToInsert)) {
+                        $this->addFlash('error', 'Aucune donnée valide sélectionnée pour l\'import.');
+                    }
+                }
+            } elseif ($action === 'import_all') {
+                try {
+                    $rowsToInsert = $this->intitulesCBOracleService->fetchMissingIntitules($missingSearch);
+                    if (empty($rowsToInsert)) {
+                        $this->addFlash('info', 'Aucun intitulé manquant à importer.');
+                    }
+                } catch (\Throwable $e) {
+                    $this->addFlash('error', 'Erreur lors de la récupération des intitulés manquants: ' . $e->getMessage());
+                }
+            }
+
+            if (!empty($rowsToInsert)) {
+                try {
+                    $count = $this->intitulesCBOracleService->insertIntitules($rowsToInsert);
+                    if ($count > 0) {
+                        $this->userActionLogger->logDataModification('PAIEMENT_CB', 'IMPORT', [
+                            'count' => $count,
+                        ], (string) $session->get('user_id'));
+                        $this->addFlash('success', sprintf('%d intitulé(s) importé(s) avec succès.', $count));
+                    } else {
+                        $this->addFlash('info', 'Aucun nouvel intitulé importé (données déjà présentes).');
+                    }
+                } catch (\Throwable $e) {
+                    $this->addFlash('error', 'Erreur lors de l\'import: ' . $e->getMessage());
+                }
+            }
+
+            return $this->redirectToRoute('admin_import_paiement_cb', [
+                'existing_search' => $existingSearch,
+                'missing_search' => $missingSearch,
+            ]);
+        }
+
+        $existing = [];
+        $missing = [];
+        $error = null;
+
+        try {
+            $existing = $this->intitulesCBOracleService->fetchExistingIntitules($existingSearch);
+        } catch (\Throwable $e) {
+            $error = 'Erreur lors du chargement des intitulés existants: ' . $e->getMessage();
+        }
+
+        try {
+            $missing = $this->intitulesCBOracleService->fetchMissingIntitules($missingSearch);
+        } catch (\Throwable $e) {
+            $error = ($error ? $error . ' ' : '') . 'Erreur lors du chargement des intitulés manquants: ' . $e->getMessage();
+        }
+
+        if ($error) {
+            $this->addFlash('error', $error);
+        }
+
+        return $this->render('admin/paiement_cb.html.twig', [
+            'existing' => $existing,
+            'missing' => $missing,
+            'existingSearch' => $existingSearch,
+            'missingSearch' => $missingSearch,
+        ]);
+    }
+
+    #[Route('/import/paiement-cb/export', name: 'admin_import_paiement_cb_export', methods: ['GET'])]
+    public function exportPaiementCb(SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        try {
+            $csv = $this->intitulesCBOracleService->exportAllIntitules();
+        } catch (\Throwable $e) {
+            $this->addFlash('error', 'Erreur lors de l\'export: ' . $e->getMessage());
+            return $this->redirectToRoute('admin_import_paiement_cb');
+        }
+
+        $response = new Response($csv);
+        $response->headers->set('Content-Type', 'text/csv; charset=UTF-8');
+        $response->headers->set('Content-Disposition', 'attachment; filename="paiement_cb_' . (new \DateTimeImmutable())->format('Ymd_His') . '.csv"');
+
+        return $response;
+    }
+
 
     #[Route('/admin/extraction', name: 'admin_extraction', methods: ['GET', 'POST'])]
     public function extraction(Request $request, SessionInterface $session): Response
@@ -1099,6 +1216,7 @@ class AdminController extends AbstractController
             'admin_import_od' => 'Import OD',
             'admin_liste_affectation' => 'Liste d\'affectation',
             'admin_traitement_gl' => 'Traitement GL',
+            'admin_import_paiement_cb' => 'Import Paiement CB',
         ];
 
         $isAdminFlag = null;
