@@ -38,16 +38,48 @@
             {% endif %}
         </div>
 
-        <!-- Description détaillée -->
-        <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-            {% if entity.DESCRIPTION_PLUS is defined and entity.DESCRIPTION_PLUS %}
-                <h3 style="color: #2d3748; margin-bottom: 20px; font-size: 1.3rem;">📋 Description détaillée</h3>
-                <div style="background: #f0fff4; padding: 20px; border-radius: 8px; border-left: 4px solid #38a169; margin-bottom: 25px;">
-                    <p style="color: #2f855a; line-height: 1.6; margin: 0; white-space: pre-wrap;">{{ entity.DESCRIPTION_PLUS }}</p>
-                </div>
-            {% else %}
-                <div class="alert alert-info">Aucune description détaillée disponible.</div>
-            {% endif %}
+        <!-- Description détaillée / Champs -->
+        <div style="display: flex; flex-direction: column; gap: 24px;">
+            <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                {% if entity.DESCRIPTION_PLUS is defined and entity.DESCRIPTION_PLUS %}
+                    <h3 style="color: #2d3748; margin-bottom: 20px; font-size: 1.3rem;">📋 Description détaillée</h3>
+                    <div style="background: #f0fff4; padding: 20px; border-radius: 8px; border-left: 4px solid #38a169; margin-bottom: 10px;">
+                        <p style="color: #2f855a; line-height: 1.6; margin: 0; white-space: pre-wrap;">{{ entity.DESCRIPTION_PLUS }}</p>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">Aucune description détaillée disponible.</div>
+                {% endif %}
+            </div>
+
+            <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                <h3 style="color: #2d3748; margin-bottom: 20px; font-size: 1.3rem;">🗂️ Champs du document</h3>
+                {% if biFields is defined and biFields is not empty %}
+                    <div style="max-height: 320px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: #f7fafc;">
+                                    <th style="text-align: left; padding: 12px; border-bottom: 1px solid #e2e8f0; width: 35%;">Nom du champ</th>
+                                    <th style="text-align: left; padding: 12px; border-bottom: 1px solid #e2e8f0;">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for field in biFields %}
+                                    <tr>
+                                        <td style="padding: 10px 12px; border-bottom: 1px solid #edf2f7; font-family: monospace; color: #2d3748;">
+                                            {{ field.ICVAR_NOM ?? '-' }}
+                                        </td>
+                                        <td style="padding: 10px 12px; border-bottom: 1px solid #edf2f7; color: #4a5568; white-space: pre-wrap;">
+                                            {{ field.ICVAR_LIB ?? '-' }}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">Aucun champ associé trouvé pour ce document.</div>
+                {% endif %}
+            </div>
         </div>
     </div>
 

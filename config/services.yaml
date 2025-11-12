@@ -118,6 +118,10 @@ services:
             $defaultConnection: '@doctrine.dbal.default_connection'
             $etudesConnection: '@doctrine.dbal.etudes_connection'
 
+    App\Service\BiFieldDescriptionService:
+        arguments:
+            $defaultConnection: '@doctrine.dbal.default_connection'
+
     # Plans d'office (connexion ETUDES)
     App\Service\PlansOfficeOracleService:
         arguments:

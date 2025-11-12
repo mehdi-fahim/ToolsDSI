@@ -465,10 +465,21 @@ class AdminController extends AbstractController
                 ['name' => 'DESCRIPTION_PLUS', 'label' => 'Description complémentaire'],
             ]
         ];
+        $fields = [];
+        try {
+            $documentName = (string) ($entity['NOM_DOCUMENT'] ?? '');
+            if ($documentName !== '') {
+                $fields = $this->biFieldDescriptionService->getFieldsForDocument($documentName);
+            }
+        } catch (\Throwable $e) {
+            $fields = [];
+        }
+
         return $this->render('admin/edition_bureautique_detail.html.twig', [
             'entity' => $entity,
             'entityName' => 'EditionBureautique',
-            'metadata' => $metadata
+            'metadata' => $metadata,
+            'biFields' => $fields
         ]);
     }
 
