@@ -28,13 +28,13 @@ class BiFieldDescriptionService
         $sql = <<<SQL
 SELECT ICVAR_NOM, ICVAR_LIB
 FROM ICVAR
-WHERE ICTRS_NOM = :document
+WHERE UPPER(ICTRS_NOM) = UPPER(:document)
 ORDER BY ICVAR_NOM
 SQL;
 
         try {
             return $this->defaultConnection
-                ->executeQuery($sql, ['document' => $documentName])
+                ->executeQuery($sql, ['document' => trim($documentName)])
                 ->fetchAllAssociative();
         } catch (\Throwable $e) {
             throw new \RuntimeException('Erreur lors de la récupération des champs BI: ' . $e->getMessage(), previous: $e);

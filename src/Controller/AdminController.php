@@ -30,6 +30,7 @@ use App\Service\ListeAffectationOracleService;
 use App\Service\InseeOracleService;
 use App\Service\IntitulesCBOracleService;
 use App\Service\PlansOfficeOracleService;
+use App\Service\BiFieldDescriptionService;
 
 #[Route('/admin')]
 class AdminController extends AbstractController
@@ -55,6 +56,7 @@ class AdminController extends AbstractController
         private InseeOracleService $inseeOracleService,
         private IntitulesCBOracleService $intitulesCBOracleService,
         private PlansOfficeOracleService $plansOfficeOracleService,
+        private BiFieldDescriptionService $biFieldDescriptionService,
         private ?DetailedUserActionLogger $detailedUserActionLogger = null
     ) {}
 
@@ -467,7 +469,7 @@ class AdminController extends AbstractController
         ];
         $fields = [];
         try {
-            $documentName = (string) ($entity['NOM_DOCUMENT'] ?? '');
+            $documentName = trim((string) ($entity['NOM_BI'] ?? $entity['NOM_DOCUMENT'] ?? ''));
             if ($documentName !== '') {
                 $fields = $this->biFieldDescriptionService->getFieldsForDocument($documentName);
             }
