@@ -6,11 +6,13 @@ use Doctrine\DBAL\ParameterType;
 
 class EditionBureautiqueOracleService
 {
-    private Connection $connection;
-
-    public function __construct(Connection $defaultConnection)
+    public function __construct(private DatabaseConnectionResolver $connectionResolver)
     {
-        $this->connection = $defaultConnection;
+    }
+
+    private function getConnection(): Connection
+    {
+        return $this->connectionResolver->getConnection();
     }
 
     public function fetchEditions(string $search = '', int $page = 1, int $limit = 20): array
@@ -41,7 +43,7 @@ SQL;
 
         // Requête pour le total
         $countSql = "SELECT COUNT(*) as total " . $baseSql;
-        $total = $this->connection
+        $total = $this->getConnection()
             ->executeQuery($countSql, $params)
             ->fetchOne();
 
@@ -78,7 +80,7 @@ SQL;
             'limit' => ParameterType::INTEGER,
         ];
 
-        $data = $this->connection
+        $data = $this->getConnection()
             ->executeQuery($sql, $params, $types)
             ->fetchAllAssociative();
 
@@ -118,7 +120,7 @@ WHERE
     AND b.BIDTP_NUM = :nomBi
 SQL;
 
-        $result = $this->connection
+        $result = $this->getConnection()
             ->executeQuery($sql, ['nomBi' => $nomBi])
             ->fetchAssociative();
 

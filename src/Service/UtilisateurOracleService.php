@@ -6,11 +6,13 @@ use Doctrine\DBAL\ParameterType;
 
 class UtilisateurOracleService
 {
-    private Connection $connection;
-
-    public function __construct(Connection $defaultConnection)
+    public function __construct(private DatabaseConnectionResolver $connectionResolver)
     {
-        $this->connection = $defaultConnection;
+    }
+
+    private function getConnection(): Connection
+    {
+        return $this->getConnection()Resolver->getConnection();
     }
 
     public function fetchUtilisateurs(string $search = '', int $page = 1, int $limit = 20): array
@@ -38,7 +40,7 @@ class UtilisateurOracleService
 
         // 1. Récupération du total
         $countSql = "SELECT COUNT(*) as total " . $baseSql;
-        $total = $this->connection
+        $total = $this->getConnection()
             ->executeQuery($countSql, $params)
             ->fetchOne();
 
@@ -69,7 +71,7 @@ class UtilisateurOracleService
             'limit' => ParameterType::INTEGER,
         ];
 
-        $data = $this->connection
+        $data = $this->getConnection()
             ->executeQuery($sql, $params, $types)
             ->fetchAllAssociative();
 
@@ -102,7 +104,7 @@ class UtilisateurOracleService
         SQL;
         
 
-        $result = $this->connection
+        $result = $this->getConnection()
             ->executeQuery($sql, ['codeUtilisateur' => $codeUtilisateur])
             ->fetchAssociative();
 
@@ -119,7 +121,7 @@ class UtilisateurOracleService
         WHERE MGUTI_COD = :userId
         SQL;
 
-        $result = $this->connection
+        $result = $this->getConnection()
             ->executeQuery($sql, ['userId' => $userId])
             ->fetchAssociative();
 

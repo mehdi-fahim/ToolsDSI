@@ -31,6 +31,7 @@ use App\Service\InseeOracleService;
 use App\Service\IntitulesCBOracleService;
 use App\Service\PlansOfficeOracleService;
 use App\Service\BiFieldDescriptionService;
+use App\Service\EnvironmentContext;
 
 #[Route('/admin')]
 class AdminController extends AbstractController
@@ -57,6 +58,7 @@ class AdminController extends AbstractController
         private IntitulesCBOracleService $intitulesCBOracleService,
         private PlansOfficeOracleService $plansOfficeOracleService,
         private BiFieldDescriptionService $biFieldDescriptionService,
+        private EnvironmentContext $environmentContext,
         private ?DetailedUserActionLogger $detailedUserActionLogger = null
     ) {}
 
@@ -800,6 +802,10 @@ class AdminController extends AbstractController
                 $session->set('user_nom', 'Plaine Commune Habitat');
                 $session->set('user_prenom', 'Administrateur');
                 $session->set('user_groupe', 'SUPER_ADMIN');
+                // Environnement par défaut pour un nouvel admin connecté
+                if (!$session->has('db_environment')) {
+                    $this->environmentContext->setEnvironment('prod');
+                }
                 
                 // Log de la connexion admin
                 $this->userActionLogger->logUserLogin('PCH', $request->getClientIp(), true);
@@ -832,6 +838,11 @@ class AdminController extends AbstractController
                 // Charger les accès pages en session pour éviter des requêtes à chaque affichage
                 $userAccessMap = $this->accessControlOracleService->getUserPageAccess($user['CODE_UTILISATEUR']);
                 $session->set('page_access', array_keys($userAccessMap));
+
+                // Environnement par défaut si non défini
+                if (!$session->has('db_environment')) {
+                    $this->environmentContext->setEnvironment('prod');
+                }
                 
                 // Log de la connexion utilisateur
                 $this->userActionLogger->logUserLogin($user['CODE_UTILISATEUR'], $request->getClientIp(), true);
@@ -867,6 +878,24 @@ class AdminController extends AbstractController
         $session->remove('page_access');
         
         return $this->redirectToRoute('login');
+    }
+
+    #[Route('/admin/environment/switch', name: 'admin_environment_switch', methods: ['POST'])]
+    public function switchEnvironment(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAdmin($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        $env = (string) $request->request->get('environment', 'prod');
+        $this->environmentContext->setEnvironment($env);
+
+        $referer = (string) $request->headers->get('referer', '');
+        if ($referer !== '') {
+            return new RedirectResponse($referer);
+        }
+
+        return $this->redirectToRoute('admin_dashboard');
     }
 
     #[Route('/admin/user/unlock', name: 'admin_user_unlock', methods: ['GET', 'POST'])]

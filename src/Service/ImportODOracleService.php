@@ -7,11 +7,13 @@ use Doctrine\DBAL\ParameterType;
 
 class ImportODOracleService
 {
-    private Connection $connection;
-
-    public function __construct(Connection $defaultConnection)
+    public function __construct(private DatabaseConnectionResolver $connectionResolver)
     {
-        $this->connection = $defaultConnection;
+    }
+
+    private function getConnection(): Connection
+    {
+        return $this->getConnection()Resolver->getConnection();
     }
 
     /**
@@ -21,7 +23,7 @@ class ImportODOracleService
     {
         try {
             $sql = "DELETE FROM OD_A_CHARGER";
-            $this->connection->executeStatement($sql);
+            $this->getConnection()->executeStatement($sql);
             return true;
         } catch (\Exception $e) {
             throw new \Exception("Erreur lors du vidage de la table OD_A_CHARGER: " . $e->getMessage());
@@ -34,7 +36,7 @@ class ImportODOracleService
     public function insertDataToOdACharger(array $csvData): int
     {
         try {
-            $this->connection->beginTransaction();
+            $this->getConnection()->beginTransaction();
             
             $insertedCount = 0;
             
@@ -69,15 +71,15 @@ class ImportODOracleService
                     'paesi_commentaire' => $row['PAESI_COMMENTAIRE'] ?? ''
                 ];
                 
-                $this->connection->executeStatement($sql, $params);
+                $this->getConnection()->executeStatement($sql, $params);
                 $insertedCount++;
             }
             
-            $this->connection->commit();
+            $this->getConnection()->commit();
             return $insertedCount;
             
         } catch (\Exception $e) {
-            $this->connection->rollBack();
+            $this->getConnection()->rollBack();
             throw new \Exception("Erreur lors de l'insertion des données: " . $e->getMessage());
         }
     }
@@ -89,7 +91,7 @@ class ImportODOracleService
     {
         try {
             $sql = "UPDATE OD_A_CHARGER SET PAESI_CODEXT = REPLACE(PAESI_CODEXT, ' ', '')";
-            $this->connection->executeStatement($sql);
+            $this->getConnection()->executeStatement($sql);
             return true;
         } catch (\Exception $e) {
             throw new \Exception("Erreur lors du nettoyage des codes: " . $e->getMessage());
@@ -103,7 +105,7 @@ class ImportODOracleService
     {
         try {
             $sql = "SELECT * FROM OD_A_CHARGER ORDER BY PAESI_CODEXT";
-            $result = $this->connection->executeQuery($sql)->fetchAllAssociative();
+            $result = $this->getConnection()->executeQuery($sql)->fetchAllAssociative();
             return $result;
         } catch (\Exception $e) {
             throw new \Exception("Erreur lors de la récupération des données: " . $e->getMessage());
@@ -121,7 +123,7 @@ class ImportODOracleService
             
             // Appel de la procédure stockée ADD_OD
             $sql = "BEGIN ADD_OD(:user_id); END;";
-            $this->connection->executeStatement($sql, ['user_id' => $userId]);
+            $this->getConnection()->executeStatement($sql, ['user_id' => $userId]);
             
             return [
                 'success' => true,
@@ -143,7 +145,7 @@ class ImportODOracleService
     {
         try {
             $sql = "INSERT INTO INTEGRATION_OD_LOG (USER_ID, INTEGRATION_DATE, STATUS) VALUES (:user_id, SYSDATE, 'STARTED')";
-            $this->connection->executeStatement($sql, ['user_id' => $userId]);
+            $this->getConnection()->executeStatement($sql, ['user_id' => $userId]);
         } catch (\Exception $e) {
             // Log silencieux - ne pas faire échouer l'intégration pour un problème de log
         }
@@ -159,7 +161,7 @@ class ImportODOracleService
         try {
             // Vérifier les doublons de PAESI_CODEXT
             $sql = "SELECT PAESI_CODEXT, COUNT(*) as count FROM OD_A_CHARGER GROUP BY PAESI_CODEXT HAVING COUNT(*) > 1";
-            $duplicates = $this->connection->executeQuery($sql)->fetchAllAssociative();
+            $duplicates = $this->getConnection()->executeQuery($sql)->fetchAllAssociative();
             
             if (!empty($duplicates)) {
                 foreach ($duplicates as $dup) {
@@ -169,7 +171,7 @@ class ImportODOracleService
             
             // Vérifier les codes vides
             $sql = "SELECT COUNT(*) as count FROM OD_A_CHARGER WHERE PAESI_CODEXT IS NULL OR TRIM(PAESI_CODEXT) = ''";
-            $emptyCodes = $this->connection->executeQuery($sql)->fetchOne();
+            $emptyCodes = $this->getConnection()->executeQuery($sql)->fetchOne();
             
             if ($emptyCodes > 0) {
                 $errors[] = "$emptyCodes ligne(s) avec PAESI_CODEXT vide";
@@ -177,7 +179,7 @@ class ImportODOracleService
             
             // Vérifier les libellés vides
             $sql = "SELECT COUNT(*) as count FROM OD_A_CHARGER WHERE PAESI_LIBELLE IS NULL OR TRIM(PAESI_LIBELLE) = ''";
-            $emptyLabels = $this->connection->executeQuery($sql)->fetchOne();
+            $emptyLabels = $this->getConnection()->executeQuery($sql)->fetchOne();
             
             if ($emptyLabels > 0) {
                 $errors[] = "$emptyLabels ligne(s) avec PAESI_LIBELLE vide";
@@ -197,7 +199,7 @@ class ImportODOracleService
     {
         try {
             $sql = "SELECT COUNT(*) as count FROM OD_A_CHARGER";
-            return (int) $this->connection->executeQuery($sql)->fetchOne();
+            return (int) $this->getConnection()->executeQuery($sql)->fetchOne();
         } catch (\Exception $e) {
             return 0;
         }

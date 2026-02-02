@@ -6,27 +6,29 @@ use Doctrine\DBAL\ParameterType;
 
 class BeckrelOracleService
 {
-    private Connection $connection;
-
-    public function __construct(Connection $defaultConnection)
+    public function __construct(private DatabaseConnectionResolver $connectionResolver)
     {
-        $this->connection = $defaultConnection;
+    }
+
+    private function getConnection(): Connection
+    {
+        return $this->getConnection()Resolver->getConnection();
     }
 
     public function listUsers(): array
     {
         $sql = "SELECT EMAIL, PHONE FROM BECKREL_V_USERS ORDER BY EMAIL";
-        return $this->connection->executeQuery($sql)->fetchAllAssociative();
+        return $this->getConnection()->executeQuery($sql)->fetchAllAssociative();
     }
 
     public function listUsersPaginated(int $page = 1, int $limit = 20): array
     {
         $offset = ($page - 1) * $limit;
         $countSql = "SELECT COUNT(*) FROM BECKREL_V_USERS";
-        $total = (int) $this->connection->executeQuery($countSql)->fetchOne();
+        $total = (int) $this->getConnection()->executeQuery($countSql)->fetchOne();
 
         $sql = "SELECT EMAIL, PHONE FROM BECKREL_V_USERS ORDER BY EMAIL OFFSET :offset ROWS FETCH NEXT :limit ROWS ONLY";
-        $data = $this->connection->executeQuery($sql, [
+        $data = $this->getConnection()->executeQuery($sql, [
             'offset' => $offset,
             'limit' => $limit,
         ], [
@@ -46,7 +48,7 @@ class BeckrelOracleService
     public function tiersExists(string $numeroTiers): bool
     {
         $sql = "SELECT COUNT(*) FROM TOZD2 WHERE TOTIE_COD = :tiers";
-        $count = (int) $this->connection->executeQuery($sql, ['tiers' => $numeroTiers])->fetchOne();
+        $count = (int) $this->getConnection()->executeQuery($sql, ['tiers' => $numeroTiers])->fetchOne();
         return $count > 0;
     }
 
@@ -54,7 +56,7 @@ class BeckrelOracleService
     {
         // Remplit TOZD2_VALPHA avec l'email (mise à jour inconditionnelle)
         $sql = "UPDATE TOZD2 SET TOZD2_VALPHA = :email WHERE TOTIE_COD = :tiers";
-        return $this->connection->executeStatement($sql, [
+        return $this->getConnection()->executeStatement($sql, [
             'email' => $email,
             'tiers' => $numeroTiers,
         ]);
@@ -64,7 +66,7 @@ class BeckrelOracleService
     {
         // Hypothèse: table minimaliste avec TOTIE_COD; ajuste si d'autres colonnes sont requises
         $sql = "INSERT INTO BECKREL_USERS_ACCESS (TOTIE_COD) VALUES (:tiers)";
-        return $this->connection->executeStatement($sql, ['tiers' => $numeroTiers]);
+        return $this->getConnection()->executeStatement($sql, ['tiers' => $numeroTiers]);
     }
 
     public function removeUserAccessByEmail(string $email): int
@@ -73,7 +75,7 @@ class BeckrelOracleService
         $sql = "DELETE FROM BECKREL_USERS_ACCESS WHERE TOTIE_COD IN (
             SELECT TOTIE_COD FROM TOZD2 WHERE UPPER(TOZD2_VALPHA) = UPPER(:email)
         )";
-        return $this->connection->executeStatement($sql, ['email' => $email]);
+        return $this->getConnection()->executeStatement($sql, ['email' => $email]);
     }
 
     public function createTozd2Record(string $numeroTiers, string $email): int
@@ -106,7 +108,7 @@ class BeckrelOracleService
             SYSDATE
         )";
 
-        return $this->connection->executeStatement($sql, [
+        return $this->getConnection()->executeStatement($sql, [
             'tiers' => $numeroTiers,
             'email' => $email,
         ]);

@@ -7,11 +7,13 @@ use Doctrine\DBAL\ParameterType;
 
 class ListeAffectationOracleService
 {
-    private Connection $connection;
-
-    public function __construct(Connection $defaultConnection)
+    public function __construct(private DatabaseConnectionResolver $connectionResolver)
     {
-        $this->connection = $defaultConnection;
+    }
+
+    private function getConnection(): Connection
+    {
+        return $this->getConnection()Resolver->getConnection();
     }
 
     /**
@@ -69,7 +71,7 @@ class ListeAffectationOracleService
 
         // 1. Récupération du total
         $countSql = "SELECT COUNT(*) as total " . $baseSql;
-        $total = $this->connection
+        $total = $this->getConnection()
             ->executeQuery($countSql, $params)
             ->fetchOne();
 
@@ -92,7 +94,7 @@ class ListeAffectationOracleService
         $params['offset'] = $offset;
         $params['limit'] = $limit;
 
-        $data = $this->connection
+        $data = $this->getConnection()
             ->executeQuery($sql, $params)
             ->fetchAllAssociative();
 
@@ -162,7 +164,7 @@ class ListeAffectationOracleService
         ORDER BY AGENCE, GROUPE, LOT
         SQL;
 
-        return $this->connection->executeQuery($sql)->iterateAssociative();
+        return $this->getConnection()->executeQuery($sql)->iterateAssociative();
     }
 
     /**
@@ -244,7 +246,7 @@ class ListeAffectationOracleService
 
         $sql = $selectSql . ' ' . $baseSql . ' ORDER BY AGENCE, GROUPE, LOT';
 
-        return $this->connection->executeQuery($sql, $params)->iterateAssociative();
+        return $this->getConnection()->executeQuery($sql, $params)->iterateAssociative();
     }
 
     /**
@@ -302,7 +304,7 @@ class ListeAffectationOracleService
         WHERE UPPER(LOT) = UPPER(:lot)
         SQL;
 
-        $result = $this->connection
+        $result = $this->getConnection()
             ->executeQuery($sql, ['lot' => $lot])
             ->fetchAssociative();
 
@@ -324,7 +326,7 @@ class ListeAffectationOracleService
         FROM LISTE_V_AFFECTATIONS
         SQL;
 
-        return $this->connection
+        return $this->getConnection()
             ->executeQuery($sql)
             ->fetchAssociative();
     }
@@ -365,7 +367,7 @@ class ListeAffectationOracleService
             $sql .= ' WHERE ' . implode(' AND ', $whereConditions);
         }
 
-        return $this->connection
+        return $this->getConnection()
             ->executeQuery($sql, $params)
             ->fetchAssociative();
     }
@@ -382,7 +384,7 @@ class ListeAffectationOracleService
         ORDER BY AGENCE
         SQL;
 
-        $result = $this->connection
+        $result = $this->getConnection()
             ->executeQuery($sql)
             ->fetchFirstColumn();
 
@@ -401,7 +403,7 @@ class ListeAffectationOracleService
         ORDER BY GROUPE
         SQL;
 
-        $result = $this->connection
+        $result = $this->getConnection()
             ->executeQuery($sql)
             ->fetchFirstColumn();
 
@@ -420,7 +422,7 @@ class ListeAffectationOracleService
         ORDER BY LOT
         SQL;
 
-        return $this->connection
+        return $this->getConnection()
             ->executeQuery($sql, ['agence' => $agence])
             ->fetchAllAssociative();
     }

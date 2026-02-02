@@ -6,11 +6,13 @@ use Doctrine\DBAL\Connection;
 
 class EngagementOracleService
 {
-    private Connection $connection;
-
-    public function __construct(Connection $defaultConnection)
+    public function __construct(private DatabaseConnectionResolver $connectionResolver)
     {
-        $this->connection = $defaultConnection;
+    }
+
+    private function getConnection(): Connection
+    {
+        return $this->getConnection()Resolver->getConnection();
     }
 
     /**
@@ -20,31 +22,31 @@ class EngagementOracleService
     {
         try {
             // Récupérer le type d'engagement
-            $typeEngagement = $this->connection->executeQuery(
+            $typeEngagement = $this->getConnection()->executeQuery(
                 "SELECT TATEN_COD FROM TAENG WHERE ICEXE_NUM = ? AND TAENG_NUM = ? AND TOTIE_CODSCTE = ?",
                 [$exercice, $numeroEngagement, $societe]
             )->fetchOne();
 
             // Récupérer l'ESO administratif
-            $esoAdministratif = $this->connection->executeQuery(
+            $esoAdministratif = $this->getConnection()->executeQuery(
                 "SELECT TOESO_COD FROM TAENG WHERE ICEXE_NUM = ? AND TAENG_NUM = ? AND TOTIE_CODSCTE = ?",
                 [$exercice, $numeroEngagement, $societe]
             )->fetchOne();
 
             // Récupérer le responsable de l'engagement
-            $responsableEngagement = $this->connection->executeQuery(
+            $responsableEngagement = $this->getConnection()->executeQuery(
                 "SELECT TOTIE_COD FROM TAENR WHERE ICEXE_NUM = ? AND TAENG_NUM = ? AND TOTIE_CODSCTE = ?",
                 [$exercice, $numeroEngagement, $societe]
             )->fetchOne();
 
             // Récupérer le marché rattaché
-            $marcheRattache = $this->connection->executeQuery(
+            $marcheRattache = $this->getConnection()->executeQuery(
                 "SELECT TAMAC_NUM FROM TAENG WHERE ICEXE_NUM = ? AND TAENG_NUM = ? AND TOTIE_CODSCTE = ?",
                 [$exercice, $numeroEngagement, $societe]
             )->fetchOne();
 
             // Récupérer le lot rattaché (requête plus complexe)
-            $lotRattache = $this->connection->executeQuery(
+            $lotRattache = $this->getConnection()->executeQuery(
                 "SELECT TAMAL_REF FROM TAMAL a, TAENG b 
                  WHERE ICEXE_NUM = ? AND TAENG_NUM = ? AND TOTIE_CODSCTE = ? 
                  AND b.tamac_num = a.tamac_num AND b.tamal_cod = a.tamal_cod 
@@ -56,7 +58,7 @@ class EngagementOracleService
             )->fetchOne();
 
             // Vérifier si l'engagement est pluriannuel
-            $isPluriannuel = $this->connection->executeQuery(
+            $isPluriannuel = $this->getConnection()->executeQuery(
                 "SELECT CASE WHEN TAENG_TEMPLURI = 'F' THEN 0 ELSE 1 END FROM TAENG WHERE ICEXE_NUM = ? AND TAENG_NUM = ?",
                 [$exercice, $numeroEngagement]
             )->fetchOne();
@@ -91,7 +93,7 @@ class EngagementOracleService
     public function checkEngagementExists(int $exercice, int $numeroEngagement, string $societe): bool
     {
         try {
-            $result = $this->connection->executeQuery(
+            $result = $this->getConnection()->executeQuery(
                 "SELECT COUNT(*) FROM TAENG WHERE ICEXE_NUM = ? AND TAENG_NUM = ? AND TOTIE_CODSCTE = ?",
                 [$exercice, $numeroEngagement, $societe]
             )->fetchOne();
@@ -108,14 +110,14 @@ class EngagementOracleService
     public function updateEngagement(int $exercice, int $numeroEngagement, string $societe, array $data): array
     {
         try {
-            $this->connection->beginTransaction();
+            $this->getConnection()->beginTransaction();
 
             $updated = [];
 
             // Mise à jour de l'ESO administratif dans TAENG
             if (isset($data['eso_administratif']) && $data['eso_administratif'] !== '') {
                 // L'ESO administratif est un champ avec des caractères, pas un numéro de tiers
-                $result = $this->connection->executeStatement(
+                $result = $this->getConnection()->executeStatement(
                     "UPDATE TAENG SET TOESO_COD = ? WHERE ICEXE_NUM = ? AND TAENG_NUM = ? AND TOTIE_CODSCTE = ?",
                     [$data['eso_administratif'], $exercice, $numeroEngagement, $societe]
                 );
@@ -128,7 +130,7 @@ class EngagementOracleService
             if (isset($data['responsable_engagement']) && $data['responsable_engagement'] !== '') {
                 // Vérifier d'abord que le tiers responsable existe dans la table des tiers
                 try {
-                    $tiersExists = $this->connection->executeQuery(
+                    $tiersExists = $this->getConnection()->executeQuery(
                         "SELECT COUNT(*) FROM TOTIE WHERE TOTIE_COD = ?",
                         [$data['responsable_engagement']]
                     )->fetchOne();
@@ -139,7 +141,7 @@ class EngagementOracleService
                 } catch (\Exception $e) {
                     // Si la requête échoue, essayer avec une conversion numérique
                     if (is_numeric($data['responsable_engagement'])) {
-                        $tiersExists = $this->connection->executeQuery(
+                        $tiersExists = $this->getConnection()->executeQuery(
                             "SELECT COUNT(*) FROM TOTIE WHERE TOTIE_COD = ?",
                             [(int)$data['responsable_engagement']]
                         )->fetchOne();
@@ -153,20 +155,20 @@ class EngagementOracleService
                 }
 
                 // Vérifier si un enregistrement existe déjà pour cet engagement
-                $existingRecord = $this->connection->executeQuery(
+                $existingRecord = $this->getConnection()->executeQuery(
                     "SELECT COUNT(*) FROM TAENR WHERE ICEXE_NUM = ? AND TAENG_NUM = ? AND TOTIE_CODSCTE = ?",
                     [$exercice, $numeroEngagement, $societe]
                 )->fetchOne();
 
                 if ((int)$existingRecord > 0) {
                     // Mettre à jour l'enregistrement existant
-                    $result = $this->connection->executeStatement(
+                    $result = $this->getConnection()->executeStatement(
                         "UPDATE TAENR SET TOTIE_COD = ? WHERE ICEXE_NUM = ? AND TAENG_NUM = ? AND TOTIE_CODSCTE = ?",
                         [is_numeric($data['responsable_engagement']) ? (int)$data['responsable_engagement'] : $data['responsable_engagement'], $exercice, $numeroEngagement, $societe]
                     );
                 } else {
                     // Créer un nouvel enregistrement avec TAITL_COD requis
-                    $result = $this->connection->executeStatement(
+                    $result = $this->getConnection()->executeStatement(
                         "INSERT INTO TAENR (ICEXE_NUM, TAENG_NUM, TOTIE_CODSCTE, TOTIE_COD, TAITL_COD) VALUES (?, ?, ?, ?, ?)",
                         [$exercice, $numeroEngagement, $societe, is_numeric($data['responsable_engagement']) ? (int)$data['responsable_engagement'] : $data['responsable_engagement'], 'RESEN']
                     );
@@ -179,7 +181,7 @@ class EngagementOracleService
 
             // Mise à jour du marché rattaché dans TAENG
             if (isset($data['marche_rattache']) && $data['marche_rattache'] !== '') {
-                $result = $this->connection->executeStatement(
+                $result = $this->getConnection()->executeStatement(
                     "UPDATE TAENG SET TAMAC_NUM = ? WHERE ICEXE_NUM = ? AND TAENG_NUM = ? AND TOTIE_CODSCTE = ?",
                     [$data['marche_rattache'], $exercice, $numeroEngagement, $societe]
                 );
@@ -188,7 +190,7 @@ class EngagementOracleService
                 }
             }
 
-            $this->connection->commit();
+            $this->getConnection()->commit();
 
             return [
                 'success' => true,
@@ -197,7 +199,7 @@ class EngagementOracleService
             ];
 
         } catch (\Exception $e) {
-            $this->connection->rollBack();
+            $this->getConnection()->rollBack();
             return [
                 'success' => false,
                 'error' => 'Erreur lors de la mise à jour: ' . $e->getMessage()

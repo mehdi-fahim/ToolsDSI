@@ -5,11 +5,13 @@ use Doctrine\DBAL\Connection;
 
 class MotDePasseOracleService
 {
-    private Connection $connection;
-
-    public function __construct(Connection $defaultConnection)
+    public function __construct(private DatabaseConnectionResolver $connectionResolver)
     {
-        $this->connection = $defaultConnection;
+    }
+
+    private function getConnection(): Connection
+    {
+        return $this->getConnection()Resolver->getConnection();
     }
 
     public function getMotDePasseInfo(string $userId): ?array
@@ -32,7 +34,7 @@ WHERE
     mguti_cod = upper(:userId)
 SQL;
 
-        $result = $this->connection
+        $result = $this->getConnection()
             ->executeQuery($sql, ['userId' => strtoupper($userId)])
             ->fetchAssociative();
 
@@ -48,7 +50,7 @@ WHERE MGUTI_COD = upper(:userId)
 SQL;
 
         try {
-            $affected = $this->connection
+            $affected = $this->getConnection()
                 ->executeStatement($sql, ['userId' => strtoupper($userId)]);
             return $affected > 0;
         } catch (\Exception $e) {
@@ -65,7 +67,7 @@ WHERE MGUTI_COD = upper(:userId)
 SQL;
 
         try {
-            $affected = $this->connection
+            $affected = $this->getConnection()
                 ->executeStatement($sql, ['userId' => strtoupper($userId)]);
             return $affected > 0;
         } catch (\Exception $e) {
@@ -83,7 +85,7 @@ WHERE MGUTI_COD = upper(:userId)
 SQL;
 
         try {
-            $affected = $this->connection
+            $affected = $this->getConnection()
                 ->executeStatement($sql, [
                     'nouveauMotDePasse' => strtoupper($nouveauMotDePasse),
                     'userId' => strtoupper($userId)
@@ -103,7 +105,7 @@ FROM MGUTI
 WHERE MGUTI_COD = upper(:userId)
 SQL;
 
-        $count = $this->connection
+        $count = $this->getConnection()
             ->executeQuery($sql, ['userId' => strtoupper($userId)])
             ->fetchOne();
 

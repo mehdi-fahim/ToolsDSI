@@ -3,11 +3,17 @@
 namespace App\Service;
 
 use Doctrine\DBAL\Connection;
+use App\Service\DatabaseConnectionResolver;
 
 class SystemOracleService
 {
-    public function __construct(private Connection $defaultConnection)
+    public function __construct(private DatabaseConnectionResolver $connectionResolver)
     {
+    }
+
+    private function getConnection(): Connection
+    {
+        return $this->connectionResolver->getConnection();
     }
 
     /**
@@ -36,7 +42,7 @@ class SystemOracleService
           AND d.object_type = 'TABLE'
         ORDER BY d.object_name
         SQL;
-        return $this->defaultConnection->executeQuery($sql)->fetchAllAssociative();
+        return $this->getConnection()->executeQuery($sql)->fetchAllAssociative();
     }
 
     /**
@@ -65,7 +71,7 @@ class SystemOracleService
           AND d.object_type = 'TABLE'
         ORDER BY d.object_name
         SQL;
-        return $this->defaultConnection->executeQuery($sql)->fetchAllAssociative();
+        return $this->getConnection()->executeQuery($sql)->fetchAllAssociative();
     }
 
     /**
@@ -94,7 +100,7 @@ class SystemOracleService
           AND d.object_type = 'TABLE'
         ORDER BY d.object_name
         SQL;
-        return $this->defaultConnection->executeQuery($sql)->fetchAllAssociative();
+        return $this->getConnection()->executeQuery($sql)->fetchAllAssociative();
     }
 
     /**
@@ -137,7 +143,7 @@ class SystemOracleService
     public function getLockedTablesFromCustomView(string $viewName): array
     {
         $sql = "SELECT sid, serial# AS serial, object_name, osuser, status FROM " . $viewName;
-        return $this->defaultConnection->executeQuery($sql)->fetchAllAssociative();
+        return $this->getConnection()->executeQuery($sql)->fetchAllAssociative();
     }
 
     /**
@@ -148,7 +154,7 @@ class SystemOracleService
         $sql = "ALTER SYSTEM KILL SESSION :sess IMMEDIATE";
         $sessionId = $sid . ',' . $serial;
         try {
-            $this->defaultConnection->executeStatement($sql, ['sess' => $sessionId]);
+            $this->getConnection()->executeStatement($sql, ['sess' => $sessionId]);
             return true;
         } catch (\Throwable $e) {
             return false;

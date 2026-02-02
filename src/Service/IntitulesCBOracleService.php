@@ -7,13 +7,13 @@ use Doctrine\DBAL\ParameterType;
 
 class IntitulesCBOracleService
 {
-    private Connection $defaultConnection;
-    private Connection $etudesConnection;
-
-    public function __construct(Connection $defaultConnection, Connection $etudesConnection)
+    public function __construct(private DatabaseConnectionResolver $connectionResolver)
     {
-        $this->defaultConnection = $defaultConnection;
-        $this->etudesConnection = $etudesConnection;
+    }
+
+    private function getConnection(): Connection
+    {
+        return $this->getConnection()Resolver->getConnection();
     }
 
     /**
@@ -57,8 +57,8 @@ SQL;
             'limit' => ParameterType::INTEGER,
         ];
 
-        $data = $this->queryWithFallback($dataSql, $paramsWithPagination, preferEtudes: true, types: $typesWithPagination);
-        $total = (int) $this->querySingleValueWithFallback($countSql, $params, preferEtudes: true, types: $types);
+        $data = $this->getConnection()->executeQuery($dataSql, $paramsWithPagination, $typesWithPagination)->fetchAllAssociative();
+        $total = (int) $this->getConnection()->executeQuery($countSql, $params, $types)->fetchOne();
         $totalPages = (int) max(1, ceil($total / $limit));
 
         return [
@@ -124,8 +124,8 @@ SQL;
             'limit' => ParameterType::INTEGER,
         ];
 
-        $data = $this->queryWithFallback($dataSql, $paramsWithPagination, preferEtudes: false, types: $typesWithPagination);
-        $total = (int) $this->querySingleValueWithFallback($countSql, $params, preferEtudes: false, types: $types);
+        $data = $this->getConnection()->executeQuery($dataSql, $paramsWithPagination, $typesWithPagination)->fetchAllAssociative();
+        $total = (int) $this->getConnection()->executeQuery($countSql, $params, $types)->fetchOne();
         $totalPages = (int) max(1, ceil($total / $limit));
 
         return [
@@ -179,7 +179,7 @@ SQL;
             ];
 
             try {
-                $inserted += $this->executeStatementWithFallback($sql, $params);
+                $inserted += $this->getConnection()->executeStatement($sql, $params);
             } catch (\Throwable $e) {
                 // Entrée déjà présente : ignorer silencieusement
                 if (str_contains($e->getMessage(), 'ORA-00001')) {
@@ -198,7 +198,7 @@ SQL;
     public function exportAllIntitules(): string
     {
         $sql = "SELECT caint_num AS NO_INTITULE, nom, mdp AS CLE FROM etudes.internet_intitules ORDER BY caint_num";
-        $rows = $this->queryWithFallback($sql, [], preferEtudes: true);
+        $rows = $this->getConnection()->executeQuery($sql)->fetchAllAssociative();
         return $this->toCsvWithoutHeader($rows);
     }
 
@@ -206,76 +206,18 @@ SQL;
     {
         $sql = "SELECT caint_num AS NO_INTITULE, nom, mdp AS CLE FROM internet_intitules WHERE TRUNC(datecre) = TRUNC(SYSDATE) ORDER BY caint_num";
 
-        // Appeler la procédure avec un argument vide
         try {
-            $this->defaultConnection->executeStatement('BEGIN INS_INTERNET_INTITULE(:p); END;', ['p' => '']);
-            $rows = $this->defaultConnection->executeQuery($sql)->fetchAllAssociative();
-            return $this->toCsv($rows);
+            $this->getConnection()->executeStatement('BEGIN INS_INTERNET_INTITULE(:p); END;', ['p' => '']);
         } catch (\Throwable $e) {
-            // Fallback: connexion ETUDES
+            // Essai avec schéma ETUDES si la procédure est dans ce schéma
             try {
-                $this->etudesConnection->executeStatement('BEGIN INS_INTERNET_INTITULE(:p); END;', ['p' => '']);
-                $rows = $this->etudesConnection->executeQuery($sql)->fetchAllAssociative();
-                return $this->toCsv($rows);
+                $this->getConnection()->executeStatement('BEGIN ETUDES.INS_INTERNET_INTITULE(:p); END;', ['p' => '']);
             } catch (\Throwable $e2) {
-                // Dernier essai: qualifier le schéma ETUDES
-                $this->etudesConnection->executeStatement('BEGIN ETUDES.INS_INTERNET_INTITULE(:p); END;', ['p' => '']);
-                $rows = $this->etudesConnection->executeQuery($sql)->fetchAllAssociative();
-                return $this->toCsv($rows);
+                // Ignorer si la procédure n'existe pas (table peut être vide)
             }
         }
-    }
-
-    private function queryWithFallback(string $sql, array $params = [], bool $preferEtudes = true, array $types = []): array
-    {
-        $connections = $preferEtudes
-            ? [$this->etudesConnection, $this->defaultConnection]
-            : [$this->defaultConnection, $this->etudesConnection];
-
-        $lastException = null;
-        foreach ($connections as $connection) {
-            try {
-                return $connection->executeQuery($sql, $params, $types)->fetchAllAssociative();
-            } catch (\Throwable $e) {
-                $lastException = $e;
-            }
-        }
-
-        throw $lastException ?? new \RuntimeException('Impossible d\'exécuter la requête.');
-    }
-
-    private function querySingleValueWithFallback(string $sql, array $params = [], bool $preferEtudes = true, array $types = [])
-    {
-        $connections = $preferEtudes
-            ? [$this->etudesConnection, $this->defaultConnection]
-            : [$this->defaultConnection, $this->etudesConnection];
-
-        $lastException = null;
-        foreach ($connections as $connection) {
-            try {
-                return $connection->executeQuery($sql, $params, $types)->fetchOne();
-            } catch (\Throwable $e) {
-                $lastException = $e;
-            }
-        }
-
-        throw $lastException ?? new \RuntimeException('Impossible d\'exécuter la requête.');
-    }
-
-    private function executeStatementWithFallback(string $sql, array $params = [], array $types = []): int
-    {
-        $connections = [$this->etudesConnection, $this->defaultConnection];
-        $lastException = null;
-
-        foreach ($connections as $connection) {
-            try {
-                return $connection->executeStatement($sql, $params, $types);
-            } catch (\Throwable $e) {
-                $lastException = $e;
-            }
-        }
-
-        throw $lastException ?? new \RuntimeException('Impossible d\'exécuter l\'instruction.');
+        $rows = $this->getConnection()->executeQuery($sql)->fetchAllAssociative();
+        return $this->toCsv($rows);
     }
 
     private function toCsv(array $rows): string

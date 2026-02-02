@@ -6,11 +6,13 @@ use Doctrine\DBAL\Connection;
 
 class BiFieldDescriptionService
 {
-    private Connection $defaultConnection;
-
-    public function __construct(Connection $defaultConnection)
+    public function __construct(private DatabaseConnectionResolver $connectionResolver)
     {
-        $this->defaultConnection = $defaultConnection;
+    }
+
+    private function getConnection(): Connection
+    {
+        return $this->connectionResolver->getConnection();
     }
 
     /**
@@ -33,7 +35,7 @@ ORDER BY ICVAR_NOM
 SQL;
 
         try {
-            return $this->defaultConnection
+            return $this->getConnection()
                 ->executeQuery($sql, ['document' => trim($documentName)])
                 ->fetchAllAssociative();
         } catch (\Throwable $e) {

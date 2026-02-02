@@ -10,8 +10,24 @@ doctrine:
                 use_savepoints: true
                 options:
                     charset: 'utf8'
-            etudes:
-                url: '%env(resolve:ETUDES_DATABASE_URL)%'
+            prod:
+                url: '%env(resolve:DATABASE_URL_PROD)%'
+                driver: 'oci8'
+                charset: AL32UTF8
+                profiling_collect_backtrace: '%kernel.debug%'
+                use_savepoints: true
+                options:
+                    charset: 'utf8'
+            preprod:
+                url: '%env(resolve:DATABASE_URL_PREPROD)%'
+                driver: 'oci8'
+                charset: AL32UTF8
+                profiling_collect_backtrace: '%kernel.debug%'
+                use_savepoints: true
+                options:
+                    charset: 'utf8'
+            test:
+                url: '%env(resolve:DATABASE_URL_TEST)%'
                 driver: 'oci8'
                 charset: AL32UTF8
                 profiling_collect_backtrace: '%kernel.debug%'

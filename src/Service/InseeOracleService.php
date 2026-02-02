@@ -6,17 +6,19 @@ use Doctrine\DBAL\Connection;
 
 class InseeOracleService
 {
-    private Connection $connection;
-
-    public function __construct(Connection $etudesConnection)
+    public function __construct(private DatabaseConnectionResolver $connectionResolver)
     {
-        $this->connection = $etudesConnection;
+    }
+
+    private function getConnection(): Connection
+    {
+        return $this->getConnection()Resolver->getConnection();
     }
 
     public function generateCsv(int $annee): string
     {
         // Dernier jour du mois précédent (au format YYYY-MM-DD)
-        $dateFinMois = $this->connection->executeQuery(
+        $dateFinMois = $this->getConnection()->executeQuery(
             "SELECT TO_CHAR(LAST_DAY(ADD_MONTHS(SYSDATE, -1)), 'YYYY-MM-DD') FROM DUAL"
         )->fetchOne();
 
@@ -113,7 +115,7 @@ WHERE a.paesi_num(+) = b.paesi_num
 ORDER BY 2
 SQL;
 
-        $rows = $this->connection->executeQuery($sql, [
+        $rows = $this->getConnection()->executeQuery($sql, [
             'dfm' => $dateFinMois,
             'annee' => $annee,
         ])->fetchAllAssociative();

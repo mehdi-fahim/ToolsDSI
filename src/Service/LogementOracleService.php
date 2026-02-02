@@ -3,11 +3,17 @@
 namespace App\Service;
 
 use Doctrine\DBAL\Connection;
+use App\Service\DatabaseConnectionResolver;
 
 class LogementOracleService
 {
-    public function __construct(private Connection $defaultConnection)
+    public function __construct(private DatabaseConnectionResolver $connectionResolver)
     {
+    }
+
+    private function getConnection(): Connection
+    {
+        return $this->connectionResolver->getConnection();
     }
 
     /**
@@ -16,7 +22,7 @@ class LogementOracleService
     public function getDemandeByNumero(string $numeroDemande): ?array
     {
         $sql = "SELECT ACDOS_NUM, ACDEM_ETA FROM ACDEM WHERE ACDOS_NUM = :num";
-        $row = $this->defaultConnection->fetchAssociative($sql, ['num' => $numeroDemande]);
+        $row = $this->getConnection()->executeQuery($sql, ['num' => $numeroDemande])->fetchAssociative();
         return $row ?: null;
     }
 
@@ -26,7 +32,7 @@ class LogementOracleService
     public function updateEtatDemande(string $numeroDemande, string $etat): int
     {
         $sql = "UPDATE ACDEM SET ACDEM_ETA = :etat WHERE ACDOS_NUM = :num";
-        return $this->defaultConnection->executeStatement($sql, [
+        return $this->getConnection()->executeStatement($sql, [
             'etat' => $etat,
             'num' => $numeroDemande,
         ]);
@@ -38,7 +44,7 @@ class LogementOracleService
     public function getTiersByRole(string $numeroDemande, string $role): ?string
     {
         $sql = "SELECT TOTIE_COD FROM ACPAR WHERE ACDOS_NUM = :num AND ACTPA_COD = :role";
-        $val = $this->defaultConnection->fetchOne($sql, ['num' => $numeroDemande, 'role' => $role]);
+        $val = $this->getConnection()->executeQuery($sql, ['num' => $numeroDemande, 'role' => $role])->fetchOne();
         return $val !== false ? (string) $val : null;
     }
 
@@ -49,8 +55,8 @@ class LogementOracleService
     {
         $sqlDebut = "SELECT ACPAR_DTDDPA FROM ACPAR WHERE ACDOS_NUM = :num AND ACTPA_COD = :role";
         $sqlFin = "SELECT ACPAR_DTFPAR FROM ACPAR WHERE ACDOS_NUM = :num AND ACTPA_COD = :role";
-        $debut = $this->defaultConnection->fetchOne($sqlDebut, ['num' => $numeroDemande, 'role' => $role]);
-        $fin = $this->defaultConnection->fetchOne($sqlFin, ['num' => $numeroDemande, 'role' => $role]);
+        $debut = $this->getConnection()->executeQuery($sqlDebut, ['num' => $numeroDemande, 'role' => $role])->fetchOne();
+        $fin = $this->getConnection()->executeQuery($sqlFin, ['num' => $numeroDemande, 'role' => $role])->fetchOne();
         return [
             'debut' => $debut !== false ? (string) $debut : null,
             'fin' => $fin !== false ? (string) $fin : null,
@@ -76,7 +82,7 @@ class LogementOracleService
                   AND ACTPA_COD = :role
                   AND TOTIE_COD = :tiers";
 
-        return $this->defaultConnection->executeStatement($sql, [
+        return $this->getConnection()->executeStatement($sql, [
             'tiers' => $tiers,
             'dateDebut' => $dateDebut,
             'dateFin' => $dateFin,
@@ -91,7 +97,7 @@ class LogementOracleService
     public function deleteCoDemandeur(string $numeroDemande, string $tiers): int
     {
         $sql = "DELETE FROM ACPAR WHERE ACDOS_NUM = :num AND TOTIE_COD = :tiers AND ACTPA_COD = 'CODEM'";
-        return $this->defaultConnection->executeStatement($sql, [
+        return $this->getConnection()->executeStatement($sql, [
             'num' => $numeroDemande,
             'tiers' => $tiers,
         ]);
@@ -104,13 +110,13 @@ class LogementOracleService
     public function closeOtherCandidatesAndKeepOneOpen(string $numeroDemande, string $tiersToKeep): void
     {
         // Ouvrir le tiers sélectionné (date fin NULL)
-        $this->defaultConnection->executeStatement(
+        $this->getConnection()->executeStatement(
             "UPDATE ACPAR SET ACPAR_DTFPAR = NULL WHERE ACDOS_NUM = :num AND ACTPA_COD = 'CAND' AND TOTIE_COD = :tiers",
             ['num' => $numeroDemande, 'tiers' => $tiersToKeep]
         );
 
         // Clôturer les autres candidats (si pas déjà clôturés)
-        $this->defaultConnection->executeStatement(
+        $this->getConnection()->executeStatement(
             "UPDATE ACPAR SET ACPAR_DTFPAR = SYSDATE WHERE ACDOS_NUM = :num AND ACTPA_COD = 'CAND' AND TOTIE_COD <> :tiers AND (ACPAR_DTFPAR IS NULL OR ACPAR_DTFPAR > SYSDATE)",
             ['num' => $numeroDemande, 'tiers' => $tiersToKeep]
         );

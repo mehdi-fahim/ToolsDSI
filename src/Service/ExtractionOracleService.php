@@ -7,11 +7,13 @@ use Doctrine\DBAL\ParameterType;
 
 class ExtractionOracleService
 {
-    private Connection $connection;
-
-    public function __construct(Connection $defaultConnection)
+    public function __construct(private DatabaseConnectionResolver $connectionResolver)
     {
-        $this->connection = $defaultConnection;
+    }
+
+    private function getConnection(): Connection
+    {
+        return $this->getConnection()Resolver->getConnection();
     }
 
     /**
@@ -23,7 +25,7 @@ class ExtractionOracleService
         $sql = $this->buildExtractionQuery($groupeSi, $selectedFields);
         
         try {
-            $data = $this->connection->executeQuery($sql)->fetchAllAssociative();
+            $data = $this->getConnection()->executeQuery($sql)->fetchAllAssociative();
             
             // Générer le CSV
             $csv = $this->arrayToCsv($data, $selectedFields);

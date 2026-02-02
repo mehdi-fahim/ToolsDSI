@@ -3,18 +3,24 @@
 namespace App\Service;
 
 use Doctrine\DBAL\Connection;
+use App\Service\DatabaseConnectionResolver;
 
 class PlansOfficeOracleService
 {
-    public function __construct(private Connection $etudesConnection)
+    public function __construct(private DatabaseConnectionResolver $connectionResolver)
     {
+    }
+
+    private function getConnection(): Connection
+    {
+        return $this->connectionResolver->getConnection();
     }
 
     public function triggerGeneration(string $username): void
     {
         // Equivalent à: insert into TRAITEMENT_EXPLOITATION values ('PLAN', :user, '', sysdate)
         $sql = "INSERT INTO TRAITEMENT_EXPLOITATION (TRAITEMENT, UTILISATEUR, COMMENTAIRE, DATE_CRE) VALUES ('PLAN', :user, '', SYSDATE)";
-        $this->etudesConnection->executeStatement($sql, ['user' => $username]);
+        $this->getConnection()->executeStatement($sql, ['user' => $username]);
     }
 
     public function exportPlansCsv(): string
@@ -37,7 +43,7 @@ class PlansOfficeOracleService
             . "LIBELLE_REGUL, RESTE_A_PAYER, CGLS, PRELEVE "
             . "FROM PLAN.PLAN_CORTEX";
 
-        $rows = $this->etudesConnection->executeQuery($sql)->fetchAllAssociative();
+        $rows = $this->getConnection()->executeQuery($sql)->fetchAllAssociative();
 
         $output = fopen('php://temp', 'r+');
         if (!empty($rows)) {

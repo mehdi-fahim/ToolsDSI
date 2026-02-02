@@ -3,11 +3,17 @@
 namespace App\Service;
 
 use Doctrine\DBAL\Connection;
+use App\Service\DatabaseConnectionResolver;
 
 class PropositionOracleService
 {
-    public function __construct(private Connection $defaultConnection)
+    public function __construct(private DatabaseConnectionResolver $connectionResolver)
     {
+    }
+
+    private function getConnection(): Connection
+    {
+        return $this->connectionResolver->getConnection();
     }
 
     public function getCandidatesByProposition(int $numeroProposition): array
@@ -22,7 +28,7 @@ class PropositionOracleService
                 FROM ACPRC
                 WHERE ACPRS_NUM = :num";
 
-        return $this->defaultConnection->fetchAllAssociative($sql, ['num' => $numeroProposition]);
+        return $this->getConnection()->executeQuery($sql, ['num' => $numeroProposition])->fetchAllAssociative();
     }
 
     public function getProposition(int $numeroProposition): ?array
@@ -40,14 +46,14 @@ class PropositionOracleService
                     ACPRS_DATCRE
                 FROM ACPRS 
                 WHERE ACPRS_NUM = :num";
-        $row = $this->defaultConnection->fetchAssociative($sql, ['num' => $numeroProposition]);
+        $row = $this->getConnection()->fetchAssociative($sql, ['num' => $numeroProposition]);
         return $row ?: null;
     }
 
     public function deleteCandidate(int $numeroProposition, string $numeroTiers, string $numeroDossier): int
     {
         $sql = "DELETE FROM ACPRC WHERE ACPRS_NUM = :num AND TOTIE_COD = :tiers AND ACDOS_NUM = :dossier";
-        return $this->defaultConnection->executeStatement($sql, [
+        return $this->getConnection()->executeStatement($sql, [
             'num' => $numeroProposition,
             'tiers' => $numeroTiers,
             'dossier' => $numeroDossier,
@@ -57,13 +63,13 @@ class PropositionOracleService
     public function deleteAllCandidates(int $numeroProposition): int
     {
         $sql = "DELETE FROM ACPRC WHERE ACPRS_NUM = :num";
-        return $this->defaultConnection->executeStatement($sql, ['num' => $numeroProposition]);
+        return $this->getConnection()->executeStatement($sql, ['num' => $numeroProposition]);
     }
 
     public function deleteProposition(int $numeroProposition): int
     {
         $sql = "DELETE FROM ACPRS WHERE ACPRS_NUM = :num";
-        return $this->defaultConnection->executeStatement($sql, ['num' => $numeroProposition]);
+        return $this->getConnection()->executeStatement($sql, ['num' => $numeroProposition]);
     }
 }
 

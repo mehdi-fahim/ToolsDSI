@@ -5,27 +5,29 @@ use Doctrine\DBAL\Connection;
 
 class SowellOracleService
 {
-    private Connection $connection;
-
-    public function __construct(Connection $defaultConnection)
+    public function __construct(private DatabaseConnectionResolver $connectionResolver)
     {
-        $this->connection = $defaultConnection;
+    }
+
+    private function getConnection(): Connection
+    {
+        return $this->getConnection()Resolver->getConnection();
     }
 
     public function listUsers(): array
     {
         $sql = "SELECT FIRST_NAME, LAST_NAME, CODE, EMAIL FROM SOWELL_V_USER ORDER BY LAST_NAME, FIRST_NAME";
-        return $this->connection->executeQuery($sql)->fetchAllAssociative();
+        return $this->getConnection()->executeQuery($sql)->fetchAllAssociative();
     }
 
     public function listUsersPaginated(int $page = 1, int $limit = 20): array
     {
         $offset = ($page - 1) * $limit;
         $countSql = "SELECT COUNT(*) FROM SOWELL_V_USER";
-        $total = (int) $this->connection->executeQuery($countSql)->fetchOne();
+        $total = (int) $this->getConnection()->executeQuery($countSql)->fetchOne();
 
         $sql = "SELECT FIRST_NAME, LAST_NAME, CODE, EMAIL FROM SOWELL_V_USER ORDER BY LAST_NAME, FIRST_NAME OFFSET :offset ROWS FETCH NEXT :limit ROWS ONLY";
-        $data = $this->connection->executeQuery($sql, [
+        $data = $this->getConnection()->executeQuery($sql, [
             'offset' => $offset,
             'limit' => $limit,
         ], [
@@ -45,7 +47,7 @@ class SowellOracleService
     public function findUserByEmail(string $email): ?array
     {
         $sql = "SELECT FIRST_NAME, LAST_NAME, CODE, EMAIL FROM SOWELL_V_USER WHERE UPPER(EMAIL) = UPPER(:email)";
-        $row = $this->connection->executeQuery($sql, ['email' => $email])->fetchAssociative();
+        $row = $this->getConnection()->executeQuery($sql, ['email' => $email])->fetchAssociative();
         return $row ?: null;
     }
 
@@ -53,7 +55,7 @@ class SowellOracleService
     {
         // Met TOZD2_VALPHA = email pour le TOTIE_COD = CODE (on ne demande pas le tiers en entrée)
         $sql = "UPDATE TOZD2 SET TOZD2_VALPHA = :email WHERE TOTIE_COD = :code";
-        return $this->connection->executeStatement($sql, [
+        return $this->getConnection()->executeStatement($sql, [
             'email' => $email,
             'code' => $code,
         ]);
@@ -62,7 +64,7 @@ class SowellOracleService
     public function tiersExists(string $code): bool
     {
         $sql = "SELECT COUNT(*) FROM TOZD2 WHERE TOTIE_COD = :code";
-        $count = (int) $this->connection->executeQuery($sql, ['code' => $code])->fetchOne();
+        $count = (int) $this->getConnection()->executeQuery($sql, ['code' => $code])->fetchOne();
         return $count > 0;
     }
 
@@ -95,7 +97,7 @@ class SowellOracleService
             NULL,
             SYSDATE
         )";
-        return $this->connection->executeStatement($sql, [
+        return $this->getConnection()->executeStatement($sql, [
             'code' => $code,
             'email' => $email,
         ]);
@@ -104,7 +106,7 @@ class SowellOracleService
     public function addUserAccess(string $code): int
     {
         $sql = "INSERT INTO SOWELL_USERS_ACCESS (TOTIE_COD) VALUES (:code)";
-        return $this->connection->executeStatement($sql, ['code' => $code]);
+        return $this->getConnection()->executeStatement($sql, ['code' => $code]);
     }
 
     public function removeUserAccessByEmail(string $email): int
@@ -112,7 +114,7 @@ class SowellOracleService
         $sql = "DELETE FROM SOWELL_USERS_ACCESS WHERE TOTIE_COD IN (
             SELECT TOTIE_COD FROM TOZD2 WHERE UPPER(TOZD2_VALPHA) = UPPER(:email)
         )";
-        return $this->connection->executeStatement($sql, ['email' => $email]);
+        return $this->getConnection()->executeStatement($sql, ['email' => $email]);
     }
 }
 

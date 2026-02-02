@@ -41,35 +41,42 @@ services:
     #    resource: '../src/DataFixtures/'
     #    tags: ['doctrine.fixture.orm']
 
+    # Résolveur de connexion selon l'environnement choisi en session (bouton admin)
+    App\Service\DatabaseConnectionResolver:
+        arguments:
+            $prodConnection: '@doctrine.dbal.prod_connection'
+            $preprodConnection: '@doctrine.dbal.preprod_connection'
+            $testConnection: '@doctrine.dbal.test_connection'
+
     # Configuration pour le service EditionBureautiqueOracleService
     App\Service\EditionBureautiqueOracleService:
         arguments:
-            $defaultConnection: '@doctrine.dbal.default_connection'
+            $connectionResolver: '@App\Service\DatabaseConnectionResolver'
 
     # Configuration pour le service EngagementOracleService
     App\Service\EngagementOracleService:
         arguments:
-            $defaultConnection: '@doctrine.dbal.default_connection'
+            $connectionResolver: '@App\Service\DatabaseConnectionResolver'
 
     # Configuration pour le service AccessControlOracleService
     App\Service\AccessControlOracleService:
         arguments:
-            $defaultConnection: '@doctrine.dbal.default_connection'
+            $connectionResolver: '@App\Service\DatabaseConnectionResolver'
 
     # Configuration pour le service LogementOracleService
     App\Service\LogementOracleService:
         arguments:
-            $defaultConnection: '@doctrine.dbal.default_connection'
+            $connectionResolver: '@App\Service\DatabaseConnectionResolver'
 
     # Configuration pour le service SystemOracleService
     App\Service\SystemOracleService:
         arguments:
-            $defaultConnection: '@doctrine.dbal.default_connection'
+            $connectionResolver: '@App\Service\DatabaseConnectionResolver'
 
     # Configuration pour le service ReouvExemptesOracleService
     App\Service\ReouvExemptesOracleService:
         arguments:
-            $connection: '@doctrine.dbal.default_connection'
+            $connectionResolver: '@App\Service\DatabaseConnectionResolver'
 
     # Configuration pour le service UserActionLogger
     App\Service\UserActionLogger:
@@ -93,12 +100,12 @@ services:
     # Configuration pour le service ImportODOracleService
     App\Service\ImportODOracleService:
         arguments:
-            $defaultConnection: '@doctrine.dbal.default_connection'
+            $connectionResolver: '@App\Service\DatabaseConnectionResolver'
 
     # Configuration pour le service ListeAffectationOracleService
     App\Service\ListeAffectationOracleService:
         arguments:
-            $defaultConnection: '@doctrine.dbal.default_connection'
+            $connectionResolver: '@App\Service\DatabaseConnectionResolver'
 
     # Configuration pour le service ImportODService
     App\Service\ImportODService:
@@ -107,26 +114,48 @@ services:
             $projectDir: '%kernel.project_dir%'
             $oracleService: '@App\Service\ImportODOracleService'
 
-    # Service INSEE (connexion Oracle par défaut)
+    # Service INSEE (connexion selon environnement session)
     App\Service\InseeOracleService:
         arguments:
-            $etudesConnection: '@doctrine.dbal.etudes_connection'
+            $connectionResolver: '@App\Service\DatabaseConnectionResolver'
 
-    # Service Intitulés CB (connexion Oracle ETUDES)
+    # Service Intitulés CB (connexion selon environnement session)
     App\Service\IntitulesCBOracleService:
         arguments:
-            $defaultConnection: '@doctrine.dbal.default_connection'
-            $etudesConnection: '@doctrine.dbal.etudes_connection'
+            $connectionResolver: '@App\Service\DatabaseConnectionResolver'
 
     App\Service\BiFieldDescriptionService:
         arguments:
-            $defaultConnection: '@doctrine.dbal.default_connection'
+            $connectionResolver: '@App\Service\DatabaseConnectionResolver'
 
-    # Plans d'office (connexion ETUDES)
+    # Plans d'office (connexion selon environnement session)
     App\Service\PlansOfficeOracleService:
         arguments:
-            $etudesConnection: '@doctrine.dbal.etudes_connection'
+            $connectionResolver: '@App\Service\DatabaseConnectionResolver'
 
+    App\Service\UtilisateurOracleService:
+        arguments:
+            $connectionResolver: '@App\Service\DatabaseConnectionResolver'
+
+    App\Service\MotDePasseOracleService:
+        arguments:
+            $connectionResolver: '@App\Service\DatabaseConnectionResolver'
+
+    App\Service\ExtractionOracleService:
+        arguments:
+            $connectionResolver: '@App\Service\DatabaseConnectionResolver'
+
+    App\Service\BeckrelOracleService:
+        arguments:
+            $connectionResolver: '@App\Service\DatabaseConnectionResolver'
+
+    App\Service\SowellOracleService:
+        arguments:
+            $connectionResolver: '@App\Service\DatabaseConnectionResolver'
+
+    App\Service\PropositionOracleService:
+        arguments:
+            $connectionResolver: '@App\Service\DatabaseConnectionResolver'
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

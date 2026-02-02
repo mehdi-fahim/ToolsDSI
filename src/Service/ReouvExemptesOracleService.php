@@ -3,12 +3,18 @@
 namespace App\Service;
 
 use Doctrine\DBAL\Connection;
+use App\Service\DatabaseConnectionResolver;
 
 class ReouvExemptesOracleService
 {
     public function __construct(
-        private Connection $connection
+        private DatabaseConnectionResolver $connectionResolver
     ) {}
+
+    private function getConnection(): Connection
+    {
+        return $this->getConnection()Resolver->getConnection();
+    }
 
     /**
      * Réouvre les étapes exemptées d'un processus de proposition
@@ -16,7 +22,7 @@ class ReouvExemptesOracleService
     public function reopenExemptedSteps(int $numeroProposition): array
     {
         try {
-            $this->connection->beginTransaction();
+            $this->getConnection()->beginTransaction();
             
             // Première requête : mettre à jour WXPRO
             $sql1 = "UPDATE wxpro
@@ -34,7 +40,7 @@ class ReouvExemptesOracleService
                          WHERE rownum = 1
                      )";
             
-            $rowsAffected1 = $this->connection->executeStatement($sql1, [$numeroProposition]);
+            $rowsAffected1 = $this->getConnection()->executeStatement($sql1, [$numeroProposition]);
             
             // Deuxième requête : mettre à jour WXETP
             $sql2 = "UPDATE wxetp
@@ -53,9 +59,9 @@ class ReouvExemptesOracleService
                      )
                      AND WFDEC_COD = '_EXS'";
             
-            $rowsAffected2 = $this->connection->executeStatement($sql2, [$numeroProposition]);
+            $rowsAffected2 = $this->getConnection()->executeStatement($sql2, [$numeroProposition]);
             
-            $this->connection->commit();
+            $this->getConnection()->commit();
             
             $totalRows = $rowsAffected1 + $rowsAffected2;
             
@@ -69,7 +75,7 @@ class ReouvExemptesOracleService
                     : "ℹ️ Aucune étape exemptée trouvée pour cette proposition."
             ];
         } catch (\Exception $e) {
-            $this->connection->rollBack();
+            $this->getConnection()->rollBack();
             return [
                 'success' => false,
                 'error' => 'Erreur lors de la réouverture des étapes exemptées: ' . $e->getMessage()
@@ -89,7 +95,7 @@ class ReouvExemptesOracleService
                     AND WFNAT_COD = 'PROP'
                     AND BIDOS_NUM LIKE 'AC/PROP/' || ? || '%'";
             
-            $count = $this->connection->executeQuery($sql, [$numeroProposition])->fetchOne();
+            $count = $this->getConnection()->executeQuery($sql, [$numeroProposition])->fetchOne();
             return (int)$count > 0;
         } catch (\Exception $e) {
             return false;
@@ -110,7 +116,7 @@ class ReouvExemptesOracleService
                     ORDER BY WXPDO_DAT DESC
                     FETCH FIRST 1 ROWS ONLY";
             
-            $result = $this->connection->executeQuery($sql, [$numeroProposition])->fetchAssociative();
+            $result = $this->getConnection()->executeQuery($sql, [$numeroProposition])->fetchAssociative();
             
             if ($result) {
                 return [
@@ -148,7 +154,7 @@ class ReouvExemptesOracleService
                     )
                     AND WFDEC_COD = '_EXS'";
             
-            $count = $this->connection->executeQuery($sql, [$numeroProposition])->fetchOne();
+            $count = $this->getConnection()->executeQuery($sql, [$numeroProposition])->fetchOne();
             return (int)$count;
         } catch (\Exception $e) {
             return 0;
