@@ -2,6 +2,7 @@
 
 use App\Kernel;
 
+require_once dirname(__DIR__).'/config/oci8_compat.php';
 require_once dirname(__DIR__).'/vendor/autoload_runtime.php';
 
 return function (array $context) {
