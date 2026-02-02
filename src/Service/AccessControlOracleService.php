@@ -54,6 +54,22 @@ class AccessControlOracleService
         return $access;
     }
 
+    /**
+     * Retourne la liste des utilisateurs ayant le statut administrateur (ADM_ADMIN.IS_ADMIN = 'Y').
+     *
+     * @return list<array{ID_UTILISATEUR: string, DATE_ADMIN: string|null}>
+     */
+    public function getAdminUsers(): array
+    {
+        try {
+            $sql = "SELECT ID_UTILISATEUR, TO_CHAR(DATE_ADMIN, 'DD/MM/YYYY HH24:MI') AS DATE_ADMIN FROM ADM_ADMIN WHERE IS_ADMIN = 'Y' ORDER BY ID_UTILISATEUR";
+            $rows = $this->getConnection()->executeQuery($sql)->fetchAllAssociative();
+            return $rows;
+        } catch (\Throwable $e) {
+            return [];
+        }
+    }
+
     public function setAdminFlag(string $userId, bool $isAdmin): void
     {
         $sql = "MERGE INTO ADM_ADMIN a

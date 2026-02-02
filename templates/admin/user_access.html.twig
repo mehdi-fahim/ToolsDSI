@@ -5,10 +5,13 @@
 {% block content %}
     <div style="background: #fff; border-radius: 18px; box-shadow: 0 4px 24px rgba(35,41,70,0.07); padding: 56px 56px; max-width: 900px; margin: 0 auto;">
         <h2 style="font-size: 1.5rem; color: #232946; font-weight: bold; margin-bottom: 18px;">Accès utilisateur</h2>
-        <form method="get" style="display: flex; gap: 16px; align-items: center; margin-bottom: 24px;">
-            <input type="text" name="user_id" placeholder="ID utilisateur (ex: JDUPONT)" value="{{ userId|default('') }}" required style="flex:1; padding: 12px 14px; border: 1.5px solid #e2e8f0; border-radius: 7px; font-size: 1.08rem; background: #f7fafc; text-transform: uppercase;">
-            <button type="submit" style="background: #ff6600; color: #fff; font-weight: 600; padding: 12px 22px; border-radius: 7px; border: none; font-size: 1.08rem; letter-spacing: 0.5px; cursor: pointer; transition: background 0.2s;">Voir accès</button>
-        </form>
+        <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 24px; flex-wrap: wrap;">
+            <form method="get" style="display: flex; gap: 16px; align-items: center; flex: 1; min-width: 280px;">
+                <input type="text" name="user_id" placeholder="ID utilisateur (ex: JDUPONT)" value="{{ userId|default('') }}" required style="flex:1; padding: 12px 14px; border: 1.5px solid #e2e8f0; border-radius: 7px; font-size: 1.08rem; background: #f7fafc; text-transform: uppercase;">
+                <button type="submit" style="background: #ff6600; color: #fff; font-weight: 600; padding: 12px 22px; border-radius: 7px; border: none; font-size: 1.08rem; letter-spacing: 0.5px; cursor: pointer; transition: background 0.2s;">Voir accès</button>
+            </form>
+            <button type="button" id="openAdminUsersModalBtn" style="background: #4299e1; color: #fff; font-weight: 600; padding: 12px 22px; border-radius: 7px; border: none; font-size: 1.08rem; cursor: pointer; transition: background 0.2s;">👥 Liste des administrateurs</button>
+        </div>
         {% if userId is not empty %}
             <div style="margin-top: 18px;">
                 <strong>ID utilisateur :</strong> {{ userId }}
@@ -35,4 +38,39 @@
             </div>
         {% endif %}
     </div>
+
+    {# Popup liste des utilisateurs admin #}
+    <div id="adminUsersModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1200; align-items: center; justify-content: center;">
+        <div style="background: #fff; border-radius: 16px; max-width: 480px; width: 90%; max-height: 80vh; overflow: hidden; box-shadow: 0 16px 48px rgba(0,0,0,0.2);">
+            <div style="padding: 20px 24px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
+                <h3 style="margin: 0; font-size: 1.25rem; color: #232946; font-weight: 700;">Utilisateurs administrateurs</h3>
+                <button type="button" id="closeAdminUsersModalBtn" style="background: none; border: none; font-size: 1.5rem; color: #718096; cursor: pointer; line-height: 1;">&times;</button>
+            </div>
+            <div style="padding: 20px 24px; overflow-y: auto; max-height: 60vh;">
+                {% if adminUsers is defined and adminUsers|length > 0 %}
+                    <ul style="list-style: none; padding: 0; margin: 0;">
+                        {% for row in adminUsers %}
+                            <li style="padding: 10px 0; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-weight: 600; color: #232946;">{{ row.ID_UTILISATEUR }}</span>
+                                <span style="font-size: 0.9rem; color: #718096;">{{ row.DATE_ADMIN|default('-') }}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p style="margin: 0; color: #718096;">Aucun utilisateur administrateur enregistré.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+    (function() {
+        var modal = document.getElementById('adminUsersModal');
+        var openBtn = document.getElementById('openAdminUsersModalBtn');
+        var closeBtn = document.getElementById('closeAdminUsersModalBtn');
+        if (openBtn) openBtn.addEventListener('click', function() { modal.style.display = 'flex'; });
+        if (closeBtn) closeBtn.addEventListener('click', function() { modal.style.display = 'none'; });
+        modal.addEventListener('click', function(e) { if (e.target === modal) modal.style.display = 'none'; });
+    })();
+    </script>
 {% endblock %} 

@@ -802,10 +802,8 @@ class AdminController extends AbstractController
                 $session->set('user_nom', 'Plaine Commune Habitat');
                 $session->set('user_prenom', 'Administrateur');
                 $session->set('user_groupe', 'SUPER_ADMIN');
-                // Environnement par défaut pour un nouvel admin connecté
-                if (!$session->has('db_environment')) {
-                    $this->environmentContext->setEnvironment('prod');
-                }
+                // Toujours repasser en prod à chaque connexion
+                $this->environmentContext->setEnvironment('prod');
                 
                 // Log de la connexion admin
                 $this->userActionLogger->logUserLogin('PCH', $request->getClientIp(), true);
@@ -839,10 +837,8 @@ class AdminController extends AbstractController
                 $userAccessMap = $this->accessControlOracleService->getUserPageAccess($user['CODE_UTILISATEUR']);
                 $session->set('page_access', array_keys($userAccessMap));
 
-                // Environnement par défaut si non défini
-                if (!$session->has('db_environment')) {
-                    $this->environmentContext->setEnvironment('prod');
-                }
+                // Toujours repasser en prod à chaque connexion
+                $this->environmentContext->setEnvironment('prod');
                 
                 // Log de la connexion utilisateur
                 $this->userActionLogger->logUserLogin($user['CODE_UTILISATEUR'], $request->getClientIp(), true);
@@ -1361,11 +1357,14 @@ class AdminController extends AbstractController
             // Pré-cocher dans la vue, pageAccess est un tableau de codes
         }
 
+        $adminUsers = $this->accessControlOracleService->getAdminUsers();
+
         return $this->render('admin/user_access.html.twig', [
             'userId' => $userId,
             'isAdmin' => $isAdminFlag,
             'allPages' => $allPages,
             'pageAccess' => array_keys($userPageAccess),
+            'adminUsers' => $adminUsers,
         ]);
     }
 
