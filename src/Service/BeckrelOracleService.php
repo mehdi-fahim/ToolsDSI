@@ -12,7 +12,7 @@ class BeckrelOracleService
 
     private function getConnection(): Connection
     {
-        return $this->getConnection()Resolver->getConnection();
+        return $this->connectionResolver->getConnection();
     }
 
     public function listUsers(): array

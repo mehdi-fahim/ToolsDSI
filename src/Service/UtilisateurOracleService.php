@@ -12,7 +12,7 @@ class UtilisateurOracleService
 
     private function getConnection(): Connection
     {
-        return $this->getConnection()Resolver->getConnection();
+        return $this->connectionResolver->getConnection();
     }
 
     public function fetchUtilisateurs(string $search = '', int $page = 1, int $limit = 20): array

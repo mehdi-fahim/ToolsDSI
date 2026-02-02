@@ -12,7 +12,7 @@ class InseeOracleService
 
     private function getConnection(): Connection
     {
-        return $this->getConnection()Resolver->getConnection();
+        return $this->connectionResolver->getConnection();
     }
 
     public function generateCsv(int $annee): string
