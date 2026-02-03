@@ -16,15 +16,13 @@
             {% if hasSearch %}
             <a class="btn btn-secondary" href="{{ path('admin_liste_affectation_export_current', {
                 search: search,
-                eso: eso,
-                gardien: gardien
+                criterion: criterion|default('ESO')
             }) }}" title="Exporter le résultat courant" style="white-space: nowrap;">
                 ⬇️ Export résultat courant
             </a>
             <a class="btn btn-secondary" href="{{ path('admin_liste_affectation_missing', {
                 search: search,
-                eso: eso,
-                gardien: gardien
+                criterion: criterion|default('ESO')
             }) }}" title="Voir les lots sans contact" style="white-space: nowrap;">
                 ❗ Lots sans contact
             </a>
@@ -62,30 +60,26 @@
         {% endif %}
         {% endif %}
 
-        {# Barre de recherche et filtres #}
+        {# Barre de recherche : critère (liste déroulante) + valeur #}
         <div class="search-container">
             <form method="GET" action="{{ path('admin_liste_affectation') }}" id="searchForm" style="display: flex; gap: 15px; align-items: center; width: 100%; flex-wrap: wrap;">
+                <label for="criterionSelect" style="font-weight: 600; color: #4a5568; white-space: nowrap;">Rechercher par :</label>
+                <select name="criterion" id="criterionSelect" class="search-input" style="flex: 0 1 auto; min-width: 180px;">
+                    <option value="ESI" {{ (criterion|default('ESO')) == 'ESI' ? 'selected' : '' }}>ESI</option>
+                    <option value="ESO" {{ (criterion|default('ESO')) == 'ESO' ? 'selected' : '' }}>ESO</option>
+                    <option value="Gardien" {{ (criterion|default('ESO')) == 'Gardien' ? 'selected' : '' }}>Gardien</option>
+                    <option value="TPROX" {{ (criterion|default('ESO')) == 'TPROX' ? 'selected' : '' }}>TPROX (TPROX_LOT)</option>
+                    <option value="RS" {{ (criterion|default('ESO')) == 'RS' ? 'selected' : '' }}>RS (RVQ_LOT)</option>
+                </select>
                 <input type="text" 
                        name="search" 
                        value="{{ search }}" 
-                       placeholder="Rechercher par lot (ex: LC4010)" 
+                       placeholder="Saisir la valeur (min. 2 caractères)" 
                        class="search-input"
-                       style="flex: 1; min-width: 260px;"
+                       style="flex: 1; min-width: 220px;"
                        id="searchInput">
-                <input type="text"
-                       name="eso"
-                       value="{{ eso }}"
-                       placeholder="ESO gardien"
-                       class="search-input"
-                       style="flex: 0 1 200px; min-width: 180px;">
-                <input type="text"
-                       name="gardien"
-                       value="{{ gardien }}"
-                       placeholder="Nom du gardien"
-                       class="search-input"
-                       style="flex: 0 1 220px; min-width: 200px;">
                 <button type="submit" class="btn" id="searchBtn">🔍 Rechercher</button>
-                {% if search or eso or gardien %}
+                {% if search %}
                     <a href="{{ path('admin_liste_affectation') }}" class="btn btn-secondary">❌ Effacer</a>
                 {% endif %}
             </form>
@@ -117,9 +111,9 @@
                     {% if data is empty %}
                         <tr>
                             <td colspan="8" style="text-align: center; padding: 40px; color: #718096;">
-                                {% if search or groupe %}
+                                {% if search or groupe|default('') %}
                                     Aucun résultat trouvé
-                                    {% if search %}pour "{{ search }}"{% endif %}
+                                    {% if search %}pour "{{ search }}" (critère: {{ criterion|default('ESO') }}){% endif %}
                                     {% if groupe %}dans le groupe "{{ groupe }}"{% endif %}
                                 {% else %}
                                     Aucune affectation trouvée
@@ -173,12 +167,12 @@
         <div class="pagination">
             {# Première page #}
             {% if pagination.page > 1 %}
-                <a href="{{ path('admin_liste_affectation', {page: 1, search: search, groupe: groupe, eso: eso, gardien: gardien}) }}" class="btn btn-secondary" style="padding: 8px 12px; font-size: 14px;">⏮️ Première</a>
+                <a href="{{ path('admin_liste_affectation', {page: 1, search: search, criterion: criterion|default('ESO'), groupe: groupe|default('')}) }}" class="btn btn-secondary" style="padding: 8px 12px; font-size: 14px;">⏮️ Première</a>
             {% endif %}
             
             {# Page précédente #}
             {% if pagination.page > 1 %}
-                <a href="{{ path('admin_liste_affectation', {page: pagination.page - 1, search: search, groupe: groupe, eso: eso, gardien: gardien}) }}" class="btn btn-secondary" style="padding: 8px 12px; font-size: 14px;">« Précédent</a>
+                <a href="{{ path('admin_liste_affectation', {page: pagination.page - 1, search: search, criterion: criterion|default('ESO'), groupe: groupe|default('')}) }}" class="btn btn-secondary" style="padding: 8px 12px; font-size: 14px;">« Précédent</a>
             {% endif %}
             
             {# Page actuelle #}
@@ -188,12 +182,12 @@
             
             {# Page suivante #}
             {% if pagination.page < pagination.totalPages %}
-                <a href="{{ path('admin_liste_affectation', {page: pagination.page + 1, search: search, groupe: groupe, eso: eso, gardien: gardien}) }}" class="btn btn-secondary" style="padding: 8px 12px; font-size: 14px;">Suivant »</a>
+                <a href="{{ path('admin_liste_affectation', {page: pagination.page + 1, search: search, criterion: criterion|default('ESO'), groupe: groupe|default('')}) }}" class="btn btn-secondary" style="padding: 8px 12px; font-size: 14px;">Suivant »</a>
             {% endif %}
             
             {# Dernière page #}
             {% if pagination.page < pagination.totalPages %}
-                <a href="{{ path('admin_liste_affectation', {page: pagination.totalPages, search: search, groupe: groupe, eso: eso, gardien: gardien}) }}" class="btn btn-secondary" style="padding: 8px 12px; font-size: 14px;">Dernière ⏭️</a>
+                <a href="{{ path('admin_liste_affectation', {page: pagination.totalPages, search: search, criterion: criterion|default('ESO'), groupe: groupe|default('')}) }}" class="btn btn-secondary" style="padding: 8px 12px; font-size: 14px;">Dernière ⏭️</a>
             {% endif %}
         </div>
         {% endif %}
@@ -343,7 +337,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const searchBtn = document.getElementById('searchBtn');
     const loadingIndicator = document.getElementById('loadingIndicator');
     const searchInput = document.getElementById('searchInput');
-    const groupeSelect = document.getElementById('groupeSelect');
     
     // Gestion du chargement lors de la soumission du formulaire
     searchForm.addEventListener('submit', function() {
@@ -351,13 +344,6 @@ document.addEventListener('DOMContentLoaded', function() {
         searchBtn.innerHTML = '⏳ Recherche...';
         loadingIndicator.style.display = 'block';
     });
-    
-    // Recherche automatique lors de la sélection d'un groupe
-    if (groupeSelect) {
-        groupeSelect.addEventListener('change', function() {
-            searchForm.submit();
-        });
-    }
     
     // Recherche automatique avec délai lors de la saisie (optionnel)
     let searchTimeout;

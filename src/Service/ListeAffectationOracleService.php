@@ -16,17 +16,27 @@ class ListeAffectationOracleService
         return $this->connectionResolver->getConnection();
     }
 
+    /** Critères de recherche autorisés => colonne SQL (dans LISTE_V_AFFECTATIONS) */
+    public const CRITERIA_COLUMNS = [
+        'ESI' => 'ESO_GROUPE',
+        'ESO' => 'ESO_GARDIEN',
+        'Gardien' => 'GARDIEN_LOT',
+        'TPROX' => 'TPROX_LOT',
+        'RS' => 'RVQ_LOT',
+    ];
+
     /**
      * Récupère la liste des affectations avec pagination et recherche
+     * @param string $searchValue Valeur saisie pour la recherche
+     * @param string $criterion Critère : ESI, ESO, Gardien, TPROX, RS
      */
     public function getListeAffectations(
-        string $search = '',
+        string $searchValue = '',
         string $groupe = '',
         int $page = 1,
         int $limit = 20,
         bool $onlyMissing = false,
-        ?string $esoGardien = null,
-        ?string $gardien = null
+        string $criterion = 'ESO'
     ): array
     {
         $offset = ($page - 1) * $limit;
@@ -36,14 +46,15 @@ class ListeAffectationOracleService
         FROM LISTE_V_AFFECTATIONS
         SQL;
 
-        // Conditions et paramètres de recherche
+        // Conditions et paramètres de recherche (un critère + une valeur)
         $whereConditions = [];
         $params = [];
 
-        if (!empty($search)) {
-            // Recherche par préfixe sans UPPER sur la colonne pour aider l'index
-            $whereConditions[] = "LOT LIKE :search";
-            $params['search'] = strtoupper($search) . '%';
+        $searchTrim = trim($searchValue);
+        if ($searchTrim !== '' && isset(self::CRITERIA_COLUMNS[$criterion])) {
+            $col = self::CRITERIA_COLUMNS[$criterion];
+            $whereConditions[] = "UPPER(TRIM($col)) LIKE :criterionSearch";
+            $params['criterionSearch'] = '%' . strtoupper($searchTrim) . '%';
         }
 
         if (!empty($groupe)) {
@@ -53,16 +64,6 @@ class ListeAffectationOracleService
 
         if ($onlyMissing) {
             $whereConditions[] = "( (GARD_TEL IS NULL OR TRIM(GARD_TEL) = '') OR (GARD_MAIL IS NULL OR TRIM(GARD_MAIL) = '') )";
-        }
-
-        if (!empty($esoGardien)) {
-            $whereConditions[] = "UPPER(ESO_GARDIEN) LIKE :esoGardien";
-            $params['esoGardien'] = '%' . strtoupper($esoGardien) . '%';
-        }
-
-        if (!empty($gardien)) {
-            $whereConditions[] = "UPPER(GARDIEN_LOT) LIKE :gardien";
-            $params['gardien'] = '%' . strtoupper($gardien) . '%';
         }
 
         if (!empty($whereConditions)) {
@@ -170,7 +171,7 @@ class ListeAffectationOracleService
     /**
      * Récupère les affectations correspondant à une recherche (pour export courant)
      */
-    public function getAffectationsForExportBySearch(string $search = '', ?string $esoGardien = null, ?string $gardien = null): iterable
+    public function getAffectationsForExportBySearch(string $searchValue = '', string $criterion = 'ESO'): iterable
     {
         $selectSql = <<<SQL
         SELECT 
@@ -221,23 +222,14 @@ class ListeAffectationOracleService
         SQL;
 
         $baseSql = 'FROM LISTE_V_AFFECTATIONS';
-
         $whereConditions = [];
         $params = [];
 
-        if (!empty($search)) {
-            $whereConditions[] = "LOT LIKE :search";
-            $params['search'] = strtoupper($search) . '%';
-        }
-
-        if (!empty($esoGardien)) {
-            $whereConditions[] = "UPPER(ESO_GARDIEN) LIKE :esoGardien";
-            $params['esoGardien'] = '%' . strtoupper($esoGardien) . '%';
-        }
-
-        if (!empty($gardien)) {
-            $whereConditions[] = "UPPER(GARDIEN_LOT) LIKE :gardien";
-            $params['gardien'] = '%' . strtoupper($gardien) . '%';
+        $searchTrim = trim($searchValue);
+        if ($searchTrim !== '' && isset(self::CRITERIA_COLUMNS[$criterion])) {
+            $col = self::CRITERIA_COLUMNS[$criterion];
+            $whereConditions[] = "UPPER(TRIM($col)) LIKE :criterionSearch";
+            $params['criterionSearch'] = '%' . strtoupper($searchTrim) . '%';
         }
 
         if (!empty($whereConditions)) {
@@ -332,9 +324,9 @@ class ListeAffectationOracleService
     }
 
     /**
-     * Statistiques filtrées par critères
+     * Statistiques filtrées par critère + valeur
      */
-    public function getAffectationStatsBySearch(string $search = '', ?string $esoGardien = null, ?string $gardien = null): array
+    public function getAffectationStatsBySearch(string $searchValue = '', string $criterion = 'ESO'): array
     {
         $sql = <<<SQL
         SELECT 
@@ -348,19 +340,11 @@ class ListeAffectationOracleService
         $whereConditions = [];
         $params = [];
 
-        if (!empty($search)) {
-            $whereConditions[] = "LOT LIKE :search";
-            $params['search'] = strtoupper($search) . '%';
-        }
-
-        if (!empty($esoGardien)) {
-            $whereConditions[] = "UPPER(ESO_GARDIEN) LIKE :esoGardien";
-            $params['esoGardien'] = '%' . strtoupper($esoGardien) . '%';
-        }
-
-        if (!empty($gardien)) {
-            $whereConditions[] = "UPPER(GARDIEN_LOT) LIKE :gardien";
-            $params['gardien'] = '%' . strtoupper($gardien) . '%';
+        $searchTrim = trim($searchValue);
+        if ($searchTrim !== '' && isset(self::CRITERIA_COLUMNS[$criterion])) {
+            $col = self::CRITERIA_COLUMNS[$criterion];
+            $whereConditions[] = "UPPER(TRIM($col)) LIKE :criterionSearch";
+            $params['criterionSearch'] = '%' . strtoupper($searchTrim) . '%';
         }
 
         if (!empty($whereConditions)) {
