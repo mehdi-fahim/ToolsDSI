@@ -419,7 +419,7 @@ class AdminController extends AbstractController
     }
 
     #[Route('/entity/utilisateur/detail/{id}', name: 'admin_user_detail', methods: ['GET'])]
-    public function viewUserDetail($id, SessionInterface $session): Response
+    public function viewUserDetail($id, Request $request, SessionInterface $session): Response
     {
         if (!$this->isAuthenticated($session)) {
             return $this->redirectToRoute('login');
@@ -442,15 +442,19 @@ class AdminController extends AbstractController
                 ['name' => 'DERNIERE_CONNEXION', 'label' => 'Dernière connexion'],
             ]
         ];
+        $backPage = (int) $request->query->get('page', 1);
+        $backSearch = (string) $request->query->get('search', '');
         return $this->render('admin/user_detail.html.twig', [
             'entity' => $entity,
             'entityName' => 'utilisateur',
-            'metadata' => $metadata
+            'metadata' => $metadata,
+            'backPage' => $backPage,
+            'backSearch' => $backSearch,
         ]);
     }
 
     #[Route('/entity/editionbureautique/detail/{id}', name: 'admin_edition_bureautique_detail', methods: ['GET'])]
-    public function viewEditionBureautiqueDetail($id, SessionInterface $session): Response
+    public function viewEditionBureautiqueDetail($id, Request $request, SessionInterface $session): Response
     {
         if (!$this->isAuthenticated($session)) {
             return $this->redirectToRoute('login');
@@ -479,11 +483,15 @@ class AdminController extends AbstractController
             $fields = [];
         }
 
+        $backPage = (int) $request->query->get('page', 1);
+        $backSearch = (string) $request->query->get('search', '');
         return $this->render('admin/edition_bureautique_detail.html.twig', [
             'entity' => $entity,
             'entityName' => 'EditionBureautique',
             'metadata' => $metadata,
-            'biFields' => $fields
+            'biFields' => $fields,
+            'backPage' => $backPage,
+            'backSearch' => $backSearch,
         ]);
     }
 

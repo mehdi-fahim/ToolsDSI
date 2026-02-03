@@ -190,6 +190,23 @@ class EngagementOracleService
                 }
             }
 
+            // Mise à jour du flag pluriannuel (TAENG_TEMPLURI)
+            // La case à cocher renvoie '1' si cochée, rien sinon.
+            if (array_key_exists('pluriannuel', $data)) {
+                $isPluri = (string) $data['pluriannuel'] === '1';
+                // Convention : 'F' = non pluriannuel, 'T' = pluriannuel
+                $templuri = $isPluri ? 'T' : 'F';
+
+                $result = $this->getConnection()->executeStatement(
+                    "UPDATE TAENG SET TAENG_TEMPLURI = ? WHERE ICEXE_NUM = ? AND TAENG_NUM = ? AND TOTIE_CODSCTE = ?",
+                    [$templuri, $exercice, $numeroEngagement, $societe]
+                );
+
+                if ($result > 0) {
+                    $updated['pluriannuel'] = $templuri;
+                }
+            }
+
             $this->getConnection()->commit();
 
             return [

@@ -13,7 +13,7 @@
             </p>
         </div>
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <a href="{{ path('admin_entity_view', {'entityName': 'EditionBureautique'}) }}" class="btn btn-secondary">← Retour à la liste</a>
+            <a href="{{ path('admin_entity_view', {'entityName': 'EditionBureautique', 'page': backPage|default(1), 'search': backSearch|default('')}) }}" class="btn btn-secondary">← Retour à la liste</a>
             <a href="{{ path('admin_dashboard') }}" class="btn btn-secondary">🏠 Dashboard</a>
         </div>
     </div>
