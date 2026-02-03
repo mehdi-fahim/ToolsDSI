@@ -15,9 +15,21 @@ class EditionBureautiqueOracleService
         return $this->connectionResolver->getConnection();
     }
 
-    public function fetchEditions(string $search = '', int $page = 1, int $limit = 20): array
+    /** Colonnes autorisées pour le tri (nom logique => colonne SQL) */
+    private const SORT_COLUMNS = [
+        'NOM_BI' => 'b.BIDTP_NUM',
+        'DOCUMENT_TYPE' => 'b.BIODO_PRG',
+        'DESCRIPTION_BI' => 'b.BIDTP_LIB',
+        'NOM_DOCUMENT' => 'b.BIDTP_NOM',
+    ];
+
+    public function fetchEditions(string $search = '', int $page = 1, int $limit = 20, string $sortBy = 'NOM_BI', string $sortOrder = 'ASC'): array
     {
         $offset = ($page - 1) * $limit;
+
+        // Tri : colonne et ordre sécurisés
+        $orderColumn = self::SORT_COLUMNS[$sortBy] ?? 'b.BIDTP_NUM';
+        $orderDir = strtoupper($sortOrder) === 'DESC' ? 'DESC' : 'ASC';
 
         // Requête de base
         $baseSql = <<<SQL
@@ -47,7 +59,7 @@ SQL;
             ->executeQuery($countSql, $params)
             ->fetchOne();
 
-        // Requête principale avec pagination
+        // Requête principale avec pagination et tri
         $sql = <<<SQL
 SELECT
     b.BIDTP_NUM AS NOM_BI,
@@ -66,7 +78,7 @@ SELECT
         ELSE DBMS_LOB.SUBSTR(i.ICTRS_DSC, 4100)
     END AS DESCRIPTION_PLUS
 $baseSql
-ORDER BY b.BIDTP_NUM
+ORDER BY $orderColumn $orderDir
 OFFSET :offset ROWS FETCH NEXT :limit ROWS ONLY
 SQL;
 

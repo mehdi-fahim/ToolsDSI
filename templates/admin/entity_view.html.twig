@@ -34,9 +34,19 @@
         <table class="admin-table" id="dataTable">
             <thead>
                 <tr>
+                    {% set sortParams = (sortBy is defined and sortOrder is defined) ? '&sort=' ~ sortBy ~ '&order=' ~ (sortOrder|lower) : '' %}
                     {% for column in metadata.columns %}
                         {% if column.name != 'requete' %}
-                            <th>{{ column.label }}</th>
+                            {% if (entityName|lower == 'editionbureautique' or entityName|lower == 'edition-bureautique') and sortBy is defined %}
+                                {% set nextOrder = (sortBy == column.name and sortOrder|lower == 'asc') ? 'desc' : 'asc' %}
+                                <th>
+                                    <a href="?sort={{ column.name }}&order={{ nextOrder }}{% if pagination.page > 1 %}&page={{ pagination.page }}{% endif %}{% if search %}&search={{ search|e('url') }}{% endif %}" style="text-decoration:none;color:inherit;white-space:nowrap;">
+                                        {{ column.label }}{% if sortBy == column.name %}{% if sortOrder|lower == 'asc' %} ↑{% else %} ↓{% endif %}{% endif %}
+                                    </a>
+                                </th>
+                            {% else %}
+                                <th>{{ column.label }}</th>
+                            {% endif %}
                         {% endif %}
                     {% endfor %}
                     <th>Actions</th>
@@ -54,7 +64,7 @@
                         {% endfor %}
                         <td>
                             {% if entityName|lower == 'editionbureautique' or entityName|lower == 'edition-bureautique' %}
-                                <a href="{{ path('admin_edition_bureautique_detail', {id: entity.NOM_BI, page: pagination.page, search: search|default('')}) }}" 
+                                <a href="{{ path('admin_edition_bureautique_detail', {id: entity.NOM_BI, page: pagination.page, search: search|default(''), sort: sortBy|default(''), order: sortOrder|default('asc')}) }}" 
                                    class="btn btn-secondary" 
                                    style="padding: 6px 12px; font-size: 0.8rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
                                     Détail
@@ -80,10 +90,11 @@
     </div>
 
     {% if pagination.totalPages > 1 %}
+        {% set sortParams = (sortBy is defined and sortOrder is defined) ? '&sort=' ~ sortBy ~ '&order=' ~ (sortOrder|lower) : '' %}
         <div class="pagination">
             {% if pagination.page > 1 %}
-                <a href="?page=1{% if search %}&search={{ search }}{% endif %}" class="btn btn-secondary">« Première</a>
-                <a href="?page={{ pagination.page - 1 }}{% if search %}&search={{ search }}{% endif %}" class="btn btn-secondary">‹ Précédente</a>
+                <a href="?page=1{% if search %}&search={{ search }}{% endif %}{{ sortParams }}" class="btn btn-secondary">« Première</a>
+                <a href="?page={{ pagination.page - 1 }}{% if search %}&search={{ search }}{% endif %}{{ sortParams }}" class="btn btn-secondary">‹ Précédente</a>
             {% endif %}
 
             {% set start = max(1, pagination.page - 2) %}
@@ -93,13 +104,13 @@
                 {% if page == pagination.page %}
                     <span class="current">{{ page }}</span>
                 {% else %}
-                    <a href="?page={{ page }}{% if search %}&search={{ search }}{% endif %}">{{ page }}</a>
+                    <a href="?page={{ page }}{% if search %}&search={{ search }}{% endif %}{{ sortParams }}">{{ page }}</a>
                 {% endif %}
             {% endfor %}
 
             {% if pagination.page < pagination.totalPages %}
-                <a href="?page={{ pagination.page + 1 }}{% if search %}&search={{ search }}{% endif %}" class="btn btn-secondary">Suivante ›</a>
-                <a href="?page={{ pagination.totalPages }}{% if search %}&search={{ search }}{% endif %}" class="btn btn-secondary">Dernière »</a>
+                <a href="?page={{ pagination.page + 1 }}{% if search %}&search={{ search }}{% endif %}{{ sortParams }}" class="btn btn-secondary">Suivante ›</a>
+                <a href="?page={{ pagination.totalPages }}{% if search %}&search={{ search }}{% endif %}{{ sortParams }}" class="btn btn-secondary">Dernière »</a>
             {% endif %}
         </div>
     {% endif %}

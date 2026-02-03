@@ -107,13 +107,15 @@ class AdminController extends AbstractController
         }
         
         if (strtolower($entityName) === 'editionbureautique' || strtolower($entityName) === 'edition-bureautique') {
-            // Récupérer les paramètres de pagination et recherche
+            // Récupérer les paramètres de pagination, recherche et tri
             $page = (int) $request->query->get('page', 1);
             $search = $request->query->get('search', '');
+            $sortBy = $request->query->get('sort', 'NOM_BI');
+            $sortOrder = strtolower($request->query->get('order', 'asc')) === 'desc' ? 'DESC' : 'ASC';
             $limit = 20; // 20 lignes par page
             
-            // Récupérer les données Oracle avec pagination et recherche
-            $result = $this->oracleService->fetchEditions($search, $page, $limit);
+            // Récupérer les données Oracle avec pagination, recherche et tri
+            $result = $this->oracleService->fetchEditions($search, $page, $limit, $sortBy, $sortOrder);
             
             // Adapter les métadonnées pour la vue
             $metadata = [
@@ -137,7 +139,9 @@ class AdminController extends AbstractController
                     'limit' => $result['limit'],
                     'totalPages' => $result['totalPages']
                 ],
-                'search' => $search
+                'search' => $search,
+                'sortBy' => $sortBy,
+                'sortOrder' => $sortOrder,
             ]);
         }
 
@@ -485,6 +489,8 @@ class AdminController extends AbstractController
 
         $backPage = (int) $request->query->get('page', 1);
         $backSearch = (string) $request->query->get('search', '');
+        $backSort = $request->query->get('sort', 'NOM_BI');
+        $backOrder = strtolower($request->query->get('order', 'asc')) === 'desc' ? 'desc' : 'asc';
         return $this->render('admin/edition_bureautique_detail.html.twig', [
             'entity' => $entity,
             'entityName' => 'EditionBureautique',
@@ -492,6 +498,8 @@ class AdminController extends AbstractController
             'biFields' => $fields,
             'backPage' => $backPage,
             'backSearch' => $backSearch,
+            'backSort' => $backSort,
+            'backOrder' => $backOrder,
         ]);
     }
 
