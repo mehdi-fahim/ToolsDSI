@@ -89,6 +89,8 @@ class ListeAffectationOracleService
             LOT,
             NATURE_LOT,
             GARDIEN_LOT,
+            TPROX_LOT,
+            RVQ_LOT,
             ESO_GARDIEN,
             GARD_TEL,
             GARD_MAIL
