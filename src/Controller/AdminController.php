@@ -1314,7 +1314,6 @@ class AdminController extends AbstractController
             'admin_logement' => 'Logement',
             'admin_user_unlock' => 'Débloquer MDP',
             'admin_system' => 'Système',
-            'admin_logs' => 'Logs',
             'admin_history' => 'Historique',
             'admin_user_access' => 'Administration',
             'admin_proposition' => 'Proposition (Suppression)',
@@ -1762,43 +1761,6 @@ class AdminController extends AbstractController
     }
 
 
-    #[Route('/admin/logs', name: 'admin_logs', methods: ['GET'])]
-    public function logs(Request $request, SessionInterface $session): Response
-    {
-        if (!$this->isAuthenticated($session)) {
-            return $this->redirectToRoute('login');
-        }
-
-        $logType = $request->query->get('type', 'user_actions');
-        $limit = (int)$request->query->get('limit', 50);
-        $userId = $request->query->get('user_id', '');
-
-        $logs = [];
-        $stats = $this->logViewerService->getLogStats();
-        $uniqueUsers = $this->logViewerService->getUniqueUsers();
-
-        switch ($logType) {
-            case 'user_actions':
-                $logs = $this->logViewerService->getUserActionLogs($limit, $userId ?: null);
-                break;
-            case 'system_events':
-                $logs = $this->logViewerService->getSystemEventLogs($limit, $userId ?: null);
-                break;
-            case 'general':
-                $logs = $this->logViewerService->getGeneralLogs($limit, $userId ?: null);
-                break;
-        }
-
-        return $this->render('admin/logs.html.twig', [
-            'logs' => $logs,
-            'stats' => $stats,
-            'logType' => $logType,
-            'limit' => $limit,
-            'userId' => $userId,
-            'uniqueUsers' => $uniqueUsers,
-        ]);
-    }
-
     #[Route('/admin/history', name: 'admin_history', methods: ['GET'])]
     public function history(Request $request, SessionInterface $session): Response
     {
@@ -1811,18 +1773,28 @@ class AdminController extends AbstractController
         $ip = trim((string) $request->query->get('ip', ''));
         $from = (string) $request->query->get('from', '');
         $to = (string) $request->query->get('to', '');
-        $limit = (int) $request->query->get('limit', 40);
+        $limit = (int) $request->query->get('limit', 50);
         $page = (int) $request->query->get('page', 1);
+
+        // Par défaut : derniers 7 jours si aucune date saisie
+        if ($from === '') {
+            $from = (new \DateTimeImmutable('-7 days'))->format('Y-m-d');
+        }
+        if ($to === '') {
+            $to = (new \DateTimeImmutable())->format('Y-m-d');
+        }
 
         $result = $this->logViewerService->getUserActionHistory(
             $user !== '' ? $user : null,
             $action !== '' ? $action : null,
             $ip !== '' ? $ip : null,
-            $from !== '' ? $from : null,
-            $to !== '' ? $to : null,
-            $limit > 0 ? $limit : 40,
+            $from,
+            $to,
+            $limit > 0 ? $limit : 50,
             $page > 0 ? $page : 1
         );
+
+        $stats = $this->logViewerService->getLogStats();
 
         return $this->render('admin/history.html.twig', [
             'entries' => $result['data'],
@@ -1837,6 +1809,7 @@ class AdminController extends AbstractController
                 'total' => $result['total'],
                 'totalPages' => $result['totalPages'],
             ],
+            'logStats' => $stats,
         ]);
     }
 

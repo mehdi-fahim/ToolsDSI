@@ -87,12 +87,13 @@ class LogViewerService
     }
 
     /**
-     * Parse une ligne de log
+     * Parse une ligne de log.
+     * La date affichée est toujours celle de l'action (extraite de la ligne), jamais la date du jour.
      */
     private function parseLogLine(string $line): array
     {
         // Format Monolog: [timestamp] channel.LEVEL: message context
-        if (preg_match('/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\] (\w+)\.(\w+): (.+)$/', $line, $matches)) {
+        if (preg_match('/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\] (\w+)\.(\w+): (.+)$/s', $line, $matches)) {
             return [
                 'timestamp' => $matches[1],
                 'channel' => $matches[2],
@@ -102,9 +103,17 @@ class LogViewerService
             ];
         }
 
-        // Format simple
+        // Ligne ne correspondant pas au format standard : extraire la date de l'action depuis la ligne (JSON ou [YYYY-MM-DD])
+        $ts = $this->extractTimestampFromLine($line);
+        if ($ts !== null) {
+            $timestamp = date('Y-m-d H:i:s', $ts);
+        } else {
+            $context = $this->extractJsonContext($line, $line);
+            $timestamp = $context['timestamp'] ?? null;
+        }
+
         return [
-            'timestamp' => date('Y-m-d H:i:s'),
+            'timestamp' => $timestamp,
             'channel' => 'unknown',
             'level' => 'info',
             'message' => $line,
@@ -126,14 +135,23 @@ class LogViewerService
     ): array
     {
         $logFile = $this->logsDir . '/user_actions.log';
+        $emptyResult = [
+            'data' => [],
+            'total' => 0,
+            'page' => max(1, $page),
+            'limit' => $limit,
+            'totalPages' => 0,
+        ];
         if (!file_exists($logFile)) {
-            return [];
+            return $emptyResult;
         }
 
         $lines = file($logFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        if ($lines === false) {
+            return $emptyResult;
+        }
         $lines = array_reverse($lines); // récents d'abord
 
-        $results = [];
         $fromTs = $fromDate ? strtotime($fromDate . ' 00:00:00') : null;
         $toTs = $toDate ? strtotime($toDate . ' 23:59:59') : null;
         $matched = [];
@@ -155,17 +173,20 @@ class LogViewerService
             $rawLower = strtolower($raw);
 
             // Filtre user
-            if ($userId && stripos($raw, $userId) === false) {
+            if ($userId !== null && $userId !== '' && stripos($raw, $userId) === false) {
                 continue;
             }
 
-            // Filtre action (recherche dans message brut)
-            if ($action && $action !== '' && strpos($msg, strtolower($action)) === false) {
-                continue;
+            // Filtre action (recherche dans message brut et dans contexte)
+            if ($action !== null && $action !== '') {
+                $actionLower = strtolower($action);
+                if (strpos($msg, $actionLower) === false && strpos($rawLower, $actionLower) === false) {
+                    continue;
+                }
             }
 
             // Filtre IP
-            if ($ip && $ip !== '' && strpos($rawLower, strtolower($ip)) === false) {
+            if ($ip !== null && $ip !== '' && strpos($rawLower, strtolower($ip)) === false) {
                 continue;
             }
 
@@ -191,22 +212,43 @@ class LogViewerService
 
     /**
      * Extrait des informations structurées depuis une entrée parsée.
+     * Tente d'abord de parser le contexte JSON (Monolog) en fin de ligne.
      */
     private function enrichParsedEntry(array $parsed): array
     {
         $raw = (string)($parsed['raw'] ?? '');
         $message = (string)($parsed['message'] ?? '');
 
-        $parsed['user_id'] = $this->extractField($raw, ['user_id','user']);
-        $parsed['ip'] = $this->extractField($raw, ['ip','client_ip','remote_ip']) ?: $this->extractIpFallback($raw);
-        // Route: chercher clés puis fallback sur motifs admin_*
-        $parsed['route'] = $this->extractField($raw, ['route','_route','path','page']) ?: $this->extractRouteFallback($raw, $message);
-        $parsed['entity'] = $this->extractField($raw, ['entity','target','resource']);
-        $parsed['entity_id'] = $this->extractField($raw, ['id','entity_id','target_id']);
-        $parsed['action'] = $this->extractField($raw, ['action','event','verb']) ?: $this->guessActionFromText($message);
+        $context = $this->extractJsonContext($raw, $message);
+
+        $parsed['user_id'] = $context['user_id'] ?? $this->extractField($raw, ['user_id','user']);
+        $parsed['ip'] = $context['ip_address'] ?? $context['ip'] ?? $this->extractField($raw, ['ip_address','ip','client_ip','remote_ip']) ?: $this->extractIpFallback($raw);
+        $parsed['route'] = $context['route'] ?? $context['page'] ?? $this->extractField($raw, ['route','_route','path','page']) ?: $this->extractRouteFallback($raw, $message);
+        $parsed['entity'] = ($context['context']['entity'] ?? null) ?? $this->extractField($raw, ['entity','target','resource']);
+        $parsed['entity_id'] = ($context['context']['id'] ?? $context['context']['entity_id'] ?? null) ?? $this->extractField($raw, ['id','entity_id','target_id']);
+        $parsed['action'] = $context['action'] ?? $this->extractField($raw, ['action','event','verb']) ?: $this->guessActionFromText($message);
         $parsed['summary'] = $this->buildSummary($message);
 
         return $parsed;
+    }
+
+    /**
+     * Tente d'extraire un objet JSON en fin de ligne (contexte Monolog).
+     */
+    private function extractJsonContext(string $raw, string $message): array
+    {
+        foreach ([$raw, $message] as $str) {
+            $pos = strrpos($str, '{');
+            if ($pos === false) {
+                continue;
+            }
+            $json = substr($str, $pos);
+            $decoded = json_decode($json, true);
+            if (\is_array($decoded)) {
+                return $decoded;
+            }
+        }
+        return [];
     }
 
     private function extractField(string $text, array $keys): ?string

@@ -3,17 +3,38 @@
 {% block title %}Historique des actions{% endblock %}
 
 {% block content %}
-<div style="max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px;">
+<div style="max-width: 1280px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px;">
   <div style="background:#fff;border-radius:15px;box-shadow:0 8px 32px rgba(0,0,0,0.08);border:1px solid #eef2f7;padding:20px;">
-    <h1 style="font-size:1.4rem;color:#232946;font-weight:700;margin-bottom:12px;">Historique des actions</h1>
-    <form method="get" action="{{ path('admin_history') }}" style="display:grid;grid-template-columns:repeat(7,1fr);gap:10px;align-items:end;">
+    <h1 style="font-size:1.5rem;color:#232946;font-weight:700;margin-bottom:16px;">🕓 Historique des actions</h1>
+
+    {% if logStats is defined and logStats.user_actions is defined %}
+    <div style="margin-bottom:14px;padding:10px 14px;background:#f8fafc;border-radius:8px;font-size:0.9rem;color:#64748b;">
+      {% if logStats.user_actions.exists %}
+        Fichier <strong>user_actions.log</strong> — {{ logStats.user_actions.lines }} ligne(s)
+        {% if logStats.user_actions.size > 0 %} — {{ (logStats.user_actions.size / 1024)|number_format(1) }} Ko{% endif %}
+      {% else %}
+        <span style="color:#b91c1c;">Fichier user_actions.log absent. Les actions seront enregistrées dès la prochaine navigation.</span>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <form method="get" action="{{ path('admin_history') }}" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;align-items:end;">
       <div>
         <label style="font-weight:600;color:#232946;font-size:0.9rem;">Utilisateur</label>
         <input type="text" name="user_id" value="{{ filters.user_id }}" placeholder="ex: JDUPONT" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;background:#f7fafc;">
       </div>
       <div>
         <label style="font-weight:600;color:#232946;font-size:0.9rem;">Action</label>
-        <input type="text" name="action" value="{{ filters.action }}" placeholder="ex: création, suppression, update, consultation" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;background:#f7fafc;">
+        <select name="action" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;background:#f7fafc;">
+          <option value="">— Toutes —</option>
+          <option value="PAGE_ACCESS" {{ filters.action == 'PAGE_ACCESS' ? 'selected' : '' }}>PAGE_ACCESS</option>
+          <option value="create" {{ filters.action == 'create' ? 'selected' : '' }}>create</option>
+          <option value="update" {{ filters.action == 'update' ? 'selected' : '' }}>update</option>
+          <option value="delete" {{ filters.action == 'delete' ? 'selected' : '' }}>delete</option>
+          <option value="view" {{ filters.action == 'view' ? 'selected' : '' }}>view</option>
+          <option value="LOGIN" {{ filters.action == 'LOGIN' ? 'selected' : '' }}>LOGIN</option>
+          <option value="LOGOUT" {{ filters.action == 'LOGOUT' ? 'selected' : '' }}>LOGOUT</option>
+        </select>
       </div>
       <div>
         <label style="font-weight:600;color:#232946;font-size:0.9rem;">IP</label>
@@ -29,76 +50,89 @@
       </div>
       <div>
         <label style="font-weight:600;color:#232946;font-size:0.9rem;">Limite</label>
-        <input type="number" min="1" max="1000" name="limit" value="{{ filters.limit|default(200) }}" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;background:#f7fafc;">
+        <input type="number" min="1" max="500" name="limit" value="{{ filters.limit|default(50) }}" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;background:#f7fafc;">
       </div>
-      <div>
-        <label style="font-weight:600;color:#232946;font-size:0.9rem;">Page</label>
-        <input type="number" min="1" name="page" value="{{ filters.page|default(1) }}" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;background:#f7fafc;">
-      </div>
-      <div style="grid-column: 1 / -1; display:flex; gap:10px;">
-        <button type="submit" class="btn">Rechercher</button>
+      <div style="display:flex;gap:8px;align-items:flex-end;">
+        <button type="submit" class="btn">🔍 Rechercher</button>
         <a href="{{ path('admin_history') }}" class="btn btn-secondary">Réinitialiser</a>
       </div>
     </form>
-    {% if 'success' in app.flashes %}
-      {% for msg in app.flashes('success') %}
-        <div style="margin-top:10px;border:1px solid #bbf7d0;background:#f0fdf4;color:#065f46;border-radius:10px;padding:10px 14px;">{{ msg }}</div>
-      {% endfor %}
-    {% endif %}
-    <form method="post" action="{{ path('admin_history_purge') }}" onsubmit="return confirm('Confirmer la purge des entrées > 30 jours ?');" style="margin-top:10px;display:flex;gap:8px;align-items:center;">
+
+    {% for msg in app.flashes('success') %}
+      <div style="margin-top:10px;border:1px solid #bbf7d0;background:#f0fdf4;color:#065f46;border-radius:10px;padding:10px 14px;">{{ msg }}</div>
+    {% endfor %}
+
+    <form method="post" action="{{ path('admin_history_purge') }}" onsubmit="return confirm('Confirmer la purge des entrées de plus de 30 jours ?');" style="margin-top:14px;display:flex;gap:8px;align-items:center;">
       <input type="hidden" name="days" value="30">
-      <button type="submit" class="btn btn-danger">Purger > 30 jours</button>
+      <input type="hidden" name="_token" value="{{ csrf_token('history_purge') }}">
+      <button type="submit" class="btn btn-danger">Purger entrées &gt; 30 jours</button>
     </form>
   </div>
 
-  <div style="background:#fff;border-radius:15px;box-shadow:0 8px 32px rgba(0,0,0,0.08);border:1px solid #eef2f7;padding:16px;">
-    <div class="table-container">
-      <table class="admin-table">
-        <thead>
+  <div style="background:#fff;border-radius:15px;box-shadow:0 8px 32px rgba(0,0,0,0.08);border:1px solid #eef2f7;padding:16px;overflow-x:auto;">
+    <table class="admin-table" style="width:100%;border-collapse:collapse;">
+      <thead>
+        <tr>
+          <th style="white-space:nowrap;">Date</th>
+          <th style="white-space:nowrap;">Utilisateur</th>
+          <th style="white-space:nowrap;">Action</th>
+          <th style="white-space:nowrap;">Route / Entité</th>
+          <th style="white-space:nowrap;">Résumé</th>
+          <th style="white-space:nowrap;">IP</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in entries %}
+          {% set actionVal = (e.action ?? '')|lower %}
+          {% set badgeBg = actionVal == 'create' ? '#10b981' : (actionVal == 'update' ? '#f59e0b' : (actionVal == 'delete' ? '#ef4444' : '#3b82f6')) %}
           <tr>
-            <th>Date</th>
-            <th>Utilisateur</th>
-            <th>Action</th>
-            <th>Route / Entité</th>
-            <th>IP</th>
+            <td style="white-space:nowrap;">{{ e.timestamp ?? '-' }}</td>
+            <td>{{ e.user_id ?? '-' }}</td>
+            <td>
+              <span style="display:inline-block;padding:4px 8px;border-radius:999px;color:#fff;background:{{ badgeBg }};font-size:11px;text-transform:uppercase;">
+                {{ actionVal ?: (e.action ?? 'view') }}
+              </span>
+            </td>
+            <td>
+              <div style="display:flex;flex-direction:column;gap:2px;">
+                <span style="color:#111827;">{{ e.route ?? '-' }}</span>
+                {% if e.entity %}<span style="color:#6b7280;font-size:12px;">{{ e.entity }}{% if e.entity_id %} #{{ e.entity_id }}{% endif %}</span>{% endif %}
+              </div>
+            </td>
+            <td style="max-width:280px;font-size:12px;color:#6b7280;">{{ e.summary|default('-')|slice(0, 120) }}{% if (e.summary|default(''))|length > 120 %}…{% endif %}</td>
+            <td style="white-space:nowrap;">{{ e.ip ?? '-' }}</td>
           </tr>
-        </thead>
-        <tbody>
-          {% for e in entries %}
-            {% set action = (e.action ?? '')|lower %}
-            {% set badgeBg = action == 'create' ? '#10b981' : (action == 'update' ? '#f59e0b' : (action == 'delete' ? '#ef4444' : '#3b82f6')) %}
-            <tr>
-              <td>{{ e.timestamp }}</td>
-              <td>{{ e.user_id ?? '-' }}</td>
-              <td>
-                <span style="display:inline-block;padding:4px 8px;border-radius:999px;color:#fff;background: {{ badgeBg }};font-size:12px;text-transform:uppercase;">
-                  {{ action ?: 'view' }}
-                </span>
-              </td>
-              <td>
-                <div style="display:flex;flex-direction:column;gap:2px;">
-                  <span style="color:#111827;">{{ e.route ?? '-' }}</span>
-                  {% if e.entity %}<span style="color:#6b7280;font-size:12px;">{{ e.entity }}{% if e.entity_id %} #{{ e.entity_id }}{% endif %}</span>{% endif %}
-                </div>
-              </td>
-              <td>{{ e.ip ?? '-' }}</td>
-            </tr>
-          {% else %}
-            <tr><td colspan="5" style="text-align:center;color:#6b7280;">Aucun résultat</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;color:#6b7280;">
-      <div>Page {{ filters.page }}/{{ filters.totalPages }} — {{ filters.total }} résultat(s)</div>
-      <div style="display:flex;gap:8px;">
+        {% else %}
+          <tr>
+            <td colspan="6" style="text-align:center;padding:40px 20px;color:#6b7280;">
+              {% if logStats is defined and logStats.user_actions is defined and not logStats.user_actions.exists %}
+                Aucun fichier de log. Les actions seront enregistrées lors de la navigation.
+              {% else %}
+                Aucun résultat pour les critères choisis (période : {{ filters.from }} → {{ filters.to }}). Essayez d’élargir les dates ou de retirer des filtres.
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% if entries|length > 0 and filters.totalPages is defined and filters.totalPages > 1 %}
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;flex-wrap:wrap;gap:10px;">
+      <div style="color:#6b7280;font-size:0.9rem;">
+        Page {{ filters.page }} / {{ filters.totalPages }} — {{ filters.total }} résultat(s)
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
         {% set p = filters.page|default(1) %}
-        {% set prev = p > 1 ? p - 1 : 1 %}
-        {% set next = p < filters.totalPages ? p + 1 : filters.totalPages %}
-        <a class="btn btn-secondary" href="{{ path('admin_history', filters|merge({'page': prev})) }}">Précédent</a>
-        <a class="btn" href="{{ path('admin_history', filters|merge({'page': next})) }}">Suivant</a>
+        <a class="btn btn-secondary" href="{{ path('admin_history', filters|merge({'page': 1})) }}">⏮ Première</a>
+        <a class="btn btn-secondary" href="{{ path('admin_history', filters|merge({'page': p > 1 ? p - 1 : 1})) }}">‹ Précédent</a>
+        <span style="padding:8px 12px;font-weight:600;">{{ p }}</span>
+        <a class="btn" href="{{ path('admin_history', filters|merge({'page': p < filters.totalPages ? p + 1 : filters.totalPages})) }}">Suivant ›</a>
+        <a class="btn" href="{{ path('admin_history', filters|merge({'page': filters.totalPages})) }}">Dernière ⏭</a>
       </div>
     </div>
+    {% elseif entries|length > 0 %}
+    <div style="margin-top:12px;color:#6b7280;font-size:0.9rem;">{{ filters.total }} résultat(s)</div>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

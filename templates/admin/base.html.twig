@@ -480,10 +480,6 @@
                     <li><a href="{{ path('admin_system') }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">🔧 <span>Système</span></a></li>
                 {% endif %}
                 
-                {# Logs #}
-                {% if 'admin_logs' in access %}
-                    <li><a href="{{ path('admin_logs') }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">📋 <span>Logs</span></a></li>
-                {% endif %}
                 {% if 'admin_history' in access %}
                     <li><a href="{{ path('admin_history') }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">🕓 <span>Historique</span></a></li>
                 {% endif %}
