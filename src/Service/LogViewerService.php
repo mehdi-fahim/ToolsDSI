@@ -224,10 +224,10 @@ class LogViewerService
         $parsed['user_id'] = $context['user_id'] ?? $this->extractField($raw, ['user_id','user']);
         $parsed['ip'] = $context['ip_address'] ?? $context['ip'] ?? $this->extractField($raw, ['ip_address','ip','client_ip','remote_ip']) ?: $this->extractIpFallback($raw);
         $parsed['route'] = $context['route'] ?? $context['page'] ?? $this->extractField($raw, ['route','_route','path','page']) ?: $this->extractRouteFallback($raw, $message);
+        $parsed['method'] = $context['context']['method'] ?? $context['method'] ?? $this->extractField($raw, ['method']);
         $parsed['entity'] = ($context['context']['entity'] ?? null) ?? $this->extractField($raw, ['entity','target','resource']);
         $parsed['entity_id'] = ($context['context']['id'] ?? $context['context']['entity_id'] ?? null) ?? $this->extractField($raw, ['id','entity_id','target_id']);
         $parsed['action'] = $context['action'] ?? $this->extractField($raw, ['action','event','verb']) ?: $this->guessActionFromText($message);
-        $parsed['summary'] = $this->buildSummary($message);
 
         return $parsed;
     }

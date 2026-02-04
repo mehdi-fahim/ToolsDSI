@@ -76,30 +76,31 @@
           <th style="white-space:nowrap;">Date</th>
           <th style="white-space:nowrap;">Utilisateur</th>
           <th style="white-space:nowrap;">Action</th>
+          <th style="white-space:nowrap;">Méthode</th>
           <th style="white-space:nowrap;">Route / Entité</th>
-          <th style="white-space:nowrap;">Résumé</th>
           <th style="white-space:nowrap;">IP</th>
         </tr>
       </thead>
       <tbody>
         {% for e in entries %}
           {% set actionVal = (e.action ?? '')|lower %}
+          {% set actionLabel = actionVal == 'create' ? 'Création' : (actionVal == 'update' ? 'Modification' : (actionVal == 'delete' ? 'Suppression' : (actionVal == 'view' ? 'Consultation' : (e.action == 'PAGE_ACCESS' ? 'Navigation' : (e.action == 'LOGIN' ? 'Connexion' : (e.action == 'LOGOUT' ? 'Déconnexion' : (e.action ?? 'view')))))) ) %}
           {% set badgeBg = actionVal == 'create' ? '#10b981' : (actionVal == 'update' ? '#f59e0b' : (actionVal == 'delete' ? '#ef4444' : '#3b82f6')) %}
           <tr>
             <td style="white-space:nowrap;">{{ e.timestamp ?? '-' }}</td>
             <td>{{ e.user_id ?? '-' }}</td>
             <td>
-              <span style="display:inline-block;padding:4px 8px;border-radius:999px;color:#fff;background:{{ badgeBg }};font-size:11px;text-transform:uppercase;">
-                {{ actionVal ?: (e.action ?? 'view') }}
+              <span style="display:inline-block;padding:4px 8px;border-radius:999px;color:#fff;background:{{ badgeBg }};font-size:11px;">
+                {{ actionLabel }}
               </span>
             </td>
+            <td style="white-space:nowrap;">{{ e.method|default('-') }}</td>
             <td>
               <div style="display:flex;flex-direction:column;gap:2px;">
                 <span style="color:#111827;">{{ e.route ?? '-' }}</span>
                 {% if e.entity %}<span style="color:#6b7280;font-size:12px;">{{ e.entity }}{% if e.entity_id %} #{{ e.entity_id }}{% endif %}</span>{% endif %}
               </div>
             </td>
-            <td style="max-width:280px;font-size:12px;color:#6b7280;">{{ e.summary|default('-')|slice(0, 120) }}{% if (e.summary|default(''))|length > 120 %}…{% endif %}</td>
             <td style="white-space:nowrap;">{{ e.ip ?? '-' }}</td>
           </tr>
         {% else %}
