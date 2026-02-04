@@ -435,7 +435,9 @@ class AdminController extends AbstractController
 
     private function isAuthenticated(SessionInterface $session): bool
     {
-        return $session->get('is_admin') === true && $session->get('user_id');
+        $userId = $session->get('user_id');
+
+        return $session->get('is_admin') === true && $userId !== null && $userId !== '';
     }
 
     private function isSuperAdmin(SessionInterface $session): bool
