@@ -18,10 +18,15 @@ class ListeAffectationOracleService
 
     /** Critères de recherche autorisés => colonne SQL (dans LISTE_V_AFFECTATIONS) */
     public const CRITERIA_COLUMNS = [
-        'ESI' => 'ESO_GROUPE',
+        // ESI : code complet (groupe / bâtiment / escalier / lot), stocké dans LOT
+        'ESI' => 'LOT',
+        // ESO : responsable de l'ESO (ESO_GARDIEN)
         'ESO' => 'ESO_GARDIEN',
+        // Gardien : nom du gardien du lot
         'Gardien' => 'GARDIEN_LOT',
+        // TPROX : type de proximité du lot
         'TPROX' => 'TPROX_LOT',
+        // RS : responsable de secteur du lot
         'RS' => 'RVQ_LOT',
     ];
 
