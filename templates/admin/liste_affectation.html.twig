@@ -68,6 +68,7 @@
                     <option value="ESI" {{ (criterion|default('ESO')) == 'ESI' ? 'selected' : '' }}>ESI</option>
                     <option value="ESO" {{ (criterion|default('ESO')) == 'ESO' ? 'selected' : '' }}>ESO</option>
                     <option value="Gardien" {{ (criterion|default('ESO')) == 'Gardien' ? 'selected' : '' }}>Gardien</option>
+                    <option value="CGLS" {{ (criterion|default('ESO')) == 'CGLS' ? 'selected' : '' }}>CGLS (CGLS_LOT)</option>
                     <option value="TPROX" {{ (criterion|default('ESO')) == 'TPROX' ? 'selected' : '' }}>Tech de prox</option>
                     <option value="RS" {{ (criterion|default('ESO')) == 'RS' ? 'selected' : '' }}>Responsable Secteur</option>
                 </select>
@@ -100,6 +101,7 @@
                         <th>Agence</th>
                         <th>Groupe</th>
                         <th>LOT</th>
+                        <th>Code GL (CGLS_LOT)</th>
                         <th>Nature du lot</th>
                         <th>Gardien du lot</th>
                         <th>Technicien de proximité</th>
@@ -112,7 +114,7 @@
                 <tbody>
                     {% if data is empty %}
                         <tr>
-                            <td colspan="10" style="text-align: center; padding: 40px; color: #718096;">
+                            <td colspan="11" style="text-align: center; padding: 40px; color: #718096;">
                                 {% if search or groupe|default('') %}
                                     Aucun résultat trouvé
                                     {% if search %}pour "{{ search }}" (critère: {{ criterion|default('ESO') }}){% endif %}
@@ -128,6 +130,7 @@
                             <td>{{ affectation.AGENCE|default('-') }}</td>
                             <td>{{ affectation.GROUPE|default('-') }}</td>
                             <td><strong>{{ affectation.LOT|default('-') }}</strong></td>
+                            <td>{{ affectation.CGLS_LOT|default('-') }}</td>
                             <td>{{ affectation.NATURE_LOT|default('-') }}</td>
                             <td>{{ affectation.GARDIEN_LOT|default('-') }}</td>
                             <td>{{ affectation.TPROX_LOT|default('-') }}</td>

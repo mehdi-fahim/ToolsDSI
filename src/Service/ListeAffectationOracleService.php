@@ -24,6 +24,8 @@ class ListeAffectationOracleService
         'ESO' => 'ESO_GARDIEN',
         // Gardien : nom du gardien du lot
         'Gardien' => 'GARDIEN_LOT',
+        // CGLS : code GL du lot
+        'CGLS' => 'CGLS_LOT',
         // TPROX : type de proximité du lot
         'TPROX' => 'TPROX_LOT',
         // RS : responsable de secteur du lot
@@ -87,6 +89,7 @@ class ListeAffectationOracleService
             AGENCE,
             GROUPE,
             LOT,
+            CGLS_LOT,
             NATURE_LOT,
             GARDIEN_LOT,
             TPROX_LOT,
