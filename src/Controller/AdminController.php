@@ -1517,7 +1517,13 @@ class AdminController extends AbstractController
             return $this->redirectToRoute('login');
         }
 
-        return $this->render('admin/traitement_gl.html.twig');
+        $currentYear = (int) (new \DateTimeImmutable())->format('Y');
+        $years = range($currentYear - 5, $currentYear + 1);
+
+        return $this->render('admin/traitement_gl.html.twig', [
+            'currentYear' => $currentYear,
+            'years' => $years,
+        ]);
     }
 
     #[Route('/admin/gerance-locative', name: 'admin_gerance_locative', methods: ['GET'])]
