@@ -1608,11 +1608,15 @@ class AdminController extends AbstractController
             return $this->redirectToRoute('login');
         }
 
-        // Par défaut, reprendre l'année 2022 comme dans le code fourni, avec possibilité de la passer en query string
-        $annee = (int) ($request->query->get('annee', 2022));
-        $csv = $this->inseeOracleService->generateCsv($annee);
+        $annee = (int) $request->query->get('annee', date('Y'));
+        try {
+            $csv = $this->inseeOracleService->generateCsv($annee);
+        } catch (\Throwable $e) {
+            $this->addFlash('error', 'Erreur lors de l\'export INSEE : ' . $e->getMessage());
+            return $this->redirectToRoute('admin_traitement_gl');
+        }
 
-        $filename = sprintf('insee_%s.csv', (new \DateTimeImmutable())->format('Ymd_His'));
+        $filename = sprintf('insee_%d_%s.csv', $annee, (new \DateTimeImmutable())->format('Ymd_His'));
 
         return new Response(
             $csv,

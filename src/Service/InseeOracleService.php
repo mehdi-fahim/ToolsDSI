@@ -115,9 +115,13 @@ WHERE a.paesi_num(+) = b.paesi_num
 ORDER BY 2
 SQL;
 
+        // Binding explicite : dtf en string, annee en string pour compatibilité VARCHAR2 ou NUMBER (INSEE_ESI.ANNEE)
         $rows = $this->getConnection()->executeQuery($sql, [
             'dtf' => $dtf,
-            'annee' => $annee,
+            'annee' => (string) $annee,
+        ], [
+            'dtf' => \Doctrine\DBAL\ParameterType::STRING,
+            'annee' => \Doctrine\DBAL\ParameterType::STRING,
         ])->fetchAllAssociative();
 
         return $this->toCsv($rows);
