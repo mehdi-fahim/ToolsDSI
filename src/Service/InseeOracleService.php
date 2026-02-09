@@ -17,8 +17,8 @@ class InseeOracleService
 
     public function generateCsv(int $annee): string
     {
-        // Dernier jour du mois précédent (au format YYYY-MM-DD)
-        $dateFinMois = $this->getConnection()->executeQuery(
+        // :dtf = dernier jour du mois précédent (au format YYYY-MM-DD)
+        $dtf = $this->getConnection()->executeQuery(
             "SELECT TO_CHAR(LAST_DAY(ADD_MONTHS(SYSDATE, -1)), 'YYYY-MM-DD') FROM DUAL"
         )->fetchOne();
 
@@ -36,9 +36,9 @@ SELECT
   TO_CHAR(b.paesi_datent,'YYYY') L_CONSTRUCT,
   1 L_WC, 1 L_SANIT, 1 L_CHAUF,
   DECODE(f.paifg_temasc,'T',1,2) L_ASC,
-  NVL(GET_LOYER_FAC(a.glcon_num,a.glcon_numver, TO_DATE(:dfm, 'YYYY-MM-DD')),0) L_LOYER,
+  NVL(GET_LOYER_FAC(a.glcon_num,a.glcon_numver, TO_DATE(:dtf, 'YYYY-MM-DD')),0) L_LOYER,
   NVL(GET_RLS(a.glcon_num,a.glcon_numver), NVL(GET_SLS(a.glcon_num,a.glcon_numver),0)) L_SURLOYER,
-  NVL(GET_CHARGES_FAC(a.glcon_num,a.glcon_numver, TO_DATE(:dfm, 'YYYY-MM-DD')),0) L_CHARGES,
+  NVL(GET_CHARGES_FAC(a.glcon_num,a.glcon_numver, TO_DATE(:dtf, 'YYYY-MM-DD')),0) L_CHARGES,
   NVL(-1*GET_APL(a.glcon_num,a.glcon_numver),0) L_AIDES,
   DECODE(a.glcon_num, NULL,'999999', TO_CHAR(LAST_DAY(ADD_MONTHS(SYSDATE,-1)),'YYYYMM')) L_DATELOYER,
   DECODE(a.glcon_num, NULL,'9', DECODE(f.paifg_fact,'M',1,9)) L_PERIODICITE,
@@ -81,9 +81,9 @@ SELECT
   TO_CHAR(b.paesi_datent,'YYYY') L_CONSTRUCT,
   1 L_WC, 1 L_SANIT, 1 L_CHAUF,
   DECODE(f.paifg_temasc,'T',1,2) L_ASC,
-  NVL(GET_LOYER_FAC(a.glcon_num,a.glcon_numver, TO_DATE(:dfm, 'YYYY-MM-DD')),0) L_LOYER,
+  NVL(GET_LOYER_FAC(a.glcon_num,a.glcon_numver, TO_DATE(:dtf, 'YYYY-MM-DD')),0) L_LOYER,
   NVL(GET_RLS(a.glcon_num,a.glcon_numver), NVL(GET_SLS(a.glcon_num,a.glcon_numver),0)) L_SURLOYER,
-  NVL(GET_CHARGES_FAC(a.glcon_num,a.glcon_numver, TO_DATE(:dfm, 'YYYY-MM-DD')),0) L_CHARGES,
+  NVL(GET_CHARGES_FAC(a.glcon_num,a.glcon_numver, TO_DATE(:dtf, 'YYYY-MM-DD')),0) L_CHARGES,
   NVL(-1*GET_APL(a.glcon_num,a.glcon_numver),0) L_AIDES,
   DECODE(a.glcon_num, NULL,'999999', TO_CHAR(LAST_DAY(ADD_MONTHS(SYSDATE,-1)),'YYYYMM')) L_DATELOYER,
   DECODE(a.glcon_num, NULL,'9', DECODE(f.paifg_fact,'M',1,9)) L_PERIODICITE,
@@ -116,7 +116,7 @@ ORDER BY 2
 SQL;
 
         $rows = $this->getConnection()->executeQuery($sql, [
-            'dfm' => $dateFinMois,
+            'dtf' => $dtf,
             'annee' => $annee,
         ])->fetchAllAssociative();
 

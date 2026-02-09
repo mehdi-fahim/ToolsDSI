@@ -1,0 +1,82 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Gérance Locative - Gestion{% endblock %}
+
+{% block content %}
+<div style="max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+    <h1 style="font-size: 1.6rem; color: #232946; font-weight: 700;">Gérance Locative</h1>
+    <div style="display: flex; gap: 10px;">
+      <a href="{{ path('admin_dashboard') }}" class="btn btn-secondary">🏠 Dashboard</a>
+    </div>
+  </div>
+
+  {# 1. Invalider des rubriques #}
+  <div style="background:#fff;border-radius:15px;box-shadow:0 8px 32px rgba(0,0,0,0.08);border:1px solid #eef2f7;padding:24px;">
+    <h2 style="font-size:1.2rem;color:#232946;font-weight:700;margin-bottom:16px;">invalider des rubriques :</h2>
+    <form method="get" action="{{ path('admin_gerance_locative') }}" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <label for="gerance_contrat_invalider" style="font-weight:600;color:#232946;font-size:0.9rem;">Contrat :</label>
+      <input type="text" id="gerance_contrat_invalider" name="contrat" value="{{ contrat_recherche|default('') }}" placeholder="Numéro de contrat" style="padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;min-width:200px;">
+      <button type="submit" class="btn">Rechercher</button>
+    </form>
+    {% if rubriques is defined %}
+      <div style="margin-top:16px;padding-top:16px;border-top:1px solid #eef2f7;">
+        {% if rubriques|length > 0 %}
+          <form method="post" action="{{ path('admin_gerance_locative_mettre_a_jour') }}" id="form-invalider-rubriques">
+            <input type="hidden" name="_token" value="{{ csrf_token('gerance_locative_mettre_a_jour') }}">
+            <input type="hidden" name="contrat" value="{{ contrat_recherche|e('html_attr') }}">
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px 20px;margin-bottom:14px;">
+              {% for r in rubriques %}
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.9rem;">
+                  <input type="checkbox" name="rubriques[]" value="{{ r.code|e('html_attr') }}" {{ r.selected ? 'checked' : '' }}>
+                  <span>{{ r.code }}</span>
+                </label>
+              {% endfor %}
+            </div>
+            <button type="submit" class="btn btn-secondary">Mettre à jour</button>
+          </form>
+        {% else %}
+          <p style="color:#64748b;font-size:0.9rem;">Aucune rubrique trouvée pour ce contrat.</p>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+
+  {# 2. Diagnostic Liquidation (pb eau) #}
+  <div style="background:#fff;border-radius:15px;box-shadow:0 8px 32px rgba(0,0,0,0.08);border:1px solid #eef2f7;padding:24px;">
+    <h2 style="font-size:1.2rem;color:#232946;font-weight:700;margin-bottom:16px;">Diagnostic Liquidation (pb eau)</h2>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <label for="gerance_contrat_diag" style="font-weight:600;color:#232946;font-size:0.9rem;">Contrat :</label>
+      <input type="text" id="gerance_contrat_diag" name="contrat_diag" placeholder="Numéro de contrat" style="padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;min-width:200px;">
+      <a href="#" class="btn">Diagnostiquer</a>
+    </div>
+  </div>
+
+  {# 3. Transfert DG (d'un intitulé vers un autre) #}
+  <div style="background:#fff;border-radius:15px;box-shadow:0 8px 32px rgba(0,0,0,0.08);border:1px solid #eef2f7;padding:24px;">
+    <h2 style="font-size:1.2rem;color:#232946;font-weight:700;margin-bottom:16px;">Transfert DG (d'un intitulé vers un autre)</h2>
+    <form method="post" action="{{ path('admin_gerance_locative_transferer_dg') }}" id="form-transfert-dg">
+      <input type="hidden" name="_token" value="{{ csrf_token('gerance_locative_transferer_dg') }}">
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <label for="gerance_ancien_contrat" style="font-weight:600;color:#232946;font-size:0.9rem;min-width:110px;">Ancien Contrat :</label>
+          <input type="text" id="gerance_ancien_contrat" name="ancien_contrat" placeholder="Ancien contrat" style="padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;min-width:180px;">
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <label for="gerance_nouveau_contrat" style="font-weight:600;color:#232946;font-size:0.9rem;min-width:110px;">Nouveau Contrat :</label>
+          <input type="text" id="gerance_nouveau_contrat" name="nouveau_contrat" placeholder="Nouveau contrat" style="padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;min-width:180px;">
+          <label for="gerance_version" style="font-weight:600;color:#232946;font-size:0.9rem;margin-left:8px;">Version</label>
+          <input type="text" id="gerance_version" name="version" placeholder="Version" style="padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;width:80px;">
+          <label for="gerance_montant" style="font-weight:600;color:#232946;font-size:0.9rem;">Montant</label>
+          <input type="text" id="gerance_montant" name="montant" placeholder="Montant" style="padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;width:120px;">
+          <label for="gerance_date" style="font-weight:600;color:#232946;font-size:0.9rem;">Date</label>
+          <input type="date" id="gerance_date" name="date" style="padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;" title="Non utilisée côté serveur (SYSDATE utilisé)">
+        </div>
+      </div>
+      <div style="margin-top:14px;">
+        <button type="submit" class="btn">Transférer</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

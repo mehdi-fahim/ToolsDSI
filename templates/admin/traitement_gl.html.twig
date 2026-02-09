@@ -21,18 +21,20 @@
   </div>
 
   <div style="background:#fff;border-radius:15px;box-shadow:0 8px 32px rgba(0,0,0,0.08);border:1px solid #eef2f7;padding:24px;">
-    <h2 style="font-size:1.2rem;color:#232946;font-weight:700;margin-bottom:12px;">Génération des intitulés pour paiement CB</h2>
-    <p style="color:#4a5568;margin-bottom:16px;">Récupérer le fichier des intitulés pour paiements carte bancaire.</p>
-    <div>
-      <a href="{{ path('admin_traitement_gl_intitules_cb') }}" class="btn">⬇️ Obtenir le fichier</a>
-    </div>
-  </div>
-
-  <div style="background:#fff;border-radius:15px;box-shadow:0 8px 32px rgba(0,0,0,0.08);border:1px solid #eef2f7;padding:24px;">
     <h2 style="font-size:1.2rem;color:#232946;font-weight:700;margin-bottom:12px;">Extraction Trimestrielle INSEE</h2>
     <p style="color:#4a5568;margin-bottom:16px;">Exporter les données trimestrielles à destination de l'INSEE.</p>
     <div>
-      <a href="{{ path('admin_traitement_gl_insee') }}" class="btn">⬇️ Obtenir le fichier</a>
+      {% set currentYear = \"now\"|date(\"Y\")|int %}
+      {% set selectedYear = app.request.query.get('annee') ?: currentYear %}
+      <form method=\"get\" action=\"{{ path('admin_traitement_gl_insee') }}\" style=\"display:flex;gap:10px;align-items:center;flex-wrap:wrap;\">
+        <label for=\"annee_insee\" style=\"font-weight:600;color:#232946;font-size:0.9rem;\">Année INSEE :</label>
+        <select id=\"annee_insee\" name=\"annee\" class=\"search-input\" style=\"flex:0 1 auto;min-width:120px;max-width:160px;padding:8px 10px;\">
+          {% for y in (currentYear-5)..(currentYear+1) %}
+            <option value=\"{{ y }}\" {{ y == selectedYear ? 'selected' : '' }}>{{ y }}</option>
+          {% endfor %}
+        </select>
+        <button type=\"submit\" class=\"btn\">⬇️ Obtenir le fichier</button>
+      </form>
     </div>
   </div>
 </div>

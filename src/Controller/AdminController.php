@@ -32,6 +32,7 @@ use App\Service\IntitulesCBOracleService;
 use App\Service\PlansOfficeOracleService;
 use App\Service\BiFieldDescriptionService;
 use App\Service\EnvironmentContext;
+use App\Service\GeranceLocativeOracleService;
 
 #[Route('/admin')]
 class AdminController extends AbstractController
@@ -59,7 +60,8 @@ class AdminController extends AbstractController
         private PlansOfficeOracleService $plansOfficeOracleService,
         private BiFieldDescriptionService $biFieldDescriptionService,
         private EnvironmentContext $environmentContext,
-        private ?DetailedUserActionLogger $detailedUserActionLogger = null
+        private ?DetailedUserActionLogger $detailedUserActionLogger = null,
+        private ?GeranceLocativeOracleService $geranceLocativeOracleService = null
     ) {}
 
     #[Route('', name: 'admin_dashboard', methods: ['GET'])]
@@ -1324,6 +1326,7 @@ class AdminController extends AbstractController
             'admin_import_od' => 'Import OD',
             'admin_liste_affectation' => 'Liste d\'affectation',
             'admin_traitement_gl' => 'Traitement GL',
+            'admin_gerance_locative' => 'Gérance Locative',
             'admin_import_paiement_cb' => 'Import Paiement CB',
         ];
 
@@ -1517,6 +1520,81 @@ class AdminController extends AbstractController
         return $this->render('admin/traitement_gl.html.twig');
     }
 
+    #[Route('/admin/gerance-locative', name: 'admin_gerance_locative', methods: ['GET'])]
+    public function geranceLocative(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        $contrat = trim((string) $request->query->get('contrat', ''));
+        $context = ['contrat_recherche' => $contrat];
+        if ($contrat !== '') {
+            // TODO: appeler le service Oracle pour récupérer GLRUB_COD + GLRUC_TEMVAL (selected = "T")
+            // SELECT GLRUB_COD, GLRUC_TEMVAL FROM GLRUC a WHERE GLCON_NUM=? AND GLRUC_DTF is null
+            //   AND GLCON_NUMVER = (select max(GLCON_NUMVER) from glcon b where b.glcon_num=a.glcon_num) ORDER BY 1
+            $context['rubriques'] = []; // à remplacer par l'appel service
+        }
+
+        return $this->render('admin/gerance_locative.html.twig', $context);
+    }
+
+    #[Route('/admin/gerance-locative/mettre-a-jour', name: 'admin_gerance_locative_mettre_a_jour', methods: ['POST'])]
+    public function geranceLocativeMettreAJour(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+        if (!$this->isCsrfTokenValid('gerance_locative_mettre_a_jour', $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token de sécurité invalide.');
+            return $this->redirectToRoute('admin_gerance_locative');
+        }
+
+        $contrat = trim((string) $request->request->get('contrat', ''));
+        $rubriques = $request->request->all('rubriques'); // codes GLRUB_COD cochés à invalider
+        // TODO: exécuter la requête d'invalidation (mise à jour GLRUC) pour les rubriques sélectionnées
+        $this->addFlash('info', 'Mise à jour des rubriques prévue (à brancher sur Oracle).');
+
+        return $this->redirectToRoute('admin_gerance_locative', ['contrat' => $contrat]);
+    }
+
+    #[Route('/admin/gerance-locative/transferer-dg', name: 'admin_gerance_locative_transferer_dg', methods: ['POST'])]
+    public function geranceLocativeTransfererDg(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+        if (!$this->isCsrfTokenValid('gerance_locative_transferer_dg', $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token de sécurité invalide.');
+            return $this->redirectToRoute('admin_gerance_locative');
+        }
+
+        $ancienContrat = trim((string) $request->request->get('ancien_contrat', ''));
+        $nouveauContrat = trim((string) $request->request->get('nouveau_contrat', ''));
+        $version = trim((string) $request->request->get('version', ''));
+        $montant = trim((string) $request->request->get('montant', ''));
+
+        if ($ancienContrat === '' || $nouveauContrat === '' || $version === '' || $montant === '') {
+            $this->addFlash('error', 'Tous les champs (ancien contrat, nouveau contrat, version, montant) sont requis.');
+            return $this->redirectToRoute('admin_gerance_locative');
+        }
+
+        if (!$this->geranceLocativeOracleService) {
+            $this->addFlash('error', 'Service Gérance Locative non disponible.');
+            return $this->redirectToRoute('admin_gerance_locative');
+        }
+
+        try {
+            $this->geranceLocativeOracleService->updateCaligMig($ancienContrat);
+            $this->geranceLocativeOracleService->callAddDgCptDg($nouveauContrat, $version, $montant);
+            $this->addFlash('success', 'Transfert DG effectué : CALIG mis à jour (MIG) et procédure ADD_DG_CPT_DG exécutée.');
+        } catch (\Throwable $e) {
+            $this->addFlash('error', 'Erreur lors du transfert DG : ' . $e->getMessage());
+        }
+
+        return $this->redirectToRoute('admin_gerance_locative');
+    }
+
     #[Route('/admin/traitement-gl/insee', name: 'admin_traitement_gl_insee', methods: ['GET'])]
     public function traitementGlInsee(Request $request, SessionInterface $session): Response
     {
@@ -1573,27 +1651,6 @@ class AdminController extends AbstractController
 
         $csv = $this->plansOfficeOracleService->exportPlansCsv();
         $filename = sprintf('plans_office_%s.csv', (new \DateTimeImmutable())->format('Ymd_His'));
-
-        return new Response(
-            $csv,
-            200,
-            [
-                'Content-Type' => 'text/csv; charset=UTF-8',
-                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-                'Cache-Control' => 'no-store',
-            ]
-        );
-    }
-
-    #[Route('/admin/traitement-gl/intitules-cb', name: 'admin_traitement_gl_intitules_cb', methods: ['GET'])]
-    public function traitementGlIntitulesCb(Request $request, SessionInterface $session): Response
-    {
-        if (!$this->isAuthenticated($session)) {
-            return $this->redirectToRoute('login');
-        }
-
-        $csv = $this->intitulesCBOracleService->generateCsvForToday();
-        $filename = sprintf('intitules_cb_%s.csv', (new \DateTimeImmutable())->format('Ymd_His'));
 
         return new Response(
             $csv,
