@@ -61,28 +61,28 @@
       </div>
 
       {# Relevés eau (ECREL) #}
-      <div style="margin-bottom:16px;">
-        <h3 style="font-size:1rem;font-weight:600;color:#232946;margin-bottom:4px;">Index (ECREL)</h3>
-        <div style="overflow-x:auto;">
-          <table style="width:100%;border-collapse:collapse;font-size:0.85rem;border:1px solid #e2e8f0;">
+      <div style="margin-bottom:18px;">
+        <h3 style="font-size:1rem;font-weight:600;color:#232946;margin-bottom:6px;">Index (ECREL)</h3>
+        <div class="table-container" style="box-shadow:none;">
+          <table class="admin-table" style="font-size:0.9rem;">
             <thead>
               <tr>
-                <th style="text-align:left;padding:2px 6px;border-bottom:1px solid #e2e8f0;">COMPTEUR</th>
-                <th style="text-align:left;padding:2px 6px;border-bottom:1px solid #e2e8f0;">OBSERVATION</th>
-                <th style="text-align:right;padding:2px 6px;border-bottom:1px solid #e2e8f0;">INDEX_RLV</th>
-                <th style="text-align:left;padding:2px 6px;border-bottom:1px solid #e2e8f0;">DATE_RLV</th>
+                <th>COMPTEUR</th>
+                <th>OBSERVATION</th>
+                <th style="text-align:right;">INDEX_RLV</th>
+                <th>DATE_RLV</th>
               </tr>
             </thead>
             <tbody>
               {% for row in diag.releves %}
                 <tr>
-                  <td style="padding:2px 6px;border-top:1px solid #f1f5f9;">{{ row.COMPTEUR }}</td>
-                  <td style="padding:2px 6px;border-top:1px solid #f1f5f9;">{{ row.OBSERVATION }}</td>
-                  <td style="padding:2px 6px;text-align:right;border-top:1px solid #f1f5f9;">{{ row.INDEX_RLV }}</td>
-                  <td style="padding:2px 6px;border-top:1px solid #f1f5f9;">{{ row.DATE_RLV }}</td>
+                  <td>{{ row.COMPTEUR }}</td>
+                  <td>{{ row.OBSERVATION }}</td>
+                  <td style="text-align:right;">{{ row.INDEX_RLV }}</td>
+                  <td>{{ row.DATE_RLV }}</td>
                 </tr>
               {% else %}
-                <tr><td colspan="4" style="color:#64748b;font-size:0.85rem;padding:2px 6px;border-top:1px solid #f1f5f9;">Aucun relevé trouvé.</td></tr>
+                <tr><td colspan="4" style="color:#64748b;font-size:0.85rem;">Aucun relevé trouvé.</td></tr>
               {% endfor %}
             </tbody>
           </table>
@@ -90,28 +90,28 @@
       </div>
 
       {# Consommations (ECCON) #}
-      <div style="margin-bottom:16px;">
-        <h3 style="font-size:1rem;font-weight:600;color:#232946;margin-bottom:4px;">Consommations (ECCON)</h3>
-        <div style="overflow-x:auto;">
-          <table style="width:100%;border-collapse:collapse;font-size:0.85rem;border:1px solid #e2e8f0;">
+      <div style="margin-bottom:18px;">
+        <h3 style="font-size:1rem;font-weight:600;color:#232946;margin-bottom:6px;">Consommations (ECCON)</h3>
+        <div class="table-container" style="box-shadow:none;">
+          <table class="admin-table" style="font-size:0.9rem;">
             <thead>
               <tr>
-                <th style="text-align:left;padding:2px 6px;border-bottom:1px solid #e2e8f0;">COMPTEUR</th>
-                <th style="text-align:right;padding:2px 6px;border-bottom:1px solid #e2e8f0;">CONSOMMATION</th>
-                <th style="text-align:left;padding:2px 6px;border-bottom:1px solid #e2e8f0;">DATE_RLV</th>
-                <th style="text-align:right;padding:2px 6px;border-bottom:1px solid #e2e8f0;">NO_LIQUIDATION</th>
+                <th>COMPTEUR</th>
+                <th style="text-align:right;">CONSOMMATION</th>
+                <th>DATE_RLV</th>
+                <th style="text-align:right;">NO_LIQUIDATION</th>
               </tr>
             </thead>
             <tbody>
               {% for row in diag.consommations %}
                 <tr>
-                  <td style="padding:2px 6px;border-top:1px solid #f1f5f9;">{{ row.COMPTEUR }}</td>
-                  <td style="padding:2px 6px;text-align:right;border-top:1px solid #f1f5f9;">{{ row.CONSOMMATION }}</td>
-                  <td style="padding:2px 6px;border-top:1px solid #f1f5f9;">{{ row.DATE_RLV }}</td>
-                  <td style="padding:2px 6px;text-align:right;border-top:1px solid #f1f5f9;">{{ row.NO_LIQUIDATION }}</td>
+                  <td>{{ row.COMPTEUR }}</td>
+                  <td style="text-align:right;">{{ row.CONSOMMATION }}</td>
+                  <td>{{ row.DATE_RLV }}</td>
+                  <td style="text-align:right;">{{ row.NO_LIQUIDATION }}</td>
                 </tr>
               {% else %}
-                <tr><td colspan="4" style="color:#64748b;font-size:0.85rem;padding:2px 6px;border-top:1px solid #f1f5f9;">Aucune consommation trouvée.</td></tr>
+                <tr><td colspan="4" style="color:#64748b;font-size:0.85rem;">Aucune consommation trouvée.</td></tr>
               {% endfor %}
             </tbody>
           </table>
@@ -120,29 +120,29 @@
 
       {# Rubriques (GLRUC) + groupe de prix #}
       <div>
-        <h3 style="font-size:1rem;font-weight:600;color:#232946;margin-bottom:4px;">Rubriques (GLRUC)</h3>
-        <div style="overflow-x:auto;margin-bottom:8px;">
-          <table style="width:100%;border-collapse:collapse;font-size:0.85rem;border:1px solid #e2e8f0;">
+        <h3 style="font-size:1rem;font-weight:600;color:#232946;margin-bottom:6px;">Rubriques (GLRUC)</h3>
+        <div class="table-container" style="box-shadow:none;margin-bottom:8px;">
+          <table class="admin-table" style="font-size:0.9rem;">
             <thead>
               <tr>
-                <th style="text-align:left;padding:2px 6px;border-bottom:1px solid #e2e8f0;">GLRUB_COD</th>
-                <th style="text-align:left;padding:2px 6px;border-bottom:1px solid #e2e8f0;">GLGPR_COD</th>
-                <th style="text-align:left;padding:2px 6px;border-bottom:1px solid #e2e8f0;">GLRUC_DTD</th>
-                <th style="text-align:left;padding:2px 6px;border-bottom:1px solid #e2e8f0;">GLRUC_DTF</th>
-                <th style="text-align:right;padding:2px 6px;border-bottom:1px solid #e2e8f0;">GLRUC_MNT</th>
+                <th>GLRUB_COD</th>
+                <th>GLGPR_COD</th>
+                <th>GLRUC_DTD</th>
+                <th>GLRUC_DTF</th>
+                <th style="text-align:right;">GLRUC_MNT</th>
               </tr>
             </thead>
             <tbody>
               {% for row in diag.rubriques %}
                 <tr>
-                  <td style="padding:2px 6px;border-top:1px solid #f1f5f9;">{{ row.GLRUB_COD }}</td>
-                  <td style="padding:2px 6px;border-top:1px solid #f1f5f9;">{{ row.GLGPR_COD }}</td>
-                  <td style="padding:2px 6px;border-top:1px solid #f1f5f9;">{{ row.GLRUC_DTD }}</td>
-                  <td style="padding:2px 6px;border-top:1px solid #f1f5f9;">{{ row.GLRUC_DTF }}</td>
-                  <td style="padding:2px 6px;text-align:right;border-top:1px solid #f1f5f9;">{{ row.GLRUC_MNT }}</td>
+                  <td>{{ row.GLRUB_COD }}</td>
+                  <td>{{ row.GLGPR_COD }}</td>
+                  <td>{{ row.GLRUC_DTD }}</td>
+                  <td>{{ row.GLRUC_DTF }}</td>
+                  <td style="text-align:right;">{{ row.GLRUC_MNT }}</td>
                 </tr>
               {% else %}
-                <tr><td colspan="5" style="color:#64748b;font-size:0.85rem;padding:2px 6px;border-top:1px solid #f1f5f9;">Aucune rubrique trouvée.</td></tr>
+                <tr><td colspan="5" style="color:#64748b;font-size:0.85rem;">Aucune rubrique trouvée.</td></tr>
               {% endfor %}
             </tbody>
           </table>
