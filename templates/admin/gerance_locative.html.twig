@@ -62,27 +62,27 @@
 
       {# Relevés eau (ECREL) #}
       <div style="margin-bottom:16px;">
-        <h3 style="font-size:1rem;font-weight:600;color:#232946;margin-bottom:8px;">Index (ECREL)</h3>
+        <h3 style="font-size:1rem;font-weight:600;color:#232946;margin-bottom:4px;">Index (ECREL)</h3>
         <div style="overflow-x:auto;">
-          <table class="table table-sm" style="width:100%;font-size:0.85rem;">
+          <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
             <thead>
               <tr>
-                <th>COMPTEUR</th>
-                <th>OBSERVATION</th>
-                <th>INDEX_RLV</th>
-                <th>DATE_RLV</th>
+                <th style="text-align:left;padding:2px 6px;">COMPTEUR</th>
+                <th style="text-align:left;padding:2px 6px;">OBSERVATION</th>
+                <th style="text-align:right;padding:2px 6px;">INDEX_RLV</th>
+                <th style="text-align:left;padding:2px 6px;">DATE_RLV</th>
               </tr>
             </thead>
             <tbody>
               {% for row in diag.releves %}
                 <tr>
-                  <td>{{ row.COMPTEUR }}</td>
-                  <td>{{ row.OBSERVATION }}</td>
-                  <td>{{ row.INDEX_RLV }}</td>
-                  <td>{{ row.DATE_RLV }}</td>
+                  <td style="padding:2px 6px;">{{ row.COMPTEUR }}</td>
+                  <td style="padding:2px 6px;">{{ row.OBSERVATION }}</td>
+                  <td style="padding:2px 6px;text-align:right;">{{ row.INDEX_RLV }}</td>
+                  <td style="padding:2px 6px;">{{ row.DATE_RLV }}</td>
                 </tr>
               {% else %}
-                <tr><td colspan="4" style="color:#64748b;font-size:0.85rem;">Aucun relevé trouvé.</td></tr>
+                <tr><td colspan="4" style="color:#64748b;font-size:0.85rem;padding:2px 6px;">Aucun relevé trouvé.</td></tr>
               {% endfor %}
             </tbody>
           </table>
@@ -91,27 +91,27 @@
 
       {# Consommations (ECCON) #}
       <div style="margin-bottom:16px;">
-        <h3 style="font-size:1rem;font-weight:600;color:#232946;margin-bottom:8px;">Consommations (ECCON)</h3>
+        <h3 style="font-size:1rem;font-weight:600;color:#232946;margin-bottom:4px;">Consommations (ECCON)</h3>
         <div style="overflow-x:auto;">
-          <table class="table table-sm" style="width:100%;font-size:0.85rem;">
+          <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
             <thead>
               <tr>
-                <th>COMPTEUR</th>
-                <th>CONSOMMATION</th>
-                <th>DATE_RLV</th>
-                <th>NO_LIQUIDATION</th>
+                <th style="text-align:left;padding:2px 6px;">COMPTEUR</th>
+                <th style="text-align:right;padding:2px 6px;">CONSOMMATION</th>
+                <th style="text-align:left;padding:2px 6px;">DATE_RLV</th>
+                <th style="text-align:right;padding:2px 6px;">NO_LIQUIDATION</th>
               </tr>
             </thead>
             <tbody>
               {% for row in diag.consommations %}
                 <tr>
-                  <td>{{ row.COMPTEUR }}</td>
-                  <td>{{ row.CONSOMMATION }}</td>
-                  <td>{{ row.DATE_RLV }}</td>
-                  <td>{{ row.NO_LIQUIDATION }}</td>
+                  <td style="padding:2px 6px;">{{ row.COMPTEUR }}</td>
+                  <td style="padding:2px 6px;text-align:right;">{{ row.CONSOMMATION }}</td>
+                  <td style="padding:2px 6px;">{{ row.DATE_RLV }}</td>
+                  <td style="padding:2px 6px;text-align:right;">{{ row.NO_LIQUIDATION }}</td>
                 </tr>
               {% else %}
-                <tr><td colspan="4" style="color:#64748b;font-size:0.85rem;">Aucune consommation trouvée.</td></tr>
+                <tr><td colspan="4" style="color:#64748b;font-size:0.85rem;padding:2px 6px;">Aucune consommation trouvée.</td></tr>
               {% endfor %}
             </tbody>
           </table>
@@ -120,29 +120,29 @@
 
       {# Rubriques (GLRUC) + groupe de prix #}
       <div>
-        <h3 style="font-size:1rem;font-weight:600;color:#232946;margin-bottom:8px;">Rubriques (GLRUC)</h3>
-        <div style="overflow-x:auto;margin-bottom:10px;">
-          <table class="table table-sm" style="width:100%;font-size:0.85rem;">
+        <h3 style="font-size:1rem;font-weight:600;color:#232946;margin-bottom:4px;">Rubriques (GLRUC)</h3>
+        <div style="overflow-x:auto;margin-bottom:8px;">
+          <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
             <thead>
               <tr>
-                <th>GLRUB_COD</th>
-                <th>GLGPR_COD</th>
-                <th>GLRUC_DTD</th>
-                <th>GLRUC_DTF</th>
-                <th>GLRUC_MNT</th>
+                <th style="text-align:left;padding:2px 6px;">GLRUB_COD</th>
+                <th style="text-align:left;padding:2px 6px;">GLGPR_COD</th>
+                <th style="text-align:left;padding:2px 6px;">GLRUC_DTD</th>
+                <th style="text-align:left;padding:2px 6px;">GLRUC_DTF</th>
+                <th style="text-align:right;padding:2px 6px;">GLRUC_MNT</th>
               </tr>
             </thead>
             <tbody>
               {% for row in diag.rubriques %}
                 <tr>
-                  <td>{{ row.GLRUB_COD }}</td>
-                  <td>{{ row.GLGPR_COD }}</td>
-                  <td>{{ row.GLRUC_DTD }}</td>
-                  <td>{{ row.GLRUC_DTF }}</td>
-                  <td>{{ row.GLRUC_MNT }}</td>
+                  <td style="padding:2px 6px;">{{ row.GLRUB_COD }}</td>
+                  <td style="padding:2px 6px;">{{ row.GLGPR_COD }}</td>
+                  <td style="padding:2px 6px;">{{ row.GLRUC_DTD }}</td>
+                  <td style="padding:2px 6px;">{{ row.GLRUC_DTF }}</td>
+                  <td style="padding:2px 6px;text-align:right;">{{ row.GLRUC_MNT }}</td>
                 </tr>
               {% else %}
-                <tr><td colspan="5" style="color:#64748b;font-size:0.85rem;">Aucune rubrique trouvée.</td></tr>
+                <tr><td colspan="5" style="color:#64748b;font-size:0.85rem;padding:2px 6px;">Aucune rubrique trouvée.</td></tr>
               {% endfor %}
             </tbody>
           </table>
