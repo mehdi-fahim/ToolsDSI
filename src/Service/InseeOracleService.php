@@ -116,13 +116,24 @@ ORDER BY 2
 SQL;
 
         // Binding explicite : dtf en string, annee en string pour compatibilité VARCHAR2 ou NUMBER (INSEE_ESI.ANNEE)
-        $rows = $this->getConnection()->executeQuery($sql, [
-            'dtf' => $dtf,
-            'annee' => (string) $annee,
-        ], [
-            'dtf' => \Doctrine\DBAL\ParameterType::STRING,
-            'annee' => \Doctrine\DBAL\ParameterType::STRING,
-        ])->fetchAllAssociative();
+        $rows = $this->getConnection()->executeQuery(
+            $sql,
+            [
+                'dtf' => $dtf,
+                'annee' => (string) $annee,
+            ],
+            [
+                'dtf' => \Doctrine\DBAL\ParameterType::STRING,
+                'annee' => \Doctrine\DBAL\ParameterType::STRING,
+            ]
+        )->fetchAllAssociative();
+
+        if (empty($rows)) {
+            throw new \RuntimeException(sprintf(
+                "Aucune donnée INSEE trouvée pour l'année %d (table INSEE_ESI).",
+                $annee
+            ));
+        }
 
         return $this->toCsv($rows);
     }
