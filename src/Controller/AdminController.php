@@ -2027,31 +2027,23 @@ class AdminController extends AbstractController
             return $this->redirectToRoute('login');
         }
 
-        $error = null;
-        $success = null;
-        $csvData = null;
-
         try {
-            $rows = $this->importODOracleService->getRelevesStains();
-            if (!empty($rows)) {
-                $csvData = [
-                    'headers' => array_keys($rows[0]),
-                    'data' => $rows,
-                    'total_rows' => count($rows),
-                ];
-                $success = sprintf('%d relevés de STAINS récupérés depuis Oracle.', $csvData['total_rows']);
-            } else {
-                $error = 'Aucun relevé de STAINS trouvé pour la période courante.';
-            }
-        } catch (\Throwable $e) {
-            $error = 'Erreur lors de la récupération des relevés de STAINS: ' . $e->getMessage();
-        }
+            $csv = $this->importODOracleService->exportRelevesStainsCsv();
+            $filename = sprintf('releves_stains_%s.csv', (new \DateTimeImmutable())->format('Ymd_His'));
 
-        return $this->render('admin/import_od.html.twig', [
-            'csvData' => $csvData,
-            'error' => $error,
-            'success' => $success,
-        ]);
+            return new Response(
+                $csv,
+                200,
+                [
+                    'Content-Type' => 'text/csv; charset=UTF-8',
+                    'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                    'Cache-Control' => 'no-store',
+                ]
+            );
+        } catch (\Throwable $e) {
+            $this->addFlash('error', 'Erreur lors de la récupération des relevés de STAINS: ' . $e->getMessage());
+            return $this->redirectToRoute('admin_import_od');
+        }
     }
 
     #[Route('/import/od/upload', name: 'admin_import_od_upload', methods: ['POST'])]

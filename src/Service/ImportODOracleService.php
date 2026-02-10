@@ -171,6 +171,39 @@ SQL;
     }
 
     /**
+     * Exporte les relevés de STAINS en CSV (séparateur ';').
+     */
+    public function exportRelevesStainsCsv(): string
+    {
+        $rows = $this->getRelevesStains();
+
+        $output = fopen('php://temp', 'r+');
+
+        if (!empty($rows)) {
+            $headers = array_keys($rows[0]);
+            fputcsv($output, $headers, ';');
+
+            foreach ($rows as $row) {
+                $line = [];
+                foreach ($headers as $h) {
+                    $line[] = $row[$h] ?? '';
+                }
+                fputcsv($output, $line, ';');
+            }
+        } else {
+            // En-tête générique si aucune ligne
+            fputcsv($output, [
+                'CONTRAT','GLCON_NUMVER','ESI','RUBRIQUE','FAMILLE',
+                'MONTANT','LIBELLE_OD','LIBELLE_INTITULE',
+                'ECTIN_COD','PAINS_COD','ECCON_VAL','ECCON_DATREL'
+            ], ';');
+        }
+
+        rewind($output);
+        return stream_get_contents($output) ?: '';
+    }
+
+    /**
      * Exécute la procédure d'intégration OD
      */
     public function executeIntegrationProcedure(string $userId): array
