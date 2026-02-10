@@ -1517,13 +1517,7 @@ class AdminController extends AbstractController
             return $this->redirectToRoute('login');
         }
 
-        $currentYear = (int) (new \DateTimeImmutable())->format('Y');
-        $years = range($currentYear - 5, $currentYear + 1);
-
-        return $this->render('admin/traitement_gl.html.twig', [
-            'currentYear' => $currentYear,
-            'years' => $years,
-        ]);
+        return $this->render('admin/traitement_gl.html.twig');
     }
 
     #[Route('/admin/gerance-locative', name: 'admin_gerance_locative', methods: ['GET'])]
@@ -1550,6 +1544,20 @@ class AdminController extends AbstractController
             }
 
             $context['rubriques'] = $rubriques;
+        }
+
+        // Bloc "Décoche rubrique de contrat" : recherche ciblée par contrat + rubrique
+        $decoContrat = trim((string) $request->query->get('deco_contrat', ''));
+        $decoRubrique = trim((string) $request->query->get('deco_rubrique', ''));
+        $context['deco_contrat'] = $decoContrat;
+        $context['deco_rubrique'] = $decoRubrique;
+
+        if ($decoContrat !== '' && $decoRubrique !== '' && $this->geranceLocativeOracleService) {
+            try {
+                $context['deco_lignes'] = $this->geranceLocativeOracleService->findLignesRubrique($decoContrat, $decoRubrique);
+            } catch (\Throwable $e) {
+                $this->addFlash('error', 'Erreur lors de la recherche pour décochage : ' . $e->getMessage());
+            }
         }
 
         return $this->render('admin/gerance_locative.html.twig', $context);
@@ -1611,6 +1619,52 @@ class AdminController extends AbstractController
         return $this->redirectToRoute('admin_gerance_locative');
     }
 
+    #[Route('/admin/gerance-locative/decocher-rubrique', name: 'admin_gerance_locative_decocher_rubrique', methods: ['POST'])]
+    public function geranceLocativeDecocherRubrique(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+        if (!$this->isCsrfTokenValid('gerance_locative_decocher_rubrique', $request->request->get('_token'))) {
+            $this->addFlash('error', 'Token de sécurité invalide.');
+            return $this->redirectToRoute('admin_gerance_locative');
+        }
+
+        $decoContrat = trim((string) $request->request->get('deco_contrat', ''));
+        $decoRubrique = trim((string) $request->request->get('deco_rubrique', ''));
+        $lignes = $request->request->all('lignes');
+
+        if ($decoContrat === '' || $decoRubrique === '') {
+            $this->addFlash('error', 'Contrat et rubrique sont requis pour le décochement.');
+            return $this->redirectToRoute('admin_gerance_locative');
+        }
+
+        if (!$this->geranceLocativeOracleService) {
+            $this->addFlash('error', 'Service Gérance Locative non disponible.');
+            return $this->redirectToRoute('admin_gerance_locative');
+        }
+
+        try {
+            foreach ($lignes as $ligne) {
+                if (!isset($ligne['id'])) {
+                    continue;
+                }
+                $id = (int) $ligne['id'];
+                $checked = array_key_exists('checked', $ligne);
+                $this->geranceLocativeOracleService->updateTemvalForLigne($id, $checked);
+            }
+            $this->addFlash('success', 'Décochement des rubriques mis à jour.');
+        } catch (\Throwable $e) {
+            $this->addFlash('error', 'Erreur lors de la mise à jour des rubriques : ' . $e->getMessage());
+        }
+
+        // On revient sur la page avec les mêmes critères pour voir le résultat
+        return $this->redirectToRoute('admin_gerance_locative', [
+            'deco_contrat' => $decoContrat,
+            'deco_rubrique' => $decoRubrique,
+        ]);
+    }
+
     #[Route('/admin/traitement-gl/insee', name: 'admin_traitement_gl_insee', methods: ['GET'])]
     public function traitementGlInsee(Request $request, SessionInterface $session): Response
     {
@@ -1618,7 +1672,8 @@ class AdminController extends AbstractController
             return $this->redirectToRoute('login');
         }
 
-        $annee = (int) $request->query->get('annee', date('Y'));
+        // Année figée à 2022 comme dans l'ancienne application
+        $annee = 2022;
         try {
             $csv = $this->inseeOracleService->generateCsv($annee);
         } catch (\Throwable $e) {

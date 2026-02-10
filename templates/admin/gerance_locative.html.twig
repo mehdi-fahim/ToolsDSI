@@ -78,5 +78,65 @@
       </div>
     </form>
   </div>
+
+  {# 4. Décoche rubrique de contrat #}
+  <div style="background:#fff;border-radius:15px;box-shadow:0 8px 32px rgba(0,0,0,0.08);border:1px solid #eef2f7;padding:24px;">
+    <h2 style="font-size:1.2rem;color:#232946;font-weight:700;margin-bottom:16px;">Décoche rubrique de contrat</h2>
+    <form method="get" action="{{ path('admin_gerance_locative') }}" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
+      <label for="deco_contrat" style="font-weight:600;color:#232946;font-size:0.9rem;">Contrat :</label>
+      <input type="text" id="deco_contrat" name="deco_contrat" value="{{ deco_contrat|default('') }}" placeholder="Numéro de contrat" style="padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;min-width:150px;">
+      <label for="deco_rubrique" style="font-weight:600;color:#232946;font-size:0.9rem;">Rubrique :</label>
+      <input type="text" id="deco_rubrique" name="deco_rubrique" value="{{ deco_rubrique|default('') }}" placeholder="Code rubrique (GLRUB_COD)" style="padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;min-width:150px;">
+      <button type="submit" class="btn">Rechercher</button>
+    </form>
+
+    {% if deco_lignes is defined %}
+      {% if deco_lignes|length > 0 %}
+        <form method="post" action="{{ path('admin_gerance_locative_decocher_rubrique') }}">
+          <input type="hidden" name="_token" value="{{ csrf_token('gerance_locative_decocher_rubrique') }}">
+          <input type="hidden" name="deco_contrat" value="{{ deco_contrat|e('html_attr') }}">
+          <input type="hidden" name="deco_rubrique" value="{{ deco_rubrique|e('html_attr') }}">
+          <div style="overflow-x:auto;">
+            <table class="table table-sm" style="width:100%;font-size:0.85rem;">
+              <thead>
+                <tr>
+                  <th>GLRUC_NUM</th>
+                  <th>Contrat</th>
+                  <th>PAESI_NUM</th>
+                  <th>Rubrique</th>
+                  <th>Tarif</th>
+                  <th>Montant</th>
+                  <th>Cocher (GLRUC_TEMVAL)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for ligne in deco_lignes %}
+                  <tr>
+                    <td>
+                      {{ ligne.GLRUC_NUM }}
+                      <input type="hidden" name="lignes[{{ loop.index0 }}][id]" value="{{ ligne.GLRUC_NUM }}">
+                    </td>
+                    <td>{{ ligne.GLCON_NUM }}</td>
+                    <td>{{ ligne.PAESI_NUM }}</td>
+                    <td>{{ ligne.GLRUB_COD }}</td>
+                    <td>{{ ligne.GLTAR_COD }}</td>
+                    <td>{{ ligne.GLRUC_MNT }}</td>
+                    <td style="text-align:center;">
+                      <input type="checkbox" name="lignes[{{ loop.index0 }}][checked]" {{ ligne.GLRUC_TEMVAL == 'T' ? 'checked' : '' }}>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <div style="margin-top:12px;">
+            <button type="submit" class="btn btn-secondary">Mettre à jour les coches</button>
+          </div>
+        </form>
+      {% else %}
+        <p style="color:#64748b;font-size:0.9rem;">Aucune ligne trouvée pour ce contrat et cette rubrique.</p>
+      {% endif %}
+    {% endif %}
+  </div>
 </div>
 {% endblock %}

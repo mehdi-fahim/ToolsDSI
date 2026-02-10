@@ -58,6 +58,38 @@ SQL;
     }
 
     /**
+     * Recherche les lignes GLRUC pour un contrat + une rubrique donnée
+     * (décoche/récoche des rubriques de contrat).
+     */
+    public function findLignesRubrique(string $contrat, string $rubrique): array
+    {
+        $sql = <<<SQL
+SELECT GLRUC_NUM, GLCON_NUM, PAESI_NUM, GLRUB_COD, GLTAR_COD, GLRUC_MNT, GLRUC_TEMVAL
+FROM opulise.GLRUC
+WHERE GLCON_NUM = :contrat
+  AND GLRUB_COD = :rubrique
+ORDER BY GLRUC_NUM
+SQL;
+
+        return $this->getConnection()->executeQuery($sql, [
+            'contrat' => trim($contrat),
+            'rubrique' => trim($rubrique),
+        ])->fetchAllAssociative();
+    }
+
+    /**
+     * Met à jour GLRUC_TEMVAL (T / F) pour une ligne identifiée par GLRUC_NUM.
+     */
+    public function updateTemvalForLigne(int $glrucNum, bool $checked): void
+    {
+        $sql = "UPDATE opulise.GLRUC SET GLRUC_TEMVAL = :temval WHERE GLRUC_NUM = :id";
+        $this->getConnection()->executeStatement($sql, [
+            'temval' => $checked ? 'T' : 'F',
+            'id' => $glrucNum,
+        ]);
+    }
+
+    /**
      * Met à jour CALIG sur l'ancien intitulé : CARUB_COD = 'MIG' où CARUB_COD = 'D019' et CACTR_NUM = ancien contrat.
      */
     public function updateCaligMig(string $ancienContrat): int
