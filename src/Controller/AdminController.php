@@ -1535,11 +1535,21 @@ class AdminController extends AbstractController
 
         $contrat = trim((string) $request->query->get('contrat', ''));
         $context = ['contrat_recherche' => $contrat];
+
         if ($contrat !== '') {
-            // TODO: appeler le service Oracle pour récupérer GLRUB_COD + GLRUC_TEMVAL (selected = "T")
-            // SELECT GLRUB_COD, GLRUC_TEMVAL FROM GLRUC a WHERE GLCON_NUM=? AND GLRUC_DTF is null
-            //   AND GLCON_NUMVER = (select max(GLCON_NUMVER) from glcon b where b.glcon_num=a.glcon_num) ORDER BY 1
-            $context['rubriques'] = []; // à remplacer par l'appel service
+            // Récupération des rubriques GLRUB_COD + GLRUC_TEMVAL depuis Oracle
+            $rubriques = [];
+            if ($this->geranceLocativeOracleService) {
+                try {
+                    $rubriques = $this->geranceLocativeOracleService->getRubriquesByContrat($contrat);
+                } catch (\Throwable $e) {
+                    $this->addFlash('error', 'Erreur lors de la récupération des rubriques : ' . $e->getMessage());
+                }
+            } else {
+                $this->addFlash('error', 'Service Gérance Locative non disponible.');
+            }
+
+            $context['rubriques'] = $rubriques;
         }
 
         return $this->render('admin/gerance_locative.html.twig', $context);
