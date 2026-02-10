@@ -113,6 +113,64 @@ class ImportODOracleService
     }
 
     /**
+     * Récupère les relevés de STAINS selon la requête fournie.
+     */
+    public function getRelevesStains(): array
+    {
+        $sql = <<<SQL
+SELECT
+    a.glcon_num AS CONTRAT,
+    a.glcon_numver,
+    (
+        SELECT pae.paesi_codext
+        FROM opulise.paesi pae
+        WHERE pae.paesi_num = p.paesi_num
+    ) AS ESI,
+    CASE a.ECTIN_COD
+        WHEN 'F' THEN 'C115'
+        WHEN 'C' THEN 'C116'
+    END AS RUBRIQUE,
+    'AUTRE' AS FAMILLE,
+    CASE a.ECTIN_COD
+        WHEN 'F' THEN a.ECCON_VAL * 4.36
+        WHEN 'C' THEN a.ECCON_VAL * 10.6
+    END AS MONTANT,
+    'EAU IND ' || a.ECCON_VAL || 'm3 - CPT:' || a.pains_cod AS LIBELLE_OD,
+    ca.caint_lib1 AS LIBELLE_INTITULE,
+    a.ECTIN_COD,
+    a.PAINS_COD,
+    a.ECCON_VAL,
+    a.ECCON_DATREL
+FROM opulise.eccon a,
+     opulise.paidl p,
+     opulise.glrec gle,
+     opulise.glrfc glf,
+     opulise.caint ca
+WHERE p.paesi_num IN (
+        SELECT pae2.paesi_num
+        FROM opulise.paesi pae2
+        WHERE SUBSTR(pae2.paesi_codext, 1, 6) IN ('ST4000','ST4100','ST4200')
+    )
+  AND a.ECCON_DATREL >= ADD_MONTHS(TRUNC(SYSDATE, 'MM'), -1)
+  AND p.pains_cod = a.pains_cod
+  AND p.paidl_ind = 'D'
+  AND a.glcon_num IS NOT NULL
+  AND glf.glcon_num = a.glcon_num
+  AND glf.glrec_num = gle.glrec_num
+  AND gle.caint_num = ca.caint_num
+  -- Contrats de gardien qui ne payent pas l'eau
+  AND a.glcon_num NOT IN (100983, 100499)
+ORDER BY ESI
+SQL;
+
+        try {
+            return $this->getConnection()->executeQuery($sql)->fetchAllAssociative();
+        } catch (\Exception $e) {
+            throw new \Exception("Erreur lors de la récupération des relevés de STAINS: " . $e->getMessage());
+        }
+    }
+
+    /**
      * Exécute la procédure d'intégration OD
      */
     public function executeIntegrationProcedure(string $userId): array

@@ -128,13 +128,6 @@ SQL;
             ]
         )->fetchAllAssociative();
 
-        if (empty($rows)) {
-            throw new \RuntimeException(sprintf(
-                "Aucune donnée INSEE trouvée pour l'année %d (table INSEE_ESI).",
-                $annee
-            ));
-        }
-
         return $this->toCsv($rows);
     }
 

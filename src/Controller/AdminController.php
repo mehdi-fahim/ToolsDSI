@@ -2020,6 +2020,40 @@ class AdminController extends AbstractController
         ]);
     }
 
+    #[Route('/import/od/releves-stains', name: 'admin_import_od_releves_stains', methods: ['GET'])]
+    public function importODRelevesStains(SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        $error = null;
+        $success = null;
+        $csvData = null;
+
+        try {
+            $rows = $this->importODOracleService->getRelevesStains();
+            if (!empty($rows)) {
+                $csvData = [
+                    'headers' => array_keys($rows[0]),
+                    'data' => $rows,
+                    'total_rows' => count($rows),
+                ];
+                $success = sprintf('%d relevés de STAINS récupérés depuis Oracle.', $csvData['total_rows']);
+            } else {
+                $error = 'Aucun relevé de STAINS trouvé pour la période courante.';
+            }
+        } catch (\Throwable $e) {
+            $error = 'Erreur lors de la récupération des relevés de STAINS: ' . $e->getMessage();
+        }
+
+        return $this->render('admin/import_od.html.twig', [
+            'csvData' => $csvData,
+            'error' => $error,
+            'success' => $success,
+        ]);
+    }
+
     #[Route('/import/od/upload', name: 'admin_import_od_upload', methods: ['POST'])]
     public function uploadOD(Request $request, SessionInterface $session): Response
     {

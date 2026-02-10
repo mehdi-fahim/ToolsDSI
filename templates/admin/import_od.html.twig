@@ -4,9 +4,14 @@
 
 {% block content %}
 <div class="admin-container">
-    <div class="admin-header">
-        <h1>📊 Intégration OD</h1>
-        <p>Import et intégration de fichiers CSV pour les données OD</p>
+    <div class="admin-header" style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;">
+        <div>
+            <h1>📊 Intégration OD</h1>
+            <p>Import et intégration de fichiers CSV pour les données OD</p>
+        </div>
+        <a href="{{ path('admin_import_od_releves_stains') }}" class="btn btn-secondary">
+            💧 Obtenir les relevés de STAINS
+        </a>
     </div>
 
     <div class="admin-content">
