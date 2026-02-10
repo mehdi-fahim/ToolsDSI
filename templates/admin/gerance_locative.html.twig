@@ -13,7 +13,7 @@
 
   {# 1. Invalider des rubriques #}
   <div style="background:#fff;border-radius:15px;box-shadow:0 8px 32px rgba(0,0,0,0.08);border:1px solid #eef2f7;padding:24px;">
-    <h2 style="font-size:1.2rem;color:#232946;font-weight:700;margin-bottom:16px;">invalider des rubriques :</h2>
+    <h2 style="font-size:1.2rem;color:#232946;font-weight:700;margin-bottom:16px;">Invalider des rubriques :</h2>
     <form method="get" action="{{ path('admin_gerance_locative') }}" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
       <label for="gerance_contrat_invalider" style="font-weight:600;color:#232946;font-size:0.9rem;">Contrat :</label>
       <input type="text" id="gerance_contrat_invalider" name="contrat" value="{{ contrat_recherche|default('') }}" placeholder="Numéro de contrat" style="padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;min-width:200px;">
@@ -44,7 +44,7 @@
 
   {# 2. Diagnostic Liquidation (pb eau) #}
   <div style="background:#fff;border-radius:15px;box-shadow:0 8px 32px rgba(0,0,0,0.08);border:1px solid #eef2f7;padding:24px;">
-    <h2 style="font-size:1.2rem;color:#232946;font-weight:700;margin-bottom:16px;">Diagnostic Liquidation (pb eau)</h2>
+    <h2 style="font-size:1.2rem;color:#232946;font-weight:700;margin-bottom:16px;">Diagnostic Liquidation</h2>
     <form method="get" action="{{ path('admin_gerance_locative') }}" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
       <label for="gerance_contrat_diag" style="font-weight:600;color:#232946;font-size:0.9rem;">Contrat :</label>
       <input type="text" id="gerance_contrat_diag" name="contrat_diag" value="{{ contrat_diag|default('') }}" placeholder="Numéro de contrat" style="padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;min-width:200px;">
@@ -79,7 +79,7 @@
                   <td>{{ row.COMPTEUR }}</td>
                   <td>{{ row.OBSERVATION }}</td>
                   <td>{{ row.INDEX_RLV }}</td>
-                  <td>{{ row.DATE_RLV|date('d/m/Y') }}</td>
+                  <td>{{ row.DATE_RLV }}</td>
                 </tr>
               {% else %}
                 <tr><td colspan="4" style="color:#64748b;font-size:0.85rem;">Aucun relevé trouvé.</td></tr>
@@ -107,7 +107,7 @@
                 <tr>
                   <td>{{ row.COMPTEUR }}</td>
                   <td>{{ row.CONSOMMATION }}</td>
-                  <td>{{ row.DATE_RLV|date('d/m/Y') }}</td>
+                  <td>{{ row.DATE_RLV }}</td>
                   <td>{{ row.NO_LIQUIDATION }}</td>
                 </tr>
               {% else %}
@@ -137,8 +137,8 @@
                 <tr>
                   <td>{{ row.GLRUB_COD }}</td>
                   <td>{{ row.GLGPR_COD }}</td>
-                  <td>{{ row.GLRUC_DTD ? row.GLRUC_DTD|date('d/m/Y') : '' }}</td>
-                  <td>{{ row.GLRUC_DTF ? row.GLRUC_DTF|date('d/m/Y') : '' }}</td>
+                  <td>{{ row.GLRUC_DTD }}</td>
+                  <td>{{ row.GLRUC_DTF }}</td>
                   <td>{{ row.GLRUC_MNT }}</td>
                 </tr>
               {% else %}
