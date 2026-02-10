@@ -110,4 +110,148 @@ SQL;
             'p3' => trim($montant),
         ]);
     }
+
+    /**
+     * Diagnostic Liquidation (pb eau) pour un contrat :
+     * - Date de fin de contrat
+     * - Relevés eau (ECREL)
+     * - Consommations (ECCON)
+     * - Rubriques GLRUC (C009, C011, C115, C116)
+     * - Liste des groupes de prix de l'ESI (GLGEL)
+     */
+    public function getDiagnosticLiquidation(string $contrat): array
+    {
+        $contrat = trim($contrat);
+
+        // 1. Date de fin de contrat (avec valeur de repli 1901-01-01 pour le calcul d'année)
+        $dtfString = $this->getConnection()->executeQuery(
+            "SELECT TO_CHAR(NVL(TRUNC(GLCON_DTF), TO_DATE('1901-01-01','YYYY-MM-DD')), 'YYYY-MM-DD') AS DTF
+             FROM opulise.GLCON
+             WHERE GLCON_NUM = :contrat",
+            ['contrat' => $contrat]
+        )->fetchOne();
+
+        $finContrat = null;
+        if ($dtfString) {
+            $finContrat = new \DateTimeImmutable($dtfString);
+        }
+        $annee = $finContrat ? (int) $finContrat->format('Y') : (int) date('Y');
+
+        $fromDate = sprintf('%04d-01-01', $annee);
+        $toDate = sprintf('%04d-12-31', $annee);
+
+        // 2. Relevés eau (ECREL)
+        $releves = $this->getConnection()->executeQuery(
+            "SELECT PAINS_COD AS COMPTEUR,
+                    ECOBU_COD AS OBSERVATION,
+                    ECREL_VAL AS INDEX_RLV,
+                    TRUNC(ECREL_DATREL) AS DATE_RLV
+             FROM opulise.ECREL
+             WHERE GLCON_NUM = :contrat
+               AND ECREL_DATREL >= TO_DATE(:fromDate, 'YYYY-MM-DD')
+               AND PAITY_COD IN ('CPTDF', 'CPTDC')
+             ORDER BY PAINS_COD, ECREL_DATREL DESC",
+            [
+                'contrat' => $contrat,
+                'fromDate' => $fromDate,
+            ]
+        )->fetchAllAssociative();
+
+        // 3. Consommations (ECCON)
+        $consommations = $this->getConnection()->executeQuery(
+            "SELECT PAINS_COD AS COMPTEUR,
+                    ECCON_VAL AS CONSOMMATION,
+                    ECCON_DATREL AS DATE_RLV,
+                    GLDDC_NUM AS NO_LIQUIDATION
+             FROM opulise.ECCON
+             WHERE GLCON_NUM = :contrat
+               AND PAITY_COD IN ('CPTDF', 'CPTDC')
+               AND ECCON_DATREL >= TO_DATE(:fromDate, 'YYYY-MM-DD')
+             ORDER BY PAINS_COD, ECCON_DATREL DESC",
+            [
+                'contrat' => $contrat,
+                'fromDate' => $fromDate,
+            ]
+        )->fetchAllAssociative();
+
+        // 4. Rubriques (GLRUC)
+        $rubriques = $this->getConnection()->executeQuery(
+            "SELECT GLRUB_COD,
+                    GLGPR_COD,
+                    GLRUC_DTD,
+                    GLRUC_DTF,
+                    GLRUC_MNT
+             FROM opulise.GLRUC
+             WHERE GLCON_NUM = :contrat
+               AND (GLRUC_DTF IS NULL
+                    OR GLRUC_DTF BETWEEN TO_DATE(:fromDate, 'YYYY-MM-DD') AND TO_DATE(:toDate, 'YYYY-MM-DD'))
+               AND GLRUB_COD IN ('C009', 'C011', 'C115', 'C116')",
+            [
+                'contrat' => $contrat,
+                'fromDate' => $fromDate,
+                'toDate' => $toDate,
+            ]
+        )->fetchAllAssociative();
+
+        // 5. Groupes de prix de l'ESI (GLGEL)
+        $gpePrix = $this->getConnection()->executeQuery(
+            "SELECT
+                GLGPR_COD || '|' || TO_CHAR(GLGPR_DTD, 'YYYY-MM-DD') AS VALUE,
+                GLGPR_COD || '-' || TO_CHAR(GLGPR_DTD, 'DD/MM/YYYY') AS LABEL
+             FROM opulise.GLGEL
+             WHERE PAESI_NUM = FGETINFOESI(:contrat, 0, 'P')
+               AND GLGEL_DTF IS NULL
+             ORDER BY GLGPR_COD",
+            ['contrat' => $contrat]
+        )->fetchAllAssociative();
+
+        return [
+            'finContrat' => $finContrat,
+            'annee' => $annee,
+            'releves' => $releves,
+            'consommations' => $consommations,
+            'rubriques' => $rubriques,
+            'gpePrix' => $gpePrix,
+        ];
+    }
+
+    /**
+     * Applique un groupe de prix (code + date) aux rubriques GLRUC du contrat
+     * pour l'année de fin de contrat (même logique que le code VB).
+     */
+    public function appliquerGroupePrix(string $contrat, string $groupePrixCode, string $groupePrixDateIso): void
+    {
+        $contrat = trim($contrat);
+
+        // On recalcule l'année de référence à partir de la date de fin de contrat
+        $dtfString = $this->getConnection()->executeQuery(
+            "SELECT TO_CHAR(NVL(TRUNC(GLCON_DTF), TO_DATE('1901-01-01','YYYY-MM-DD')), 'YYYY-MM-DD') AS DTF
+             FROM opulise.GLCON
+             WHERE GLCON_NUM = :contrat",
+            ['contrat' => $contrat]
+        )->fetchOne();
+
+        $finContrat = $dtfString ? new \DateTimeImmutable($dtfString) : null;
+        $annee = $finContrat ? (int) $finContrat->format('Y') : (int) date('Y');
+
+        $fromDate = sprintf('%04d-01-01', $annee);
+        $toDate = sprintf('%04d-12-31', $annee);
+
+        $sql = "UPDATE opulise.GLRUC
+                SET GLGPR_COD = :code,
+                    GLGPR_DTD = TO_DATE(:dtd, 'YYYY-MM-DD')
+                WHERE GLCON_NUM = :contrat
+                  AND (GLRUC_DTF BETWEEN TO_DATE(:fromDate, 'YYYY-MM-DD')
+                                    AND TO_DATE(:toDate, 'YYYY-MM-DD')
+                       OR GLRUC_DTF IS NULL)
+                  AND GLRUB_COD IN ('C009', 'C011', 'C115', 'C116')";
+
+        $this->getConnection()->executeStatement($sql, [
+            'code' => trim($groupePrixCode),
+            'dtd' => $groupePrixDateIso,
+            'contrat' => $contrat,
+            'fromDate' => $fromDate,
+            'toDate' => $toDate,
+        ]);
+    }
 }

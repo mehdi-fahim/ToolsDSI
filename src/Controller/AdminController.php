@@ -1546,17 +1546,15 @@ class AdminController extends AbstractController
             $context['rubriques'] = $rubriques;
         }
 
-        // Bloc "Décoche rubrique de contrat" : recherche ciblée par contrat + rubrique
-        $decoContrat = trim((string) $request->query->get('deco_contrat', ''));
-        $decoRubrique = trim((string) $request->query->get('deco_rubrique', ''));
-        $context['deco_contrat'] = $decoContrat;
-        $context['deco_rubrique'] = $decoRubrique;
+        // Bloc Diagnostic Liquidation (pb eau)
+        $contratDiag = trim((string) $request->query->get('contrat_diag', ''));
+        $context['contrat_diag'] = $contratDiag;
 
-        if ($decoContrat !== '' && $decoRubrique !== '' && $this->geranceLocativeOracleService) {
+        if ($contratDiag !== '' && $this->geranceLocativeOracleService) {
             try {
-                $context['deco_lignes'] = $this->geranceLocativeOracleService->findLignesRubrique($decoContrat, $decoRubrique);
+                $context['diag'] = $this->geranceLocativeOracleService->getDiagnosticLiquidation($contratDiag);
             } catch (\Throwable $e) {
-                $this->addFlash('error', 'Erreur lors de la recherche pour décochage : ' . $e->getMessage());
+                $this->addFlash('error', 'Erreur lors du diagnostic liquidation : ' . $e->getMessage());
             }
         }
 
@@ -1619,23 +1617,22 @@ class AdminController extends AbstractController
         return $this->redirectToRoute('admin_gerance_locative');
     }
 
-    #[Route('/admin/gerance-locative/decocher-rubrique', name: 'admin_gerance_locative_decocher_rubrique', methods: ['POST'])]
-    public function geranceLocativeDecocherRubrique(Request $request, SessionInterface $session): Response
+    #[Route('/admin/gerance-locative/diag-gpe-prix', name: 'admin_gerance_locative_diag_gpe_prix', methods: ['POST'])]
+    public function geranceLocativeDiagGpePrix(Request $request, SessionInterface $session): Response
     {
         if (!$this->isAuthenticated($session)) {
             return $this->redirectToRoute('login');
         }
-        if (!$this->isCsrfTokenValid('gerance_locative_decocher_rubrique', $request->request->get('_token'))) {
+        if (!$this->isCsrfTokenValid('gerance_locative_diag_gpe_prix', $request->request->get('_token'))) {
             $this->addFlash('error', 'Token de sécurité invalide.');
             return $this->redirectToRoute('admin_gerance_locative');
         }
 
-        $decoContrat = trim((string) $request->request->get('deco_contrat', ''));
-        $decoRubrique = trim((string) $request->request->get('deco_rubrique', ''));
-        $lignes = $request->request->all('lignes');
+        $contratDiag = trim((string) $request->request->get('contrat_diag', ''));
+        $selected = (string) $request->request->get('gpe_prix', '');
 
-        if ($decoContrat === '' || $decoRubrique === '') {
-            $this->addFlash('error', 'Contrat et rubrique sont requis pour le décochement.');
+        if ($contratDiag === '' || $selected === '') {
+            $this->addFlash('error', 'Contrat et groupe de prix sont requis.');
             return $this->redirectToRoute('admin_gerance_locative');
         }
 
@@ -1645,23 +1642,17 @@ class AdminController extends AbstractController
         }
 
         try {
-            foreach ($lignes as $ligne) {
-                if (!isset($ligne['id'])) {
-                    continue;
-                }
-                $id = (int) $ligne['id'];
-                $checked = array_key_exists('checked', $ligne);
-                $this->geranceLocativeOracleService->updateTemvalForLigne($id, $checked);
-            }
-            $this->addFlash('success', 'Décochement des rubriques mis à jour.');
+            // valeur au format CODE|YYYY-MM-DD
+            [$code, $dateIso] = explode('|', $selected, 2);
+            $this->geranceLocativeOracleService->appliquerGroupePrix($contratDiag, $code, $dateIso);
+            $this->addFlash('success', 'Groupe de prix appliqué aux rubriques eau.');
         } catch (\Throwable $e) {
-            $this->addFlash('error', 'Erreur lors de la mise à jour des rubriques : ' . $e->getMessage());
+            $this->addFlash('error', 'Erreur lors de l\'application du groupe de prix : ' . $e->getMessage());
         }
 
-        // On revient sur la page avec les mêmes critères pour voir le résultat
+        // On revient sur la page avec le même contrat diagnostic
         return $this->redirectToRoute('admin_gerance_locative', [
-            'deco_contrat' => $decoContrat,
-            'deco_rubrique' => $decoRubrique,
+            'contrat_diag' => $contratDiag,
         ]);
     }
 
