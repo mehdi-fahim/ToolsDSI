@@ -384,7 +384,7 @@
                 {% endif %}
 
                 {# Menu déroulant Documents #}
-                {% if 'admin_entity_view' in access or 'admin_extraction' in access %}
+                {% if 'admin_entity_view' in access or 'admin_extraction' in access or 'admin_extraction_divers' in access %}
                 <li class="sidebar-dropdown">
                     <div class="dropdown-toggle" onclick="toggleDropdown(this)">
                         <span style="display: flex; align-items: center; gap: 12px;">📄 <span>Documents</span></span>
@@ -399,6 +399,11 @@
                         {% if 'admin_extraction' in access %}
                         <a href="{{ path('admin_extraction') }}">
                             <span>Extraction CSV</span>
+                        </a>
+                        {% endif %}
+                        {% if 'admin_extraction_divers' in access %}
+                        <a href="{{ path('admin_extraction_divers') }}">
+                            <span>Extraction Divers</span>
                         </a>
                         {% endif %}
                     </div>

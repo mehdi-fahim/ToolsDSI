@@ -39,13 +39,16 @@ doctrine:
                 host: '172.22.0.30'
                 port: 1521
                 dbname: 'OPULISE'
-                user: 'SYS as SYSDBA'
+                service: true
+                user: 'SYS'
                 password: 'PCH93200'
                 charset: AL32UTF8
                 profiling_collect_backtrace: '%kernel.debug%'
                 use_savepoints: true
                 options:
                     charset: 'utf8'
+                driver_options:
+                    session_mode: !php/const OCI_SYSDBA
     orm:
         auto_generate_proxy_classes: true
         enable_lazy_ghost_objects: true

@@ -117,7 +117,13 @@ class AdminController extends AbstractController
             $limit = 20; // 20 lignes par page
             
             // Récupérer les données Oracle avec pagination, recherche et tri
-            $result = $this->oracleService->fetchEditions($search, $page, $limit, $sortBy, $sortOrder);
+            try {
+                $result = $this->oracleService->fetchEditions($search, $page, $limit, $sortBy, $sortOrder);
+            } catch (\Throwable $e) {
+                // Fallback sécurisé pour éviter les 500 sur pagination/sort corrompus
+                $result = $this->oracleService->fetchEditions($search, 1, $limit, 'NOM_BI', 'ASC');
+                $this->addFlash('error', 'Pagination BI invalide, retour à la première page.');
+            }
             
             // Adapter les métadonnées pour la vue
             $metadata = [
@@ -1256,6 +1262,16 @@ class AdminController extends AbstractController
         ]);
     }
 
+    #[Route('/admin/extraction-divers', name: 'admin_extraction_divers', methods: ['GET'])]
+    public function extractionDivers(SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        return $this->render('admin/extraction_divers.html.twig');
+    }
+
     #[Route('/admin/extraction/query', name: 'admin_extraction_query', methods: ['POST'])]
     public function extractionQuery(Request $request, SessionInterface $session): Response
     {
@@ -1318,6 +1334,7 @@ class AdminController extends AbstractController
             'admin_entity_view' => 'Document BI',
             'admin_users' => 'Utilisateurs',
             'admin_extraction' => 'Extraction CSV',
+            'admin_extraction_divers' => 'Extraction Divers',
             'admin_engagement' => 'Engagements',
             'admin_logement' => 'Logement',
             'admin_user_unlock' => 'Débloquer MDP',

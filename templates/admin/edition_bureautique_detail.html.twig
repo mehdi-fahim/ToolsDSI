@@ -3,6 +3,15 @@
 {% block title %}Détail édition bureautique - Panel Admin{% endblock %}
 
 {% block content %}
+    {% for label, messages in app.flashes %}
+        {% for msg in messages %}
+            {% set isError = label in ['error', 'danger'] %}
+            <div style="margin-bottom: 16px; padding: 12px 14px; border-radius: 8px; border-left: 4px solid {{ isError ? '#e53e3e' : '#4299e1' }}; background: {{ isError ? '#fed7d7' : '#ebf8ff' }}; color: {{ isError ? '#c53030' : '#2b6cb0' }};">
+                {{ msg }}
+            </div>
+        {% endfor %}
+    {% endfor %}
+
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px;">
         <div>
             <h2 style="color: #2d3748; font-size: 1.8rem; margin-bottom: 5px;">

@@ -1,0 +1,29 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Extraction Divers{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="admin-header">
+        <h1>🧩 Extraction Divers</h1>
+        <p>Regroupement des extractions ponctuelles qui n'ont pas de page dédiée.</p>
+    </div>
+
+    <div class="admin-content">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;">
+            <div style="background:#f7fafc;border:1px solid #e2e8f0;border-radius:12px;padding:18px;">
+                <h3 style="color:#2d3748;margin-bottom:8px;">Extraction #1</h3>
+                <p style="color:#718096;margin-bottom:14px;">Zone prête à brancher une extraction future.</p>
+                <button class="btn btn-secondary" type="button" disabled>Bientôt disponible</button>
+            </div>
+
+            <div style="background:#f7fafc;border:1px solid #e2e8f0;border-radius:12px;padding:18px;">
+                <h3 style="color:#2d3748;margin-bottom:8px;">Extraction #2</h3>
+                <p style="color:#718096;margin-bottom:14px;">Tu pourras ajouter ici d'autres exports ad hoc.</p>
+                <button class="btn btn-secondary" type="button" disabled>Bientôt disponible</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
