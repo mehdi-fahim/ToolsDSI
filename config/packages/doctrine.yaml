@@ -47,8 +47,7 @@ doctrine:
                 use_savepoints: true
                 options:
                     charset: 'utf8'
-                driver_options:
-                    session_mode: !php/const OCI_SYSDBA
+                sessionMode: 2
     orm:
         auto_generate_proxy_classes: true
         enable_lazy_ghost_objects: true

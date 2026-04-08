@@ -3,6 +3,12 @@
 {% block title %}Détail édition bureautique - Panel Admin{% endblock %}
 
 {% block content %}
+    {% if modelError is defined and modelError %}
+        <div style="margin-bottom: 16px; padding: 12px 14px; border-radius: 8px; border-left: 4px solid #e53e3e; background: #fed7d7; color: #c53030;">
+            {{ modelError }}
+        </div>
+    {% endif %}
+
     {% for label, messages in app.flashes %}
         {% for msg in messages %}
             {% set isError = label in ['error', 'danger'] %}

@@ -484,6 +484,10 @@
                 {% if 'admin_user_unlock' in access %}
                     <li><a href="{{ path('admin_user_unlock') }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">🔒 <span>Débloquer MDP</span></a></li>
                 {% endif %}
+
+                {% if 'admin_extraction_divers' in access %}
+                    <li><a href="{{ path('admin_extraction_divers') }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">🧩 <span>Extraction Divers</span></a></li>
+                {% endif %}
                 
                 {# Système #}
                 {% if 'admin_system' in access %}

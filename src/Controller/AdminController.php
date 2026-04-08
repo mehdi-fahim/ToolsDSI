@@ -495,6 +495,7 @@ class AdminController extends AbstractController
         $backSearch = (string) $request->query->get('search', '');
         $backSort = $request->query->get('sort', 'NOM_BI');
         $backOrder = strtolower($request->query->get('order', 'asc')) === 'desc' ? 'desc' : 'asc';
+        $modelError = (string) $request->query->get('model_error', '');
         return $this->render('admin/edition_bureautique_detail.html.twig', [
             'entity' => $entity,
             'entityName' => 'EditionBureautique',
@@ -504,6 +505,7 @@ class AdminController extends AbstractController
             'backSearch' => $backSearch,
             'backSort' => $backSort,
             'backOrder' => $backOrder,
+            'modelError' => $modelError,
         ]);
     }
 
@@ -525,8 +527,10 @@ class AdminController extends AbstractController
         
         // Vérifier si le fichier existe
         if (!file_exists($cheminFichier)) {
-            $this->addFlash('error', 'Aucun modèle associé pour le BI : ' . ($entity['NOM_BI'] ?? $id));
-            return $this->redirectToRoute('admin_edition_bureautique_detail', ['id' => $id]);
+            return $this->redirectToRoute('admin_edition_bureautique_detail', [
+                'id' => $id,
+                'model_error' => 'Aucun modèle associé pour le BI : ' . ($entity['NOM_BI'] ?? $id),
+            ]);
         }
         
         try {
@@ -536,8 +540,10 @@ class AdminController extends AbstractController
             $response->headers->set('Content-Disposition', 'attachment; filename="' . basename($nomDocument) . '"');
             return $response;
         } catch (\Throwable $e) {
-            $this->addFlash('error', 'Impossible de télécharger le modèle pour le BI : ' . ($entity['NOM_BI'] ?? $id));
-            return $this->redirectToRoute('admin_edition_bureautique_detail', ['id' => $id]);
+            return $this->redirectToRoute('admin_edition_bureautique_detail', [
+                'id' => $id,
+                'model_error' => 'Impossible de télécharger le modèle pour le BI : ' . ($entity['NOM_BI'] ?? $id),
+            ]);
         }
     }
 

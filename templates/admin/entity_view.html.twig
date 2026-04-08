@@ -93,7 +93,6 @@
         {% set sortParams = (sortBy is defined and sortOrder is defined) ? '&sort=' ~ sortBy ~ '&order=' ~ (sortOrder|lower) : '' %}
         <div class="pagination">
             {% if pagination.page > 1 %}
-                <a href="?page=1{% if search %}&search={{ search }}{% endif %}{{ sortParams }}" class="btn btn-secondary">« Première</a>
                 <a href="?page={{ pagination.page - 1 }}{% if search %}&search={{ search }}{% endif %}{{ sortParams }}" class="btn btn-secondary">‹ Précédente</a>
             {% endif %}
 
@@ -110,7 +109,6 @@
 
             {% if pagination.page < pagination.totalPages %}
                 <a href="?page={{ pagination.page + 1 }}{% if search %}&search={{ search }}{% endif %}{{ sortParams }}" class="btn btn-secondary">Suivante ›</a>
-                <a href="?page={{ pagination.totalPages }}{% if search %}&search={{ search }}{% endif %}{{ sortParams }}" class="btn btn-secondary">Dernière »</a>
             {% endif %}
         </div>
     {% endif %}
@@ -216,7 +214,6 @@
         let paginationHtml = '';
 
         if (pagination.page > 1) {
-            paginationHtml += `<a href="?page=1${searchTerm ? '&search=' + searchTerm : ''}" class="btn btn-secondary">« Première</a>`;
             paginationHtml += `<a href="?page=${pagination.page - 1}${searchTerm ? '&search=' + searchTerm : ''}" class="btn btn-secondary">‹ Précédente</a>`;
         }
 
@@ -233,7 +230,6 @@
 
         if (pagination.page < pagination.totalPages) {
             paginationHtml += `<a href="?page=${pagination.page + 1}${searchTerm ? '&search=' + searchTerm : ''}" class="btn btn-secondary">Suivante ›</a>`;
-            paginationHtml += `<a href="?page=${pagination.totalPages}${searchTerm ? '&search=' + searchTerm : ''}" class="btn btn-secondary">Dernière »</a>`;
         }
 
         paginationContainer.innerHTML = paginationHtml;
