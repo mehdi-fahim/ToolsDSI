@@ -11,15 +11,35 @@ class SystemOracleService
         $service = 'OPULISE';
         $username = 'SYS';
         $password = 'PCH93200';
-        $connStr = "//{$host}:{$port}/{$service}";
-
-        $conn = @oci_connect($username, $password, $connStr, 'AL32UTF8', OCI_SYSDBA);
-        if (!$conn) {
-            $e = oci_error();
-            $message = is_array($e) && isset($e['message']) ? (string) $e['message'] : 'Connexion SYSDBA impossible';
-            throw new \RuntimeException($message);
+        if (!function_exists('oci_connect')) {
+            throw new \RuntimeException('Extension PHP OCI8 non chargée sur le serveur web.');
         }
-        return $conn;
+
+        $descriptors = [
+            "//{$host}:{$port}/{$service}",
+            "{$host}:{$port}/{$service}",
+            "(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST={$host})(PORT={$port}))(CONNECT_DATA=(SERVICE_NAME={$service})))",
+            "(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST={$host})(PORT={$port}))(CONNECT_DATA=(SID={$service})))",
+        ];
+        $modes = [
+            'SYSDBA' => OCI_SYSDBA,
+            'SYSOPER' => OCI_SYSOPER,
+        ];
+
+        $attemptErrors = [];
+        foreach ($descriptors as $dsn) {
+            foreach ($modes as $modeLabel => $modeConst) {
+                $conn = @oci_connect($username, $password, $dsn, 'AL32UTF8', $modeConst);
+                if ($conn) {
+                    return $conn;
+                }
+                $e = oci_error();
+                $msg = is_array($e) && isset($e['message']) ? trim((string) $e['message']) : 'erreur inconnue';
+                $attemptErrors[] = "{$modeLabel} / {$dsn} -> {$msg}";
+            }
+        }
+
+        throw new \RuntimeException("Connexion SYS impossible. Détails: " . implode(' | ', $attemptErrors));
     }
 
     private function fetchAllAssociative(string $sql): array

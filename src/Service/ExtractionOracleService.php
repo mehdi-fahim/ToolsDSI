@@ -302,24 +302,31 @@ class ExtractionOracleService
      */
     private function arrayToCsv(array $data, array $selectedFields): string
     {
-        if (empty($data)) {
-            return '';
-        }
-
         $output = fopen('php://temp', 'r+');
         
         // En-têtes
         $headers = [];
-        foreach ($selectedFields as $field) {
-            $headers[] = $this->sanitizeLabel($this->getFieldLabel($field));
+        $seen = [];
+        foreach (array_values(array_unique($selectedFields)) as $field) {
+            $label = $this->getFieldLabel($field);
+            if (!isset($seen[$label])) {
+                $headers[] = $label;
+                $seen[$label] = true;
+            }
         }
         fputcsv($output, $headers, ';');
 
         // Données
         foreach ($data as $row) {
             $csvRow = [];
-            foreach ($selectedFields as $field) {
+            $lineSeen = [];
+            foreach (array_values(array_unique($selectedFields)) as $field) {
+                $label = $this->getFieldLabel($field);
+                if (isset($lineSeen[$label])) {
+                    continue;
+                }
                 $csvRow[] = $row[$this->getFieldKey($field)] ?? '';
+                $lineSeen[$label] = true;
             }
             fputcsv($output, $csvRow, ';');
         }
@@ -328,7 +335,8 @@ class ExtractionOracleService
         $csv = stream_get_contents($output);
         fclose($output);
 
-        return $csv;
+        // BOM UTF-8 pour une bonne lecture des accents sous Excel/Windows
+        return "\xEF\xBB\xBF" . ($csv ?: '');
     }
 
     /**
@@ -447,18 +455,4 @@ class ExtractionOracleService
         return $this->buildExtractionQuery($groupeSi, array_values(array_unique($selectedFields)));
     }
 
-    /**
-     * Supprime les accents et normalise les libellés pour l'export CSV
-     */
-    private function sanitizeLabel(string $label): string
-    {
-        $normalized = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $label);
-        if ($normalized === false) {
-            $normalized = $label;
-        }
-
-        $normalized = preg_replace('/\s+/', ' ', $normalized ?? $label);
-
-        return trim($normalized ?? $label);
-    }
 } 

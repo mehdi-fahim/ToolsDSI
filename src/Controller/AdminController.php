@@ -1235,9 +1235,7 @@ class AdminController extends AbstractController
         $query = null;
 
         if ($request->isMethod('POST')) {
-            if (empty($groupeSi)) {
-                $error = 'Veuillez saisir un groupe SI.';
-            } elseif (empty($selectedFields)) {
+            if (empty($selectedFields)) {
                 $error = 'Veuillez sélectionner au moins un champ à extraire.';
             } else {
                 try {
@@ -1264,7 +1262,7 @@ class AdminController extends AbstractController
             'error' => $error,
             'success' => $success,
             'query' => $query,
-            'canViewQuery' => $this->isAdmin($session)
+            'canViewQuery' => $this->canViewExtractionQuery($session),
         ]);
     }
 
@@ -1281,7 +1279,7 @@ class AdminController extends AbstractController
     #[Route('/admin/extraction/query', name: 'admin_extraction_query', methods: ['POST'])]
     public function extractionQuery(Request $request, SessionInterface $session): Response
     {
-        if (!$this->isAdmin($session)) {
+        if (!$this->canViewExtractionQuery($session)) {
             return new JsonResponse(['error' => 'Accès non autorisé'], 403);
         }
 
@@ -1853,9 +1851,11 @@ class AdminController extends AbstractController
         if ($request->isMethod('POST') && $request->request->get('action') === 'add_user') {
             $code = trim((string) $request->request->get('numero_tiers', ''));
             $email = trim((string) $request->request->get('email', ''));
+            $nom = trim((string) $request->request->get('nom', ''));
+            $prenom = trim((string) $request->request->get('prenom', ''));
 
-            if ($code === '' || $email === '') {
-                $error = 'Le numéro de tiers et l\'email sont obligatoires.';
+            if ($code === '' || $email === '' || $nom === '' || $prenom === '') {
+                $error = 'Le numéro de tiers, l\'email, le nom et le prénom sont obligatoires.';
             } else {
                 try {
                     if (!$this->sowellOracleService->tiersExists($code)) {
@@ -1863,6 +1863,7 @@ class AdminController extends AbstractController
                     }
                     $this->sowellOracleService->setEmailInTozd2ForCode($code, $email);
                     $this->sowellOracleService->addUserAccess($code);
+                    $this->sowellOracleService->upsertOldUsersSowell($prenom, $nom, $code, $email);
                     $success = 'Utilisateur ajouté/actualisé dans TOZD2 et ajouté aux accès Sowell.';
                 } catch (\Throwable $e) {
                     $error = 'Erreur lors de l\'ajout: ' . $e->getMessage();
@@ -2468,5 +2469,18 @@ class AdminController extends AbstractController
     private function isAdmin(SessionInterface $session): bool
     {
         return $this->isAuthenticated($session) && $session->get('is_admin', false) === true;
+    }
+
+    private function canViewExtractionQuery(SessionInterface $session): bool
+    {
+        if (!$this->isAuthenticated($session)) {
+            return false;
+        }
+        if ($this->isAdmin($session) || $this->isSuperAdmin($session)) {
+            return true;
+        }
+
+        $access = (array) $session->get('page_access', []);
+        return in_array('admin_extraction', $access, true);
     }
 } 

@@ -109,6 +109,36 @@ class SowellOracleService
         return $this->getConnection()->executeStatement($sql, ['code' => $code]);
     }
 
+    /**
+     * Historise/alimente l'ancien référentiel utilisateurs Sowell.
+     * Colonnes attendues : FIRST_NAME, LAST_NAME, CODE, EMAIL.
+     */
+    public function upsertOldUsersSowell(string $firstName, string $lastName, string $code, string $email): int
+    {
+        $sql = <<<SQL
+MERGE INTO OLD_USERS_SOWELL t
+USING (
+    SELECT :code AS CODE, :email AS EMAIL FROM DUAL
+) s
+ON (t.CODE = s.CODE AND UPPER(t.EMAIL) = UPPER(s.EMAIL))
+WHEN MATCHED THEN
+    UPDATE SET
+        t.FIRST_NAME = :first_name,
+        t.LAST_NAME = :last_name,
+        t.EMAIL = :email
+WHEN NOT MATCHED THEN
+    INSERT (FIRST_NAME, LAST_NAME, CODE, EMAIL)
+    VALUES (:first_name, :last_name, :code, :email)
+SQL;
+
+        return $this->getConnection()->executeStatement($sql, [
+            'first_name' => trim($firstName),
+            'last_name' => trim($lastName),
+            'code' => trim($code),
+            'email' => trim($email),
+        ]);
+    }
+
     public function removeUserAccessByEmail(string $email): int
     {
         $sql = "DELETE FROM SOWELL_USERS_ACCESS WHERE TOTIE_COD IN (
