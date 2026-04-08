@@ -2,17 +2,55 @@
 
 namespace App\Service;
 
-use Doctrine\DBAL\Connection;
-
 class SystemOracleService
 {
-    public function __construct(private Connection $sysConnection)
+    private function getOciConnection()
     {
+        $host = '172.22.0.30';
+        $port = 1521;
+        $service = 'OPULISE';
+        $username = 'SYS';
+        $password = 'PCH93200';
+        $connStr = "//{$host}:{$port}/{$service}";
+
+        $conn = @oci_connect($username, $password, $connStr, 'AL32UTF8', OCI_SYSDBA);
+        if (!$conn) {
+            $e = oci_error();
+            $message = is_array($e) && isset($e['message']) ? (string) $e['message'] : 'Connexion SYSDBA impossible';
+            throw new \RuntimeException($message);
+        }
+        return $conn;
     }
 
-    private function getConnection(): Connection
+    private function fetchAllAssociative(string $sql): array
     {
-        return $this->sysConnection;
+        $conn = $this->getOciConnection();
+        $stid = @oci_parse($conn, $sql);
+        if (!$stid) {
+            $e = oci_error($conn);
+            oci_close($conn);
+            throw new \RuntimeException(is_array($e) && isset($e['message']) ? (string) $e['message'] : 'Erreur de préparation SQL');
+        }
+
+        if (!@oci_execute($stid)) {
+            $e = oci_error($stid);
+            oci_free_statement($stid);
+            oci_close($conn);
+            throw new \RuntimeException(is_array($e) && isset($e['message']) ? (string) $e['message'] : 'Erreur d’exécution SQL');
+        }
+
+        $rows = [];
+        while (($row = oci_fetch_assoc($stid)) !== false) {
+            $normalized = [];
+            foreach ($row as $k => $v) {
+                $normalized[strtolower($k)] = $v;
+            }
+            $rows[] = $normalized;
+        }
+
+        oci_free_statement($stid);
+        oci_close($conn);
+        return $rows;
     }
 
     /**
@@ -41,7 +79,7 @@ class SystemOracleService
           AND d.object_type = 'TABLE'
         ORDER BY d.object_name
         SQL;
-        return $this->getConnection()->executeQuery($sql)->fetchAllAssociative();
+        return $this->fetchAllAssociative($sql);
     }
 
     /**
@@ -70,7 +108,7 @@ class SystemOracleService
           AND d.object_type = 'TABLE'
         ORDER BY d.object_name
         SQL;
-        return $this->getConnection()->executeQuery($sql)->fetchAllAssociative();
+        return $this->fetchAllAssociative($sql);
     }
 
     /**
@@ -99,7 +137,7 @@ class SystemOracleService
           AND d.object_type = 'TABLE'
         ORDER BY d.object_name
         SQL;
-        return $this->getConnection()->executeQuery($sql)->fetchAllAssociative();
+        return $this->fetchAllAssociative($sql);
     }
 
     /**
@@ -142,7 +180,7 @@ class SystemOracleService
     public function getLockedTablesFromCustomView(string $viewName): array
     {
         $sql = "SELECT sid, serial# AS serial, object_name, osuser, status FROM " . $viewName;
-        return $this->getConnection()->executeQuery($sql)->fetchAllAssociative();
+        return $this->fetchAllAssociative($sql);
     }
 
     /**
@@ -150,10 +188,19 @@ class SystemOracleService
      */
     public function killSession(int $sid, int $serial): bool
     {
-        $sql = "ALTER SYSTEM KILL SESSION :sess IMMEDIATE";
-        $sessionId = $sid . ',' . $serial;
         try {
-            $this->getConnection()->executeStatement($sql, ['sess' => $sessionId]);
+            $conn = $this->getOciConnection();
+            $sql = "ALTER SYSTEM KILL SESSION '" . (int) $sid . "," . (int) $serial . "' IMMEDIATE";
+            $stid = @oci_parse($conn, $sql);
+            if (!$stid || !@oci_execute($stid)) {
+                if ($stid) {
+                    oci_free_statement($stid);
+                }
+                oci_close($conn);
+                return false;
+            }
+            oci_free_statement($stid);
+            oci_close($conn);
             return true;
         } catch (\Throwable $e) {
             return false;

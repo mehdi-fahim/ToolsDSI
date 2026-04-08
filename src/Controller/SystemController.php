@@ -38,7 +38,8 @@ class SystemController extends AbstractController
                 };
                 if (!$locks) { $message = 'Aucun verrou détecté (réponse vide).'; }
             } catch (\Throwable $e) {
-                $error = 'Erreur SQL: ' . $e->getMessage();
+                $msg = trim((string) $e->getMessage());
+                $error = 'Erreur SQL: ' . ($msg !== '' ? $msg : 'Erreur inconnue (message vide)');
             }
         }
 

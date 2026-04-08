@@ -68,10 +68,8 @@ services:
         arguments:
             $connectionResolver: '@App\Service\DatabaseConnectionResolver'
 
-    # Configuration pour le service SystemOracleService
-    App\Service\SystemOracleService:
-        arguments:
-            $sysConnection: '@doctrine.dbal.system_sys_connection'
+    # SystemOracleService utilise une connexion OCI native SYSDBA dédiée (pas Doctrine)
+    App\Service\SystemOracleService: ~
 
     # Configuration pour le service ReouvExemptesOracleService
     App\Service\ReouvExemptesOracleService:
