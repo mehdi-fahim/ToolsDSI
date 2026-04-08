@@ -40,11 +40,10 @@
         {% endif %}
       </div>
     {% endif %}
-  </div>
 
   {# 2. Diagnostic Liquidation (pb eau) #}
   <div style="background:#fff;border-radius:15px;box-shadow:0 8px 32px rgba(0,0,0,0.08);border:1px solid #eef2f7;padding:24px;">
-    <h2 style="font-size:1.2rem;color:#232946;font-weight:700;margin-bottom:16px;">Diagnostic Liquidationimage.png</h2>
+    <h2 style="font-size:1.2rem;color:#232946;font-weight:700;margin-bottom:16px;">Diagnostic Liquidation</h2>
     <form method="get" action="{{ path('admin_gerance_locative') }}" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
       <label for="gerance_contrat_diag" style="font-weight:600;color:#232946;font-size:0.9rem;">Contrat :</label>
       <input type="text" id="gerance_contrat_diag" name="contrat_diag" value="{{ contrat_diag|default('') }}" placeholder="Numéro de contrat" style="padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;min-width:200px;">

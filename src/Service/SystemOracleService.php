@@ -3,17 +3,16 @@
 namespace App\Service;
 
 use Doctrine\DBAL\Connection;
-use App\Service\DatabaseConnectionResolver;
 
 class SystemOracleService
 {
-    public function __construct(private DatabaseConnectionResolver $connectionResolver)
+    public function __construct(private Connection $sysConnection)
     {
     }
 
     private function getConnection(): Connection
     {
-        return $this->connectionResolver->getConnection();
+        return $this->sysConnection;
     }
 
     /**

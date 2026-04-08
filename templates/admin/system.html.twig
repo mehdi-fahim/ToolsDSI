@@ -10,6 +10,10 @@
     </div>
 
     <div class="admin-content">
+        <div style="background:#fff7ed;color:#9a3412;border-left:4px solid #f97316;padding:10px 14px;border-radius:8px;margin-bottom:12px;">
+            <strong>Information :</strong> cette page affiche les tables lockées de l'environnement <strong>PRODUCTION</strong> uniquement (connexion SYS dédiée).
+        </div>
+
         {% for label, messages in app.flashes %}
             {% for msg in messages %}
             <div style="background:#ebf8ff;color:#2b6cb0;border-left:4px solid #4299e1;padding:10px 14px;border-radius:8px;margin-bottom:12px;">{{ msg }}</div>

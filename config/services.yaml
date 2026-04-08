@@ -71,7 +71,7 @@ services:
     # Configuration pour le service SystemOracleService
     App\Service\SystemOracleService:
         arguments:
-            $connectionResolver: '@App\Service\DatabaseConnectionResolver'
+            $sysConnection: '@doctrine.dbal.system_sys_connection'
 
     # Configuration pour le service ReouvExemptesOracleService
     App\Service\ReouvExemptesOracleService:
