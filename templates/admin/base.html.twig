@@ -536,7 +536,12 @@
                         </div>
                     </div>
                 </div>
-                <a href="{{ path('logout') }}" style="background: #ff6600; color: #fff; font-weight: 600; padding: 8px 22px; border-radius: 7px; text-decoration: none; font-size: 1.08rem; letter-spacing: 0.5px; transition: background 0.2s;">Déconnexion</a>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <a href="{{ path('admin_mode_operatoire') }}" title="Mode opératoire de la page" style="background:#4299e1; color:#fff; font-weight:600; padding:8px 14px; border-radius:7px; text-decoration:none; font-size:0.95rem; letter-spacing:0.2px; transition:background 0.2s; display:inline-flex; align-items:center; gap:6px;">
+                        📘 <span>Mode opératoire</span>
+                    </a>
+                    <a href="{{ path('logout') }}" style="background: #ff6600; color: #fff; font-weight: 600; padding: 8px 22px; border-radius: 7px; text-decoration: none; font-size: 1.08rem; letter-spacing: 0.5px; transition: background 0.2s;">Déconnexion</a>
+                </div>
             {% else %}
                 <div></div>
                 <a href="{{ path('login') }}" style="background: #ff6600; color: #fff; font-weight: 600; padding: 8px 22px; border-radius: 7px; text-decoration: none; font-size: 1.08rem; letter-spacing: 0.5px; transition: background 0.2s;">Connexion</a>
@@ -643,6 +648,72 @@
                 }, 300);
             }, 3000);
         }
+
+        // Ajoute un champ "Aller à la page" sur toutes les paginations
+        function initPaginationJump() {
+            const paginations = document.querySelectorAll('.pagination');
+            paginations.forEach((pagination) => {
+                if (pagination.querySelector('.page-jump-form')) {
+                    return;
+                }
+
+                const pageNumbers = Array.from(pagination.querySelectorAll('a, span'))
+                    .map(el => (el.textContent || '').trim())
+                    .filter(t => /^\d+$/.test(t))
+                    .map(n => parseInt(n, 10));
+                const maxPage = pageNumbers.length > 0 ? Math.max(...pageNumbers) : null;
+
+                const form = document.createElement('form');
+                form.className = 'page-jump-form';
+                form.style.display = 'inline-flex';
+                form.style.alignItems = 'center';
+                form.style.gap = '6px';
+                form.style.marginLeft = '10px';
+
+                const label = document.createElement('span');
+                label.textContent = 'Aller page';
+                label.style.fontSize = '0.9rem';
+                label.style.color = '#4a5568';
+
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.min = '1';
+                if (maxPage) {
+                    input.max = String(maxPage);
+                }
+                input.placeholder = maxPage ? ('1-' + maxPage) : 'N°';
+                input.style.width = '84px';
+                input.style.padding = '6px 8px';
+                input.style.border = '1px solid #e2e8f0';
+                input.style.borderRadius = '6px';
+
+                const btn = document.createElement('button');
+                btn.type = 'submit';
+                btn.className = 'btn btn-secondary';
+                btn.style.padding = '6px 10px';
+                btn.style.fontSize = '0.85rem';
+                btn.textContent = 'OK';
+
+                form.appendChild(label);
+                form.appendChild(input);
+                form.appendChild(btn);
+
+                form.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const value = parseInt(input.value, 10);
+                    if (!Number.isFinite(value) || value < 1) {
+                        return;
+                    }
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('page', String(value));
+                    window.location.href = url.toString();
+                });
+
+                pagination.appendChild(form);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', initPaginationJump);
     </script>
 
     {% block javascript %}{% endblock %}
