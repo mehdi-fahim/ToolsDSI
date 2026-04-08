@@ -102,7 +102,7 @@
         </div>
     {% endif %}
 
-    <form method="POST" action="{{ path('admin_extraction') }}" style="background: white; border-radius: 12px; padding: 30px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+    <form id="extraction-form" method="POST" action="{{ path('admin_extraction') }}" style="background: white; border-radius: 12px; padding: 30px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
         
         <!-- Champ de recherche Groupe SI -->
         <div style="margin-bottom: 30px;">
@@ -457,6 +457,11 @@
     
     // Appliquer les règles au chargement de la page
     document.addEventListener('DOMContentLoaded', function() {
+        const extractionForm = document.getElementById('extraction-form');
+        if (!extractionForm) {
+            return;
+        }
+
         // Appliquer les règles une première fois
         applyAutoCheckRules();
         
@@ -473,9 +478,9 @@
         
         // S'assurer que les champs cochés automatiquement sont inclus dans la soumission
         // même s'ils sont désactivés visuellement
-        document.querySelector('form').addEventListener('submit', function(e) {
+        extractionForm.addEventListener('submit', function(e) {
             // Activer temporairement tous les checkboxes désactivés pour la soumission
-            const disabledCheckboxes = document.querySelectorAll('input[name="fields[]"]:disabled');
+            const disabledCheckboxes = extractionForm.querySelectorAll('input[name="fields[]"]:disabled');
             disabledCheckboxes.forEach(checkbox => {
                 checkbox.disabled = false;
             });
@@ -486,7 +491,11 @@
     });
 
     function showQuery() {
-        const form = document.querySelector('form');
+        const form = document.getElementById('extraction-form');
+        if (!form) {
+            alert('Formulaire d’extraction introuvable.');
+            return;
+        }
         const selectedFields = form.querySelectorAll('input[name="fields[]"]:checked');
 
         // Vérifier qu'au moins un champ est sélectionné visuellement
