@@ -167,14 +167,19 @@ class ExtractionOracleService
         $locataireFields = ['contrat', 'intitule', 'tiers', 'libelle_intitule', 'telephone', 'age', 'assurance_jour', 'prelevement', 'date_debut_contrat', 'date_fin_contrat', 'adresse_regroupement', 'immatriculation', 'marque_vehicule'];
         
         if (array_intersect($locataireFields, $selectedFields)) {
-            $clauseSelect .= ", c.GLCON_NUM as Contrat, c.GLCON_NUMVER as Version_Contrat";
             $clauseFrom .= " LEFT JOIN GLELC c ON c.paesi_num = a.paesi_num AND (SELECT GLCON_TEMCA FROM GLCON WHERE glcon_num = c.glcon_num AND glcon_numver = c.glcon_numver) = 'F' AND c.GLELC_DTF IS NULL";
+            // Jointures nécessaires pour les champs dépendants (tiers, libellé, dette, etc.)
+            $clauseFrom .= " LEFT JOIN CACTR d ON d.CACTR_NUM = c.GLCON_NUM AND d.CACTR_VRS = c.GLCON_NUMVER";
+            $clauseFrom .= " LEFT JOIN GLREC f ON f.CAINT_NUM = d.CAINT_NUM";
+
+            // Contrat
+            if (in_array('contrat', $selectedFields)) {
+                $clauseSelect .= ", c.GLCON_NUM as Contrat";
+            }
             
             // Intitulé
             if (in_array('intitule', $selectedFields)) {
                 $clauseSelect .= ", d.CAINT_NUM as Intitule";
-                $clauseFrom .= " LEFT JOIN CACTR d ON d.CACTR_NUM = c.GLCON_NUM AND d.CACTR_VRS = c.GLCON_NUMVER";
-                $clauseFrom .= " LEFT JOIN GLREC f ON f.CAINT_NUM = d.CAINT_NUM";
             }
             
             // Tiers

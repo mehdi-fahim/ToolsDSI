@@ -15,6 +15,11 @@ class SystemOracleService
             throw new \RuntimeException('Extension PHP OCI8 non chargée sur le serveur web.');
         }
 
+        $privileged = ini_get('oci8.privileged_connect');
+        if ($privileged !== false && $privileged !== '' && (string) $privileged !== '1') {
+            throw new \RuntimeException("PHP ini 'oci8.privileged_connect' doit être activé (valeur actuelle: {$privileged}).");
+        }
+
         $descriptors = [
             "//{$host}:{$port}/{$service}",
             "{$host}:{$port}/{$service}",
@@ -29,13 +34,50 @@ class SystemOracleService
         $attemptErrors = [];
         foreach ($descriptors as $dsn) {
             foreach ($modes as $modeLabel => $modeConst) {
-                $conn = @oci_connect($username, $password, $dsn, 'AL32UTF8', $modeConst);
+                $phpWarning = null;
+                set_error_handler(function ($severity, $message) use (&$phpWarning) {
+                    $phpWarning = (string) $message;
+                    return true;
+                });
+                $conn = oci_connect($username, $password, $dsn, 'AL32UTF8', $modeConst);
+                restore_error_handler();
                 if ($conn) {
                     return $conn;
                 }
                 $e = oci_error();
-                $msg = is_array($e) && isset($e['message']) ? trim((string) $e['message']) : 'erreur inconnue';
+                $msg = is_array($e) && isset($e['message']) ? trim((string) $e['message']) : '';
+                if ($msg === '' && $phpWarning) {
+                    $msg = trim($phpWarning);
+                }
+                if ($msg === '') {
+                    $msg = 'erreur inconnue';
+                }
                 $attemptErrors[] = "{$modeLabel} / {$dsn} -> {$msg}";
+            }
+        }
+
+        // Tentative explicite avec user "SYS as SYSDBA/SYSOPER" sans session mode
+        foreach ($descriptors as $dsn) {
+            foreach (['SYS as SYSDBA', 'SYS as SYSOPER'] as $userWithRole) {
+                $phpWarning = null;
+                set_error_handler(function ($severity, $message) use (&$phpWarning) {
+                    $phpWarning = (string) $message;
+                    return true;
+                });
+                $conn = oci_connect($userWithRole, $password, $dsn, 'AL32UTF8');
+                restore_error_handler();
+                if ($conn) {
+                    return $conn;
+                }
+                $e = oci_error();
+                $msg = is_array($e) && isset($e['message']) ? trim((string) $e['message']) : '';
+                if ($msg === '' && $phpWarning) {
+                    $msg = trim($phpWarning);
+                }
+                if ($msg === '') {
+                    $msg = 'erreur inconnue';
+                }
+                $attemptErrors[] = "{$userWithRole} / {$dsn} -> {$msg}";
             }
         }
 

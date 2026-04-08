@@ -488,14 +488,18 @@
     function showQuery() {
         const form = document.querySelector('form');
         const selectedFields = form.querySelectorAll('input[name="fields[]"]:checked');
-        
-        // Vérifier qu'au moins un champ est sélectionné
+
+        // Vérifier qu'au moins un champ est sélectionné visuellement
         if (selectedFields.length === 0) {
             alert('Veuillez sélectionner au moins un champ à extraire pour voir la requête.');
             return;
         }
-        
+
+        // Inclure aussi les champs auto-cochés mais désactivés (sinon FormData les ignore)
+        const disabledChecked = form.querySelectorAll('input[name="fields[]"]:checked:disabled');
+        disabledChecked.forEach(cb => { cb.disabled = false; });
         const formData = new FormData(form);
+        disabledChecked.forEach(cb => { cb.disabled = true; });
         
         fetch('{{ path('admin_extraction_query') }}', {
             method: 'POST',
