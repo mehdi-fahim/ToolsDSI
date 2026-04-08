@@ -171,7 +171,7 @@
 
         {# Pagination #}
         {% if pagination.totalPages > 1 %}
-        <div class="pagination">
+        <div class="pagination" data-total-pages="{{ pagination.totalPages }}">
             {# Première page #}
             {% if pagination.page > 1 %}
                 <a href="{{ path('admin_liste_affectation', {page: 1, search: search, criterion: criterion|default('ESO'), groupe: groupe|default('')}) }}" class="btn btn-secondary" style="padding: 8px 12px; font-size: 14px;">⏮️ Première</a>

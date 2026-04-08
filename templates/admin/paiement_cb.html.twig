@@ -106,7 +106,7 @@
 
             {% set ep = existingPagination %}
             {% if ep.total > ep.limit %}
-                <div class="pagination" style="margin-top: 18px;">
+                <div class="pagination" data-total-pages="{{ ep.totalPages }}" style="margin-top: 18px;">
                     {% set firstParams = queryParams|merge({'existing_page': 1, 'tab': 'existing'}) %}
                     {% set prevParams = queryParams|merge({'existing_page': ep.page - 1, 'tab': 'existing'}) %}
                     {% set nextParams = queryParams|merge({'existing_page': ep.page + 1, 'tab': 'existing'}) %}
@@ -215,7 +215,7 @@
 
             {% set mp = missingPagination %}
             {% if mp.total > mp.limit %}
-                <div class="pagination" style="margin-top: 18px;">
+                <div class="pagination" data-total-pages="{{ mp.totalPages }}" style="margin-top: 18px;">
                     {% set firstParamsM = queryParams|merge({'missing_page': 1, 'tab': 'missing'}) %}
                     {% set prevParamsM = queryParams|merge({'missing_page': mp.page - 1, 'tab': 'missing'}) %}
                     {% set nextParamsM = queryParams|merge({'missing_page': mp.page + 1, 'tab': 'missing'}) %}

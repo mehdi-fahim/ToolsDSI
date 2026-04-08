@@ -536,18 +536,18 @@
                         </div>
                     </div>
                 </div>
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <a href="{{ path('admin_mode_operatoire') }}" title="Mode opératoire de la page" style="background:#4299e1; color:#fff; font-weight:600; padding:8px 14px; border-radius:7px; text-decoration:none; font-size:0.95rem; letter-spacing:0.2px; transition:background 0.2s; display:inline-flex; align-items:center; gap:6px;">
-                        📘 <span>Mode opératoire</span>
-                    </a>
-                    <a href="{{ path('logout') }}" style="background: #ff6600; color: #fff; font-weight: 600; padding: 8px 22px; border-radius: 7px; text-decoration: none; font-size: 1.08rem; letter-spacing: 0.5px; transition: background 0.2s;">Déconnexion</a>
-                </div>
+                <a href="{{ path('logout') }}" style="background: #ff6600; color: #fff; font-weight: 600; padding: 8px 22px; border-radius: 7px; text-decoration: none; font-size: 1.08rem; letter-spacing: 0.5px; transition: background 0.2s;">Déconnexion</a>
             {% else %}
                 <div></div>
                 <a href="{{ path('login') }}" style="background: #ff6600; color: #fff; font-weight: 600; padding: 8px 22px; border-radius: 7px; text-decoration: none; font-size: 1.08rem; letter-spacing: 0.5px; transition: background 0.2s;">Connexion</a>
             {% endif %}
         </header>
         <main style="flex: 1; padding: 36px;">
+            <div style="display:flex; justify-content:flex-start; margin-bottom: 12px;">
+                <a href="{{ path('admin_mode_operatoire') ~ '?from=' ~ app.request.attributes.get('_route') }}" title="Mode opératoire de cette page" style="width:42px; height:42px; border-radius:10px; background:#4299e1; color:#fff; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(66,153,225,0.35); font-size:1.1rem;">
+                    📘
+                </a>
+            </div>
             {% block content %}{% endblock %}
         </main>
     </div>
@@ -649,7 +649,7 @@
             }, 3000);
         }
 
-        // Ajoute un champ "Aller à la page" sur toutes les paginations
+        // Ajoute un sélecteur "Aller à la page" sur toutes les paginations
         function initPaginationJump() {
             const paginations = document.querySelectorAll('.pagination');
             paginations.forEach((pagination) => {
@@ -661,7 +661,10 @@
                     .map(el => (el.textContent || '').trim())
                     .filter(t => /^\d+$/.test(t))
                     .map(n => parseInt(n, 10));
-                const maxPage = pageNumbers.length > 0 ? Math.max(...pageNumbers) : null;
+                const attrTotal = parseInt(pagination.getAttribute('data-total-pages') || '', 10);
+                const maxPage = Number.isFinite(attrTotal) && attrTotal > 0
+                    ? attrTotal
+                    : (pageNumbers.length > 0 ? Math.max(...pageNumbers) : null);
 
                 const form = document.createElement('form');
                 form.className = 'page-jump-form';
@@ -675,17 +678,25 @@
                 label.style.fontSize = '0.9rem';
                 label.style.color = '#4a5568';
 
-                const input = document.createElement('input');
-                input.type = 'number';
-                input.min = '1';
+                const select = document.createElement('select');
+                select.style.minWidth = '96px';
+                select.style.padding = '6px 8px';
+                select.style.border = '1px solid #e2e8f0';
+                select.style.borderRadius = '6px';
+
+                const firstOpt = document.createElement('option');
+                firstOpt.value = '';
+                firstOpt.textContent = 'Choisir';
+                select.appendChild(firstOpt);
+
                 if (maxPage) {
-                    input.max = String(maxPage);
+                    for (let p = 1; p <= maxPage; p++) {
+                        const opt = document.createElement('option');
+                        opt.value = String(p);
+                        opt.textContent = String(p);
+                        select.appendChild(opt);
+                    }
                 }
-                input.placeholder = maxPage ? ('1-' + maxPage) : 'N°';
-                input.style.width = '84px';
-                input.style.padding = '6px 8px';
-                input.style.border = '1px solid #e2e8f0';
-                input.style.borderRadius = '6px';
 
                 const btn = document.createElement('button');
                 btn.type = 'submit';
@@ -695,12 +706,12 @@
                 btn.textContent = 'OK';
 
                 form.appendChild(label);
-                form.appendChild(input);
+                form.appendChild(select);
                 form.appendChild(btn);
 
                 form.addEventListener('submit', (e) => {
                     e.preventDefault();
-                    const value = parseInt(input.value, 10);
+                    const value = parseInt(select.value, 10);
                     if (!Number.isFinite(value) || value < 1) {
                         return;
                     }

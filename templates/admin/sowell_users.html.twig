@@ -80,7 +80,7 @@
             </table>
         </div>
         {% if pagination is defined and pagination.totalPages > 1 %}
-        <div class="pagination" style="display:flex; gap:8px; justify-content:center; margin-top:12px;">
+        <div class="pagination" data-total-pages="{{ pagination.totalPages }}" style="display:flex; gap:8px; justify-content:center; margin-top:12px;">
             {% set current = pagination.page %}
             {% for p in 1..pagination.totalPages %}
                 {% if p == current %}

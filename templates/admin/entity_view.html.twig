@@ -91,7 +91,7 @@
 
     {% if pagination.totalPages > 1 %}
         {% set sortParams = (sortBy is defined and sortOrder is defined) ? '&sort=' ~ sortBy ~ '&order=' ~ (sortOrder|lower) : '' %}
-        <div class="pagination">
+        <div class="pagination" data-total-pages="{{ pagination.totalPages }}">
             {% if pagination.page > 1 %}
                 <a href="?page={{ pagination.page - 1 }}{% if search %}&search={{ search }}{% endif %}{{ sortParams }}" class="btn btn-secondary">‹ Précédente</a>
             {% endif %}
