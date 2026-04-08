@@ -39,7 +39,7 @@ doctrine:
                 host: '172.22.0.30'
                 port: 1521
                 dbname: 'OPULISE'
-                user: 'SYS'
+                user: 'SYS as SYSDBA'
                 password: 'PCH93200'
                 charset: AL32UTF8
                 profiling_collect_backtrace: '%kernel.debug%'

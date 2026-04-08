@@ -510,7 +510,8 @@ class AdminController extends AbstractController
         
         $entity = $this->oracleService->fetchEditionById($id);
         if (!$entity) {
-            throw $this->createNotFoundException('Document BI non trouvé');
+            $this->addFlash('error', 'Document BI non trouvé : ' . $id);
+            return $this->redirectToRoute('admin_entity_view', ['entityName' => 'editionbureautique']);
         }
         
         $nomDocument = $entity['NOM_DOCUMENT'] ?? $entity['NOM_BI'] ?? $id;
@@ -518,15 +519,20 @@ class AdminController extends AbstractController
         
         // Vérifier si le fichier existe
         if (!file_exists($cheminFichier)) {
-            throw $this->createNotFoundException('Fichier modèle non trouvé sur le serveur');
+            $this->addFlash('error', 'Aucun modèle associé pour le BI : ' . ($entity['NOM_BI'] ?? $id));
+            return $this->redirectToRoute('admin_edition_bureautique_detail', ['id' => $id]);
         }
         
-        // Créer la réponse de téléchargement
-        $response = new Response(file_get_contents($cheminFichier));
-        $response->headers->set('Content-Type', 'application/octet-stream');
-        $response->headers->set('Content-Disposition', 'attachment; filename="' . basename($nomDocument) . '"');
-        
-        return $response;
+        try {
+            // Créer la réponse de téléchargement
+            $response = new Response(file_get_contents($cheminFichier));
+            $response->headers->set('Content-Type', 'application/octet-stream');
+            $response->headers->set('Content-Disposition', 'attachment; filename="' . basename($nomDocument) . '"');
+            return $response;
+        } catch (\Throwable $e) {
+            $this->addFlash('error', 'Impossible de télécharger le modèle pour le BI : ' . ($entity['NOM_BI'] ?? $id));
+            return $this->redirectToRoute('admin_edition_bureautique_detail', ['id' => $id]);
+        }
     }
 
     #[Route('/entity/editionbureautique/query/{id}', name: 'admin_edition_bureautique_query', methods: ['GET'])]
@@ -1574,8 +1580,21 @@ class AdminController extends AbstractController
 
         $contrat = trim((string) $request->request->get('contrat', ''));
         $rubriques = $request->request->all('rubriques'); // codes GLRUB_COD cochés à invalider
-        // TODO: exécuter la requête d'invalidation (mise à jour GLRUC) pour les rubriques sélectionnées
-        $this->addFlash('info', 'Mise à jour des rubriques prévue (à brancher sur Oracle).');
+        if ($contrat === '') {
+            $this->addFlash('error', 'Le contrat est requis.');
+            return $this->redirectToRoute('admin_gerance_locative');
+        }
+        if (!$this->geranceLocativeOracleService) {
+            $this->addFlash('error', 'Service Gérance Locative non disponible.');
+            return $this->redirectToRoute('admin_gerance_locative', ['contrat' => $contrat]);
+        }
+
+        try {
+            $updated = $this->geranceLocativeOracleService->updateRubriquesSelection($contrat, is_array($rubriques) ? $rubriques : []);
+            $this->addFlash('success', 'Rubriques mises à jour (' . $updated . ' ligne(s) impactée(s)).');
+        } catch (\Throwable $e) {
+            $this->addFlash('error', 'Erreur lors de la mise à jour des rubriques : ' . $e->getMessage());
+        }
 
         return $this->redirectToRoute('admin_gerance_locative', ['contrat' => $contrat]);
     }

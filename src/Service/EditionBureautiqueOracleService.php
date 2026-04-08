@@ -25,7 +25,8 @@ class EditionBureautiqueOracleService
 
     public function fetchEditions(string $search = '', int $page = 1, int $limit = 20, string $sortBy = 'NOM_BI', string $sortOrder = 'ASC'): array
     {
-        $offset = ($page - 1) * $limit;
+        $page = max(1, $page);
+        $limit = max(1, $limit);
 
         // Tri : colonne et ordre sécurisés
         $orderColumn = self::SORT_COLUMNS[$sortBy] ?? 'b.BIDTP_NUM';
@@ -58,6 +59,12 @@ SQL;
         $total = $this->getConnection()
             ->executeQuery($countSql, $params)
             ->fetchOne();
+        $total = (int) $total;
+        $totalPages = max(1, (int) ceil($total / $limit));
+        if ($page > $totalPages) {
+            $page = $totalPages;
+        }
+        $offset = ($page - 1) * $limit;
 
         // Requête principale avec pagination et tri
         $sql = <<<SQL
@@ -98,10 +105,10 @@ SQL;
 
         return [
             'data' => $data,
-            'total' => (int) $total,
+            'total' => $total,
             'page' => $page,
             'limit' => $limit,
-            'totalPages' => ceil($total / $limit),
+            'totalPages' => $totalPages,
         ];
     }
 

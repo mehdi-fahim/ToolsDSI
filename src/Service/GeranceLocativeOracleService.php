@@ -58,6 +58,52 @@ SQL;
     }
 
     /**
+     * Met à jour l'état GLRUC_TEMVAL des rubriques du contrat (dernière version active).
+     * - Toutes les rubriques passent à 'F'
+     * - Les rubriques sélectionnées passent à 'T'
+     */
+    public function updateRubriquesSelection(string $contrat, array $selectedCodes): int
+    {
+        $contrat = trim($contrat);
+        $selectedCodes = array_values(array_filter(array_map('trim', $selectedCodes), fn($v) => $v !== ''));
+
+        $conn = $this->getConnection();
+        $conn->beginTransaction();
+        try {
+            $baseWhere = "GLCON_NUM = ?
+                          AND GLRUC_DTF IS NULL
+                          AND GLCON_NUMVER = (
+                              SELECT MAX(b.GLCON_NUMVER)
+                              FROM opulise.GLCON b
+                              WHERE b.GLCON_NUM = opulise.GLRUC.GLCON_NUM
+                          )";
+
+            // 1) Tout décocher
+            $count = $conn->executeStatement(
+                "UPDATE opulise.GLRUC SET GLRUC_TEMVAL = 'F' WHERE " . $baseWhere,
+                [$contrat]
+            );
+
+            // 2) Recocher la sélection
+            if (!empty($selectedCodes)) {
+                $in = implode(',', array_fill(0, count($selectedCodes), '?'));
+                $sql = "UPDATE opulise.GLRUC
+                        SET GLRUC_TEMVAL = 'T'
+                        WHERE $baseWhere
+                          AND GLRUB_COD IN ($in)";
+                $params = array_merge([$contrat], $selectedCodes);
+                $count += $conn->executeStatement($sql, $params);
+            }
+
+            $conn->commit();
+            return $count;
+        } catch (\Throwable $e) {
+            $conn->rollBack();
+            throw $e;
+        }
+    }
+
+    /**
      * Recherche les lignes GLRUC pour un contrat + une rubrique donnée
      * (décoche/récoche des rubriques de contrat).
      */
