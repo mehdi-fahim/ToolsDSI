@@ -21,6 +21,18 @@ class EngagementOracleService
     public function getEngagementInfo(int $exercice, int $numeroEngagement, string $societe): array
     {
         try {
+            if (!$this->checkEngagementExists($exercice, $numeroEngagement, $societe)) {
+                return [
+                    'type_engagement' => '',
+                    'eso_administratif' => '',
+                    'responsable_engagement' => '',
+                    'marche_rattache' => '',
+                    'lot_reference' => '',
+                    'is_pluriannuel' => false,
+                    'found' => false,
+                ];
+            }
+
             // Récupérer le type d'engagement
             $typeEngagement = $this->getConnection()->executeQuery(
                 "SELECT TATEN_COD FROM TAENG WHERE ICEXE_NUM = ? AND TAENG_NUM = ? AND TOTIE_CODSCTE = ?",
@@ -33,11 +45,8 @@ class EngagementOracleService
                 [$exercice, $numeroEngagement, $societe]
             )->fetchOne();
 
-            // Récupérer le responsable de l'engagement
-            $responsableEngagement = $this->getConnection()->executeQuery(
-                "SELECT TOTIE_COD FROM TAENR WHERE ICEXE_NUM = ? AND TAENG_NUM = ? AND TOTIE_CODSCTE = ?",
-                [$exercice, $numeroEngagement, $societe]
-            )->fetchOne();
+            // Récupérer le responsable de l'engagement (rôle RESEN, exercice courant ou pluriannuel)
+            $responsableEngagement = $this->getResponsableEngagement($exercice, $numeroEngagement, $societe) ?? '';
 
             // Récupérer le marché rattaché
             $marcheRattache = $this->getConnection()->executeQuery(
@@ -57,16 +66,18 @@ class EngagementOracleService
                 [$exercice, $numeroEngagement, $societe]
             )->fetchOne();
 
-            // Vérifier si l'engagement est pluriannuel
+            // Vérifier si l'engagement est pluriannuel (pour cet exercice et cette société)
             $isPluriannuel = $this->getConnection()->executeQuery(
-                "SELECT CASE WHEN TAENG_TEMPLURI = 'F' THEN 0 ELSE 1 END FROM TAENG WHERE ICEXE_NUM = ? AND TAENG_NUM = ?",
-                [$exercice, $numeroEngagement]
+                "SELECT CASE WHEN TAENG_TEMPLURI = 'F' THEN 0 ELSE 1 END
+                 FROM TAENG
+                 WHERE ICEXE_NUM = ? AND TAENG_NUM = ? AND TOTIE_CODSCTE = ?",
+                [$exercice, $numeroEngagement, $societe]
             )->fetchOne();
 
             return [
                 'type_engagement' => $typeEngagement ?: '',
                 'eso_administratif' => $esoAdministratif ?: '',
-                'responsable_engagement' => $responsableEngagement ?: '',
+                'responsable_engagement' => $responsableEngagement,
                 'marche_rattache' => $marcheRattache ?: '',
                 'lot_reference' => $lotRattache ?: '',
                 'is_pluriannuel' => (bool)$isPluriannuel,
@@ -110,6 +121,18 @@ class EngagementOracleService
     public function updateEngagement(int $exercice, int $numeroEngagement, string $societe, array $data): array
     {
         try {
+            if (!$this->checkEngagementExists($exercice, $numeroEngagement, $societe)) {
+                return [
+                    'success' => false,
+                    'error' => sprintf(
+                        'Aucun engagement trouvé pour l\'exercice %d, le n° %d et la société %s.',
+                        $exercice,
+                        $numeroEngagement,
+                        $societe
+                    ),
+                ];
+            }
+
             $this->getConnection()->beginTransaction();
 
             $updated = [];
@@ -126,56 +149,28 @@ class EngagementOracleService
                 }
             }
 
-            // Mise à jour du responsable de l'engagement dans TAENR
+            // Mise à jour du responsable de l'engagement dans TAENR (rôle RESEN)
             if (isset($data['responsable_engagement']) && $data['responsable_engagement'] !== '') {
-                // Vérifier d'abord que le tiers responsable existe dans la table des tiers
-                try {
-                    $tiersExists = $this->getConnection()->executeQuery(
-                        "SELECT COUNT(*) FROM TOTIE WHERE TOTIE_COD = ?",
-                        [$data['responsable_engagement']]
-                    )->fetchOne();
+                $responsableCod = is_numeric($data['responsable_engagement'])
+                    ? (int) $data['responsable_engagement']
+                    : $data['responsable_engagement'];
 
-                    if ((int)$tiersExists === 0) {
-                        throw new \Exception("Le numéro de tiers du responsable d'engagement n'existe pas.");
-                    }
-                } catch (\Exception $e) {
-                    // Si la requête échoue, essayer avec une conversion numérique
-                    if (is_numeric($data['responsable_engagement'])) {
-                        $tiersExists = $this->getConnection()->executeQuery(
-                            "SELECT COUNT(*) FROM TOTIE WHERE TOTIE_COD = ?",
-                            [(int)$data['responsable_engagement']]
-                        )->fetchOne();
+                $currentResponsable = $this->getResponsableEngagement($exercice, $numeroEngagement, $societe);
+                $responsableChanged = (string) $currentResponsable !== (string) $data['responsable_engagement'];
 
-                        if ((int)$tiersExists === 0) {
-                            throw new \Exception("Le numéro de tiers du responsable d'engagement n'existe pas.");
-                        }
-                    } else {
-                        throw new \Exception("Le numéro de tiers du responsable d'engagement n'est pas valide.");
-                    }
-                }
+                if ($responsableChanged) {
+                    $this->assertTiersExists($responsableCod);
 
-                // Vérifier si un enregistrement existe déjà pour cet engagement
-                $existingRecord = $this->getConnection()->executeQuery(
-                    "SELECT COUNT(*) FROM TAENR WHERE ICEXE_NUM = ? AND TAENG_NUM = ? AND TOTIE_CODSCTE = ?",
-                    [$exercice, $numeroEngagement, $societe]
-                )->fetchOne();
-
-                if ((int)$existingRecord > 0) {
-                    // Mettre à jour l'enregistrement existant
-                    $result = $this->getConnection()->executeStatement(
-                        "UPDATE TAENR SET TOTIE_COD = ? WHERE ICEXE_NUM = ? AND TAENG_NUM = ? AND TOTIE_CODSCTE = ?",
-                        [is_numeric($data['responsable_engagement']) ? (int)$data['responsable_engagement'] : $data['responsable_engagement'], $exercice, $numeroEngagement, $societe]
+                    $result = $this->upsertResponsableEngagement(
+                        $exercice,
+                        $numeroEngagement,
+                        $societe,
+                        $responsableCod
                     );
-                } else {
-                    // Créer un nouvel enregistrement avec TAITL_COD requis
-                    $result = $this->getConnection()->executeStatement(
-                        "INSERT INTO TAENR (ICEXE_NUM, TAENG_NUM, TOTIE_CODSCTE, TOTIE_COD, TAITL_COD) VALUES (?, ?, ?, ?, ?)",
-                        [$exercice, $numeroEngagement, $societe, is_numeric($data['responsable_engagement']) ? (int)$data['responsable_engagement'] : $data['responsable_engagement'], 'RESEN']
-                    );
-                }
-                
-                if ($result > 0) {
-                    $updated['responsable_engagement'] = $data['responsable_engagement'];
+
+                    if ($result > 0) {
+                        $updated['responsable_engagement'] = (string) $data['responsable_engagement'];
+                    }
                 }
             }
 
@@ -221,6 +216,102 @@ class EngagementOracleService
                 'success' => false,
                 'error' => 'Erreur lors de la mise à jour: ' . $e->getMessage()
             ];
+        }
+    }
+
+    private function getResponsableEngagement(int $exercice, int $numeroEngagement, string $societe): ?string
+    {
+        $responsable = $this->getConnection()->executeQuery(
+            "SELECT TOTIE_COD FROM TAENR
+             WHERE ICEXE_NUM = ? AND TAENG_NUM = ? AND TOTIE_CODSCTE = ? AND TAITL_COD = 'RESEN'",
+            [$exercice, $numeroEngagement, $societe]
+        )->fetchOne();
+
+        if ($responsable !== false && $responsable !== null && $responsable !== '') {
+            return (string) $responsable;
+        }
+
+        // Engagement pluriannuel : responsable parfois rattaché sur un autre exercice
+        $responsableAutreExercice = $this->getConnection()->executeQuery(
+            "SELECT TOTIE_COD FROM TAENR
+             WHERE TAENG_NUM = ? AND TOTIE_CODSCTE = ? AND TAITL_COD = 'RESEN'
+             ORDER BY ICEXE_NUM DESC",
+            [$numeroEngagement, $societe]
+        )->fetchOne();
+
+        return ($responsableAutreExercice !== false && $responsableAutreExercice !== null && $responsableAutreExercice !== '')
+            ? (string) $responsableAutreExercice
+            : null;
+    }
+
+    private function assertTiersExists(int|string $tiersCod): void
+    {
+        $params = [$tiersCod];
+        if (is_numeric($tiersCod)) {
+            $params = [(int) $tiersCod];
+        }
+
+        $tiersExists = $this->getConnection()->executeQuery(
+            'SELECT COUNT(*) FROM TOTIE WHERE TOTIE_COD = ?',
+            $params
+        )->fetchOne();
+
+        if ((int) $tiersExists === 0) {
+            throw new \Exception("Le numéro de tiers du responsable d'engagement n'existe pas.");
+        }
+    }
+
+    /**
+     * Met à jour ou crée le responsable RESEN sans violer la contrainte TAENRP1.
+     */
+    private function upsertResponsableEngagement(
+        int $exercice,
+        int $numeroEngagement,
+        string $societe,
+        int|string $responsableCod
+    ): int {
+        $existingResen = (int) $this->getConnection()->executeQuery(
+            "SELECT COUNT(*) FROM TAENR
+             WHERE ICEXE_NUM = ? AND TAENG_NUM = ? AND TOTIE_CODSCTE = ? AND TAITL_COD = 'RESEN'",
+            [$exercice, $numeroEngagement, $societe]
+        )->fetchOne();
+
+        if ($existingResen > 0) {
+            return $this->getConnection()->executeStatement(
+                "UPDATE TAENR SET TOTIE_COD = ?
+                 WHERE ICEXE_NUM = ? AND TAENG_NUM = ? AND TOTIE_CODSCTE = ? AND TAITL_COD = 'RESEN'",
+                [$responsableCod, $exercice, $numeroEngagement, $societe]
+            );
+        }
+
+        try {
+            return $this->getConnection()->executeStatement(
+                "INSERT INTO TAENR (ICEXE_NUM, TAENG_NUM, TOTIE_CODSCTE, TOTIE_COD, TAITL_COD)
+                 VALUES (?, ?, ?, ?, 'RESEN')",
+                [$exercice, $numeroEngagement, $societe, $responsableCod]
+            );
+        } catch (\Exception $e) {
+            // Enregistrement RESEN déjà présent (clé TAENRP1) : basculer en mise à jour
+            if (!str_contains($e->getMessage(), 'ORA-00001')) {
+                throw $e;
+            }
+
+            $result = $this->getConnection()->executeStatement(
+                "UPDATE TAENR SET TOTIE_COD = ?
+                 WHERE ICEXE_NUM = ? AND TAENG_NUM = ? AND TOTIE_CODSCTE = ? AND TAITL_COD = 'RESEN'",
+                [$responsableCod, $exercice, $numeroEngagement, $societe]
+            );
+
+            if ($result > 0) {
+                return $result;
+            }
+
+            // Cas pluriannuel : le responsable peut exister sur un autre exercice pour le même n°
+            return $this->getConnection()->executeStatement(
+                "UPDATE TAENR SET TOTIE_COD = ?
+                 WHERE TAENG_NUM = ? AND TOTIE_CODSCTE = ? AND TAITL_COD = 'RESEN'",
+                [$responsableCod, $numeroEngagement, $societe]
+            );
         }
     }
 }

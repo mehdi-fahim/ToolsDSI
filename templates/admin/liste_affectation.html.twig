@@ -13,7 +13,7 @@
             <a class="btn" href="{{ path('admin_liste_affectation_export') }}" title="Exporter tout (CSV pour Excel)" style="white-space: nowrap;">
                 ⬇️ Export total
             </a>
-            {% if hasSearch %}
+            {% if hasSearch|default(false) %}
             <a class="btn btn-secondary" href="{{ path('admin_liste_affectation_export_current', {
                 search: search,
                 criterion: criterion|default('ESO')
@@ -30,7 +30,7 @@
         </div>
     </div>
 
-    {% if error %}
+    {% if error|default('') %}
         <div style="background: #fed7d7; color: #c53030; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #e53e3e;">
             <strong>❌ Erreur :</strong> {{ error }}
         </div>
@@ -38,7 +38,7 @@
 
     <div class="admin-content">
         {# Statistiques #}
-        {% if stats and hasSearch %}
+        {% if stats and hasSearch|default(false) %}
         <div class="stats" style="margin-bottom: 30px;">
             <div class="stat-card">
                 <h3>{{ stats.TOTAL_LOTS|default(0) }}</h3>
@@ -93,7 +93,7 @@
         </div>
 
         {# Tableau des affectations #}
-        {% if hasSearch %}
+        {% if hasSearch|default(false) %}
         <div class="table-container">
             <table class="admin-table">
                 <thead>
@@ -163,7 +163,7 @@
         {% else %}
         <div style="text-align: center; padding: 30px; color: #718096;">
             Saisissez un code (Groupe, Batiment, Escalier) puis lancez la recherche.
-            {% if minSearchMsg %}
+            {% if minSearchMsg|default('') %}
                 <div style="margin-top:10px;color:#c53030;">{{ minSearchMsg }}</div>
             {% endif %}
         </div>

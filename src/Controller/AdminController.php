@@ -309,7 +309,9 @@ class AdminController extends AbstractController
             'groupes' => [],
             'stats' => null,
             'hasSearch' => true,
-            'showingMissing' => true
+            'showingMissing' => true,
+            'minSearchMsg' => null,
+            'error' => null,
         ]);
     }
 
@@ -582,7 +584,7 @@ class AdminController extends AbstractController
         // Initialiser les données avec des valeurs par défaut
         $engagementData = [
             'societe' => '1',
-            'exercice' => '2025',
+            'exercice' => '2026',
             'numero_engagement' => '',
             'type_engagement' => '',
             'eso_administratif' => '',
@@ -596,7 +598,7 @@ class AdminController extends AbstractController
             // Traitement des données du formulaire
             $engagementData = [
                 'societe' => $request->request->get('societe', '1'),
-                'exercice' => $request->request->get('exercice', '2025'),
+                'exercice' => $request->request->get('exercice', '2026'),
                 'numero_engagement' => $request->request->get('numero_engagement', ''),
                 'type_engagement' => $request->request->get('type_engagement', ''),
                 'eso_administratif' => $request->request->get('eso_administratif', ''),
@@ -2257,7 +2259,8 @@ class AdminController extends AbstractController
                     'groupes' => [],
                     'stats' => null,
                     'hasSearch' => false,
-                    'minSearchMsg' => 'Choisissez un critère puis saisissez au moins 2 caractères.'
+                    'minSearchMsg' => 'Choisissez un critère puis saisissez au moins 2 caractères.',
+                    'error' => null,
                 ]);
             }
 
@@ -2285,7 +2288,9 @@ class AdminController extends AbstractController
                 'groupe' => $groupe,
                 'groupes' => [],
                 'stats' => $stats,
-                'hasSearch' => true
+                'hasSearch' => true,
+                'minSearchMsg' => null,
+                'error' => null,
             ]);
             
         } catch (\Exception $e) {
@@ -2303,7 +2308,8 @@ class AdminController extends AbstractController
                 'groupes' => [],
                 'stats' => [],
                 'error' => 'Erreur lors du chargement des données: ' . $e->getMessage(),
-                'hasSearch' => $hasFilters
+                'hasSearch' => $hasFilters,
+                'minSearchMsg' => $hasFilters ? null : 'Choisissez un critère puis saisissez au moins 2 caractères.',
             ]);
         }
     }

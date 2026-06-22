@@ -4,6 +4,20 @@ namespace App\Service;
 
 class SystemOracleService
 {
+    private function isPrivilegedConnectEnabled(): bool
+    {
+        $privileged = ini_get('oci8.privileged_connect');
+        if ($privileged === false || $privileged === '') {
+            return true;
+        }
+
+        if (is_numeric($privileged)) {
+            return (int) $privileged === 1;
+        }
+
+        return in_array(strtolower((string) $privileged), ['1', 'on', 'true', 'yes'], true);
+    }
+
     private function getOciConnection()
     {
         $host = '172.22.0.30';
@@ -15,9 +29,11 @@ class SystemOracleService
             throw new \RuntimeException('Extension PHP OCI8 non chargée sur le serveur web.');
         }
 
-        $privileged = ini_get('oci8.privileged_connect');
-        if ($privileged !== false && $privileged !== '' && (string) $privileged !== '1') {
-            throw new \RuntimeException("PHP ini 'oci8.privileged_connect' doit être activé (valeur actuelle: {$privileged}).");
+        if (!$this->isPrivilegedConnectEnabled()) {
+            $privileged = ini_get('oci8.privileged_connect');
+            throw new \RuntimeException(
+                "PHP ini 'oci8.privileged_connect' doit être activé dans php.ini (avant extension=oci8). Valeur actuelle: {$privileged}."
+            );
         }
 
         $descriptors = [
@@ -120,7 +136,7 @@ class SystemOracleService
      */
     public function getLockedTablesGV_DBA(): array
     {
-        $sql = <<<SQL
+        $sql = <<<'SQL'
         SELECT DISTINCT
             s.sid,
             s.serial# AS serial,
@@ -149,7 +165,7 @@ class SystemOracleService
      */
     public function getLockedTablesV_DBA(): array
     {
-        $sql = <<<SQL
+        $sql = <<<'SQL'
         SELECT DISTINCT
             s.sid,
             s.serial# AS serial,
@@ -178,7 +194,7 @@ class SystemOracleService
      */
     public function getLockedTablesV_ALL(): array
     {
-        $sql = <<<SQL
+        $sql = <<<'SQL'
         SELECT DISTINCT
             s.sid,
             s.serial# AS serial,

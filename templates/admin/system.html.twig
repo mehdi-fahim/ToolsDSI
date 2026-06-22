@@ -21,13 +21,12 @@
         {% endfor %}
 
         <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap: wrap;">
-            <a class="btn" href="{{ path('admin_system', {action: 'list', variant: 'gv_dba'}) }}" title="GV$ + DBA_OBJECTS">🔍 Lister (GV$ + DBA)</a>
-            <a class="btn" href="{{ path('admin_system', {action: 'list', variant: 'v_dba'}) }}" title="V$ + DBA_OBJECTS">🔍 Lister (V$ + DBA)</a>
-            <a class="btn" href="{{ path('admin_system', {action: 'list', variant: 'v_all'}) }}" title="V$ + ALL_OBJECTS">🔍 Lister (V$ + ALL)</a>
-            <a class="btn btn-secondary" href="{{ path('admin_system', {action: 'list'}) }}" title="Auto">🔁 Auto</a>
+            <a class="btn" href="{{ path('admin_system', {action: 'list', variant: 'v_dba'}) }}" title="V$ + DBA_OBJECTS">
+                🔍 Lister les tables locker
+            </a>
             {% if locks is defined and locks|length > 0 %}
             <form method="POST" action="{{ path('admin_system_kill_all') }}">
-                <button type="submit" class="btn btn-secondary" onclick="return confirm('Confirmer la suppression de TOUTES les sessions verrouillant ?');">🗑️ Tuer toutes les sessions</button>
+                <button type="submit" class="btn btn-secondary" onclick="return confirm('Confirmer la suppression de TOUTES les sessions verrouillant ?');">🗑️ Kill les sessions</button>
             </form>
             {% endif %}
         </div>
@@ -67,10 +66,10 @@
                         <td>{{ row.program|default('-') }}</td>
                         <td>{{ row.owner|default('') }} {{ row.object_name|default('') }}</td>
                         <td>
-                            <form method="POST" action="{{ path('admin_system_kill') }}" onsubmit="return confirm('Tuer la session {{ row.sid }}/{{ row.serial ?? row['serial#'] }} ?');" style="display:inline;">
+                            <form method="POST" action="{{ path('admin_system_kill') }}" onsubmit="return confirm('Kill la session {{ row.sid }}/{{ row.serial ?? row['serial#'] }} ?');" style="display:inline;">
                                 <input type="hidden" name="sid" value="{{ row.sid }}" />
                                 <input type="hidden" name="serial" value="{{ row.serial ?? row['serial#'] }}" />
-                                <button type="submit" class="btn" style="padding:6px 10px;">🗑️ Tuer</button>
+                                <button type="submit" class="btn btn-danger" style="padding:6px 10px;">Kill</button>
                             </form>
                         </td>
                     </tr>

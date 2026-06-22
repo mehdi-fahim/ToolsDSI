@@ -23,7 +23,7 @@ class SystemController extends AbstractController
         }
 
         $action = $request->query->get('action', '');
-        $variant = $request->query->get('variant', 'auto');
+        $variant = $request->query->get('variant', 'v_dba');
         $message = null;
         $error = null;
         $locks = [];
