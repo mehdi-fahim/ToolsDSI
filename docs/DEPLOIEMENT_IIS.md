@@ -54,6 +54,7 @@ Sur le serveur :
 ```powershell
 cd C:\inetpub\ToolsDSI
 composer install --no-dev --optimize-autoloader
+C:\php\php.exe bin\console importmap:install
 ```
 
 ---
@@ -124,6 +125,7 @@ icacls "C:\inetpub\ToolsDSI\var" /grant "IIS_IUSRS:(OI)(CI)M" /T
 cd C:\inetpub\ToolsDSI
 C:\php\php.exe bin\console cache:clear --env=prod --no-debug
 C:\php\php.exe bin\console cache:warmup --env=prod --no-debug
+C:\php\php.exe bin\console importmap:install
 ```
 
 ---
@@ -161,6 +163,7 @@ Le code `SystemOracleService` (connexion SYS pour les verrous) pointe déjà ver
 |----------|--------|
 | 404 sur `/login` | URL Rewrite installé ? `web.config` dans `public` ? |
 | 500 générique | `var\log\prod.log`, activer temporairement `APP_DEBUG=1` en local uniquement |
+| 500 asset / importmap / stimulus | `php bin\console importmap:install` puis vider le cache prod |
 | 500 « Bad file descriptor » / écriture log | Monolog : ne pas utiliser `php://stderr` sous IIS (voir `config/packages/monolog.yaml`) |
 | Connexion PCH OK, autre utilisateur 500 | Tester Oracle **via le navigateur** (pas seulement en CLI) ; lire `var\log\prod.log` |
 | Oracle / OCI8 | `php.ini`, Instant Client dans PATH **système**, redémarrer IIS (`iisreset`) |

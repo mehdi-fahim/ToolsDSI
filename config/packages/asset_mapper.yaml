@@ -1,8 +1,8 @@
 framework:
     asset_mapper:
-        # The paths to make available to the asset mapper.
         paths:
             - assets/
+            - vendor/symfony/stimulus-bundle/assets/
         missing_import_mode: strict
 
 when@prod:
