@@ -161,7 +161,9 @@ Le code `SystemOracleService` (connexion SYS pour les verrous) pointe déjà ver
 |----------|--------|
 | 404 sur `/login` | URL Rewrite installé ? `web.config` dans `public` ? |
 | 500 générique | `var\log\prod.log`, activer temporairement `APP_DEBUG=1` en local uniquement |
-| Oracle / OCI8 | `php.ini`, Instant Client dans PATH, redémarrer IIS (`iisreset`) |
+| 500 « Bad file descriptor » / écriture log | Monolog : ne pas utiliser `php://stderr` sous IIS (voir `config/packages/monolog.yaml`) |
+| Connexion PCH OK, autre utilisateur 500 | Tester Oracle **via le navigateur** (pas seulement en CLI) ; lire `var\log\prod.log` |
+| Oracle / OCI8 | `php.ini`, Instant Client dans PATH **système**, redémarrer IIS (`iisreset`) |
 | Tables locker | `oci8.privileged_connect=1` **avant** `extension=oci8` |
 | Permission denied sur cache | Droits `var\` pour IIS_IUSRS |
 
