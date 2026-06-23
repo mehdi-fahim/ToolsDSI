@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Panel Admin{% endblock %}</title>
+    <meta name="turbo-cache-control" content="no-preview">
+    {% block javascripts %}
+        {% block importmap %}{{ importmap('app') }}{% endblock %}
+    {% endblock %}
     <style>
         * {
             margin: 0;
@@ -317,6 +321,11 @@
             background: rgba(255, 255, 255, 0.15);
         }
 
+        .turbo-progress-bar {
+            height: 3px;
+            background: linear-gradient(90deg, #4299e1, #63b3ed);
+        }
+
         @media (max-width: 768px) {
             .admin-container {
                 padding: 10px;
@@ -342,13 +351,13 @@
     </style>
 </head>
 <body style="display: flex; min-height: 100vh; background: #f4f6fa;">
-    <aside style="width: 240px; background: #232946; color: #fff; display: flex; flex-direction: column; align-items: stretch; padding: 32px 0 0 0; box-shadow: 2px 0 12px rgba(35,41,70,0.08);">
+    <aside id="admin-sidebar" data-turbo-permanent style="width: 240px; background: #232946; color: #fff; display: flex; flex-direction: column; align-items: stretch; padding: 32px 0 0 0; box-shadow: 2px 0 12px rgba(35,41,70,0.08);">
         <div style="text-align: center; margin-bottom: 40px;">
             <img src="/images/logo-pch.png" alt="Plaine Commune Habitat" style="max-width: 120px; max-height: 90px; display: block; margin: 0 auto; background: transparent;" />
         </div>
         <nav style="flex: 1;">
             <ul style="list-style: none; padding: 0; margin: 0;">
-                <li><a href="{{ path('admin_dashboard') }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">🏠 <span>Accueil</span></a></li>
+                <li><a href="{{ path('admin_dashboard') }}" data-turbo-prefetch style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">🏠 <span>Accueil</span></a></li>
                 {% set access = app.session and app.session.get('page_access') ? app.session.get('page_access') : [] %}
                 
                 {# Menu déroulant Utilisateurs #}
@@ -360,22 +369,22 @@
                     </div>
                     <div class="dropdown-menu">
                         {% if 'admin_users' in access and app.session.get('is_admin') %}
-                        <a href="{{ path('admin_entity_view', {entityName: 'Utilisateur'}) }}">
+                        <a data-turbo-prefetch href="{{ path('admin_entity_view', {entityName: 'Utilisateur'}) }}">
                             <span>Utilisateurs</span>
                         </a>
                         {% endif %}
                         {% if 'admin_beckrel_users' in access %}
-                        <a href="{{ path('admin_beckrel_users') }}">
+                        <a data-turbo-prefetch href="{{ path('admin_beckrel_users') }}">
                             <span>Users Beckrel</span>
                         </a>
                         {% endif %}
                         {% if 'admin_sowell_users' in access %}
-                        <a href="{{ path('admin_sowell_users') }}">
+                        <a data-turbo-prefetch href="{{ path('admin_sowell_users') }}">
                             <span>Users Sowell</span>
                         </a>
                         {% endif %}
                         {% if 'admin_liste_affectation' in access %}
-                        <a href="{{ path('admin_liste_affectation') }}">
+                        <a data-turbo-prefetch href="{{ path('admin_liste_affectation') }}">
                             <span>Liste d'affectation</span>
                         </a>
                         {% endif %}
@@ -392,12 +401,12 @@
                     </div>
                     <div class="dropdown-menu">
                         {% if 'admin_entity_view' in access %}
-                        <a href="{{ path('admin_entity_view', {entityName: 'EditionBureautique'}) }}">
+                        <a data-turbo-prefetch href="{{ path('admin_entity_view', {entityName: 'EditionBureautique'}) }}">
                             <span>Document BI</span>
                         </a>
                         {% endif %}
                         {% if 'admin_extraction' in access %}
-                        <a href="{{ path('admin_extraction') }}">
+                        <a data-turbo-prefetch href="{{ path('admin_extraction') }}">
                             <span>Extraction CSV</span>
                         </a>
                         {% endif %}
@@ -414,37 +423,37 @@
                     </div>
                     <div class="dropdown-menu">
                         {% if 'admin_logement' in access %}
-                        <a href="{{ path('admin_logement') }}">
+                        <a data-turbo-prefetch href="{{ path('admin_logement') }}">
                             <span>Logement</span>
                         </a>
                         {% endif %}
                         {% if 'admin_engagement' in access %}
-                        <a href="{{ path('admin_engagement') }}">
+                        <a data-turbo-prefetch href="{{ path('admin_engagement') }}">
                             <span>Engagements</span>
                         </a>
                         {% endif %}
                         {% if 'admin_proposition' in access %}
-                        <a href="{{ path('admin_proposition') }}">
+                        <a data-turbo-prefetch href="{{ path('admin_proposition') }}">
                             <span>Proposition</span>
                         </a>
                         {% endif %}
                         {% if 'admin_reouv_exemptes' in access %}
-                        <a href="{{ path('admin_reouv_exemptes') }}">
+                        <a data-turbo-prefetch href="{{ path('admin_reouv_exemptes') }}">
                             <span>Réouv exemptés</span>
                         </a>
                         {% endif %}
                         {% if 'admin_mode_operatoire' in access %}
-                        <a href="{{ path('admin_mode_operatoire') }}">
+                        <a data-turbo-prefetch href="{{ path('admin_mode_operatoire') }}">
                             <span>Mode opératoire</span>
                         </a>
                         {% endif %}
                         {% if 'admin_traitement_gl' in access %}
-                        <a href="{{ path('admin_traitement_gl') }}">
+                        <a data-turbo-prefetch href="{{ path('admin_traitement_gl') }}">
                             <span>Traitement GL</span>
                         </a>
                         {% endif %}
                         {% if 'admin_gerance_locative' in access %}
-                        <a href="{{ path('admin_gerance_locative') }}">
+                        <a data-turbo-prefetch href="{{ path('admin_gerance_locative') }}">
                             <span>Gérance Locative</span>
                         </a>
                         {% endif %}
@@ -462,12 +471,12 @@
                     </div>
                     <div class="dropdown-menu">
                         {% if 'admin_import_od' in access %}
-                        <a href="{{ path('admin_import_od') }}">
+                        <a data-turbo-prefetch href="{{ path('admin_import_od') }}">
                             <span>Intégration OD</span>
                         </a>
                         {% endif %}
                         {% if 'admin_import_paiement_cb' in access %}
-                        <a href="{{ path('admin_import_paiement_cb') }}">
+                        <a data-turbo-prefetch href="{{ path('admin_import_paiement_cb') }}">
                             <span>Paiement CB</span>
                         </a>
                         {% endif %}
@@ -477,33 +486,33 @@
 
                 {# Débloquer MDP - reste seul #}
                 {% if 'admin_user_unlock' in access %}
-                    <li><a href="{{ path('admin_user_unlock') }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">🔒 <span>Débloquer MDP</span></a></li>
+                    <li><a data-turbo-prefetch href="{{ path('admin_user_unlock') }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">🔒 <span>Débloquer MDP</span></a></li>
                 {% endif %}
 
                 {% if 'admin_extraction_divers' in access %}
-                    <li><a href="{{ path('admin_extraction_divers') }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">🧩 <span>Extraction Divers</span></a></li>
+                    <li><a data-turbo-prefetch href="{{ path('admin_extraction_divers') }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">🧩 <span>Extraction Divers</span></a></li>
                 {% endif %}
                 
                 {# Système #}
                 {% if 'admin_system' in access %}
-                    <li><a href="{{ path('admin_system') }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">🔧 <span>Système</span></a></li>
+                    <li><a data-turbo-prefetch href="{{ path('admin_system') }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">🔧 <span>Système</span></a></li>
                 {% endif %}
                 
                 {% if 'admin_history' in access %}
-                    <li><a href="{{ path('admin_history') }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">🕓 <span>Historique</span></a></li>
+                    <li><a data-turbo-prefetch href="{{ path('admin_history') }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">🕓 <span>Historique</span></a></li>
                 {% endif %}
                 
             </ul>
         </nav>
         {% if app.session and app.session.get('is_admin') %}
         <div style="text-align: center; margin-bottom: 18px;">
-            <a href="{{ path('admin_user_access') }}" style="color: #fff; font-weight: 600; text-decoration: none; font-size: 1.08rem; letter-spacing: 0.5px;">Administration</a>
+            <a data-turbo-prefetch href="{{ path('admin_user_access') }}" style="color: #fff; font-weight: 600; text-decoration: none; font-size: 1.08rem; letter-spacing: 0.5px;">Administration</a>
         </div>
         {% endif %}
         <div style="margin: 40px 0 0 0; text-align: center; font-size: 0.9rem; color: #b8b8d1;">Copyright © Outil DSI</div>
     </aside>
     <div style="flex: 1; display: flex; flex-direction: column; min-height: 100vh;">
-        <header style="background: #fff; box-shadow: 0 2px 8px rgba(35,41,70,0.04); padding: 18px 36px; display: flex; align-items: center; justify-content: space-between; gap: 24px;">
+        <header id="admin-header" data-turbo-permanent style="background: #fff; box-shadow: 0 2px 8px rgba(35,41,70,0.04); padding: 18px 36px; display: flex; align-items: center; justify-content: space-between; gap: 24px;">
             {% if app.session and app.session.get('user_id') %}
                 <div style="display: flex; align-items: center; gap: 25px;">
                     {% if app.session.get('is_admin') %}
@@ -536,15 +545,15 @@
                         </div>
                     </div>
                 </div>
-                <a href="{{ path('logout') }}" style="background: #ff6600; color: #fff; font-weight: 600; padding: 8px 22px; border-radius: 7px; text-decoration: none; font-size: 1.08rem; letter-spacing: 0.5px; transition: background 0.2s;">Déconnexion</a>
+                <a href="{{ path('logout') }}" data-turbo="false" style="background: #ff6600; color: #fff; font-weight: 600; padding: 8px 22px; border-radius: 7px; text-decoration: none; font-size: 1.08rem; letter-spacing: 0.5px; transition: background 0.2s;">Déconnexion</a>
             {% else %}
                 <div></div>
                 <a href="{{ path('login') }}" style="background: #ff6600; color: #fff; font-weight: 600; padding: 8px 22px; border-radius: 7px; text-decoration: none; font-size: 1.08rem; letter-spacing: 0.5px; transition: background 0.2s;">Connexion</a>
             {% endif %}
         </header>
-        <main style="flex: 1; padding: 36px;">
+        <main id="admin-main" style="flex: 1; padding: 36px;">
             <div style="display:flex; justify-content:flex-start; margin-bottom: 12px;">
-                <a href="{{ path('admin_mode_operatoire') ~ '?from=' ~ app.request.attributes.get('_route') }}" title="Mode opératoire de cette page" style="width:42px; height:42px; border-radius:10px; background:#4299e1; color:#fff; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(66,153,225,0.35); font-size:1.1rem;">
+                <a data-turbo-prefetch href="{{ path('admin_mode_operatoire') ~ '?from=' ~ app.request.attributes.get('_route') }}" title="Mode opératoire de cette page" style="width:42px; height:42px; border-radius:10px; background:#4299e1; color:#fff; text-decoration:none; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(66,153,225,0.35); font-size:1.1rem;">
                     📘
                 </a>
             </div>
@@ -553,6 +562,31 @@
     </div>
 
     <script>
+        // Navigation fluide : Turbo charge uniquement le contenu principal
+        function adminNavigate(url) {
+            if (window.Turbo) {
+                window.Turbo.visit(url);
+            } else {
+                window.location.href = url;
+            }
+        }
+
+        function onAdminPageLoad(callback) {
+            window.__adminPageInit = callback;
+        }
+
+        if (!window.__adminNavInitialized) {
+            window.__adminNavInitialized = true;
+
+            document.addEventListener('turbo:load', function() {
+                if (typeof window.__adminPageInit === 'function') {
+                    window.__adminPageInit();
+                    window.__adminPageInit = undefined;
+                }
+                initPaginationJump();
+            });
+        }
+
         // Fonction pour gérer les menus déroulants
         function toggleDropdown(toggleElement) {
             const dropdown = toggleElement.closest('.sidebar-dropdown');
@@ -717,14 +751,12 @@
                     }
                     const url = new URL(window.location.href);
                     url.searchParams.set('page', String(value));
-                    window.location.href = url.toString();
+                    adminNavigate(url.toString());
                 });
 
                 pagination.appendChild(form);
             });
         }
-
-        document.addEventListener('DOMContentLoaded', initPaginationJump);
     </script>
 
     {% block javascript %}{% endblock %}

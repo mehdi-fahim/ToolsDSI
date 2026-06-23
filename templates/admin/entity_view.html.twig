@@ -144,7 +144,7 @@
             const url = new URL(window.location.href);
             url.searchParams.set('search', searchTerm);
             url.searchParams.set('page', '1');
-            window.location.href = url.toString();
+            adminNavigate(url.toString());
             return;
         }
 
@@ -167,7 +167,7 @@
 
     function clearSearch() {
         searchInput.value = '';
-        window.location.href = '{{ path('admin_entity_view', {entityName: entityName}) }}';
+        adminNavigate('{{ path('admin_entity_view', {entityName: entityName}) }}');
     }
 
     function updateTable(data) {

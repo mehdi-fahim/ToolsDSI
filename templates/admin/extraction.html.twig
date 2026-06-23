@@ -456,7 +456,7 @@
     }
     
     // Appliquer les règles au chargement de la page
-    document.addEventListener('DOMContentLoaded', function() {
+    onAdminPageLoad(function() {
         const extractionForm = document.getElementById('extraction-form');
         if (!extractionForm) {
             return;
