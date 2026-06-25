@@ -1,0 +1,39 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Validation pré-encaissement - Outil DSI{% endblock %}
+
+{% block content %}
+<div style="max-width: 700px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px;">
+    <h1 style="font-size: 1.6rem; color: #232946; font-weight: 700;">Validation pré-encaissement</h1>
+
+    {% if error %}
+        <div style="background:#fed7d7;color:#c53030;padding:12px 16px;border-radius:8px;">{{ error }}</div>
+    {% elseif inserted %}
+        <div style="background:#c6f6d5;color:#22543d;padding:16px;border-radius:8px;">
+            Encaissement enregistré pour l'intitulé <strong>{{ intitule }}</strong>.
+        </div>
+    {% endif %}
+
+    {% if intitule %}
+        <div style="background:#fff;border-radius:15px;box-shadow:0 8px 32px rgba(0,0,0,0.08);border:1px solid #eef2f7;padding:24px;">
+            <p style="font-size:1.05rem;color:#232946;margin-bottom:8px;">Intitulé : <strong>{{ intitule }}</strong></p>
+            {% if typePay %}
+                <p style="color:#4a5568;margin-bottom:4px;">Type de paiement : {{ typePay }}</p>
+            {% endif %}
+            {% if montant %}
+                <p style="color:#4a5568;margin-bottom:4px;">Montant : {{ montant }}</p>
+            {% endif %}
+            {% if nomChq %}
+                <p style="color:#4a5568;margin-bottom:4px;">Nom sur chèque : {{ nomChq }}</p>
+            {% endif %}
+            {% if numChq %}
+                <p style="color:#4a5568;">N° chèque : {{ numChq }}</p>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    <div>
+        <a href="{{ path('admin_locataire') }}" class="btn">Retour recherche locataire</a>
+    </div>
+</div>
+{% endblock %}

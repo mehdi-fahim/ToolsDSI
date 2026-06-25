@@ -46,6 +46,15 @@ admin_locataire:
     path: /admin/locataire
     controller: App\Controller\AdminController::locataire
 
+admin_locataire_fiche:
+    path: /admin/locataire/fiche
+    controller: App\Controller\AdminController::locataireFiche
+
+admin_locataire_validation_preenc:
+    path: /admin/locataire/validation-preenc
+    controller: App\Controller\AdminController::locataireValidationPreenc
+
+# Ancienne route conservée : redirection vers la fiche via contrat
 admin_locataire_detail:
     path: /admin/locataire/detail/{esi}
     controller: App\Controller\AdminController::locataireDetail

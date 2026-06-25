@@ -33,6 +33,7 @@ use App\Service\PlansOfficeOracleService;
 use App\Service\BiFieldDescriptionService;
 use App\Service\EnvironmentContext;
 use App\Service\GeranceLocativeOracleService;
+use App\Service\LocataireOracleService;
 
 #[Route('/admin')]
 class AdminController extends AbstractController
@@ -60,6 +61,7 @@ class AdminController extends AbstractController
         private PlansOfficeOracleService $plansOfficeOracleService,
         private BiFieldDescriptionService $biFieldDescriptionService,
         private EnvironmentContext $environmentContext,
+        private LocataireOracleService $locataireOracleService,
         private ?DetailedUserActionLogger $detailedUserActionLogger = null,
         private ?GeranceLocativeOracleService $geranceLocativeOracleService = null
     ) {}
@@ -1357,6 +1359,7 @@ class AdminController extends AbstractController
             'admin_traitement_gl' => 'Traitement GL',
             'admin_gerance_locative' => 'Gérance Locative',
             'admin_import_paiement_cb' => 'Import Paiement CB',
+            'admin_locataire' => 'Locataire',
         ];
 
         $isAdminFlag = null;
@@ -1547,6 +1550,195 @@ class AdminController extends AbstractController
         }
 
         return $this->render('admin/traitement_gl.html.twig');
+    }
+
+    public function locataire(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        $searchType = (string) $request->query->get('type', 'intitule');
+        $query = trim((string) $request->query->get('q', ''));
+        $results = [];
+        $error = null;
+        $hasSearched = $query !== '';
+
+        if ($hasSearched) {
+            if ($searchType === 'contrat') {
+                return $this->redirectToRoute('admin_locataire_fiche', [
+                    'contrat' => $query,
+                ]);
+            }
+
+            try {
+                $results = match ($searchType) {
+                    'esi' => $this->locataireOracleService->searchByEsi($query),
+                    'nom' => $this->locataireOracleService->searchByNom($query),
+                    default => $this->locataireOracleService->searchByIntitule($query),
+                };
+            } catch (\Throwable $e) {
+                $error = 'Erreur lors de la recherche : ' . $e->getMessage();
+                $hasSearched = false;
+            }
+        }
+
+        return $this->render('admin/locataire.html.twig', [
+            'searchType' => in_array($searchType, ['intitule', 'esi', 'nom', 'contrat'], true) ? $searchType : 'intitule',
+            'query' => $query,
+            'results' => $results,
+            'error' => $error,
+            'hasSearched' => $hasSearched && $error === null,
+        ]);
+    }
+
+    public function locataireDetail(string $esi, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        return $this->redirectToRoute('admin_locataire_fiche', [
+            'contrat' => $esi,
+        ]);
+    }
+
+    public function locataireFiche(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        $contrat = trim((string) $request->query->get('contrat', $request->request->get('contrat', '')));
+        $tiers = trim((string) $request->query->get('tiers', $request->request->get('tiers', '')));
+        $ficheParams = array_filter([
+            'contrat' => $contrat !== '' ? $contrat : null,
+            'tiers' => $tiers !== '' ? $tiers : null,
+        ]);
+
+        $error = null;
+        $success = null;
+        $forceEncaissementForm = (bool) ($session->getFlashBag()->get('force_encaissement_form')[0] ?? false);
+
+        $fiche = null;
+        if ($contrat !== '' || $tiers !== '') {
+            try {
+                $fiche = $this->locataireOracleService->getFiche($contrat, $tiers);
+            } catch (\Throwable $e) {
+                $error = 'Impossible de charger la fiche : ' . $e->getMessage();
+            }
+        } elseif (!$request->isMethod('POST')) {
+            $error = 'Paramètre contrat ou tiers manquant.';
+        }
+
+        if ($request->isMethod('POST') && $fiche !== null) {
+            if (!$this->isCsrfTokenValid('locataire_fiche', (string) $request->request->get('_token'))) {
+                $error = 'Jeton de sécurité invalide.';
+            } else {
+                $action = (string) $request->request->get('action', '');
+                try {
+                    switch ($action) {
+                        case 'update_telephone':
+                            $this->locataireOracleService->updateSignataireTelephone(
+                                (string) $request->request->get('no_tiers', ''),
+                                (string) $request->request->get('telephone', '')
+                            );
+                            $success = 'Numéro de téléphone mis à jour.';
+                            $fiche = $this->locataireOracleService->getFiche($contrat, $tiers);
+                            break;
+                        case 'show_encaissement_form':
+                            $session->getFlashBag()->add('force_encaissement_form', true);
+                            return $this->redirectToRoute('admin_locataire_fiche', $ficheParams);
+                        case 'prepare_encaissement':
+                            $typePay = (string) $request->request->get('type_pay', '');
+                            $mnt = (string) $request->request->get('mnt_regle', '');
+                            $nomChq = (string) $request->request->get('nom_chq', '');
+                            $numChq = (string) $request->request->get('num_chq', '');
+
+                            if (in_array($typePay, ['CHQ', 'TIPCHQ'], true) && ($nomChq === '' || $numChq === '')) {
+                                $error = 'Veuillez renseigner le nom figurant sur le chèque et le numéro du chèque.';
+                                break;
+                            }
+
+                            return $this->redirectToRoute('admin_locataire_validation_preenc', [
+                                'intitule' => (string) ($fiche['intitule'] ?? ''),
+                                'TypePay' => $typePay,
+                                'mnt' => $mnt,
+                                'nomchq' => $nomChq,
+                                'numchq' => $numChq,
+                            ]);
+                    }
+                } catch (\Throwable $e) {
+                    $error = 'Erreur : ' . $e->getMessage();
+                }
+            }
+        }
+
+        return $this->render('admin/locataire_fiche.html.twig', [
+            'fiche' => $fiche,
+            'ficheParams' => $ficheParams,
+            'error' => $error,
+            'success' => $success,
+            'showDette' => $this->isAdmin($session),
+            'forceEncaissementForm' => $forceEncaissementForm,
+        ]);
+    }
+
+    public function locataireValidationPreenc(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        $intitule = trim((string) $request->query->get('intitule', ''));
+        $typePay = $this->locataireOracleService->normalizeTypePaiement(
+            (string) $request->query->get('TypePay', '')
+        );
+        $montant = (string) $request->query->get('mnt', '');
+        $nomChq = str_replace("'", ' ', (string) $request->query->get('nomchq', ''));
+        $numChq = (string) $request->query->get('numchq', '');
+
+        $error = null;
+        $inserted = false;
+
+        if ($intitule === '' || $typePay === '' || $montant === '') {
+            $error = 'Paramètres manquants pour la validation de l\'encaissement.';
+        } else {
+            $dedupeKey = 'preenc_validated_' . md5($intitule . '|' . $typePay . '|' . $montant . '|' . $nomChq . '|' . $numChq);
+            if (!$session->has($dedupeKey)) {
+                try {
+                    $this->locataireOracleService->insertEncaissement(
+                        $intitule,
+                        $typePay,
+                        $montant,
+                        $nomChq,
+                        $numChq,
+                        (string) $session->get('user_id', '')
+                    );
+                    $this->userActionLogger->logDataModification('LOCATAIRE', 'ENCAISSEMENT', [
+                        'intitule' => $intitule,
+                        'type_pay' => $typePay,
+                        'montant' => $montant,
+                    ], $session->get('user_id'));
+                    $session->set($dedupeKey, true);
+                    $inserted = true;
+                } catch (\Throwable $e) {
+                    $error = 'Erreur lors de l\'enregistrement : ' . $e->getMessage();
+                }
+            } else {
+                $inserted = true;
+            }
+        }
+
+        return $this->render('admin/locataire_validation_preenc.html.twig', [
+            'intitule' => $intitule,
+            'typePay' => $this->locataireOracleService->getTypePaiementLabel($typePay),
+            'montant' => $this->locataireOracleService->formatMontant($montant),
+            'nomChq' => $nomChq,
+            'numChq' => $numChq,
+            'inserted' => $inserted,
+            'error' => $error,
+        ]);
     }
 
     #[Route('/admin/gerance-locative', name: 'admin_gerance_locative', methods: ['GET'])]

@@ -1,0 +1,343 @@
+{% extends 'admin/base.html.twig' %}
+
+
+
+{% macro montant(val) %}
+
+    {%- if val is not null and val is not same as('') -%}
+
+        {{- val|number_format(2, ',', ' ') }} €
+
+    {%- else -%}
+
+        -
+
+    {%- endif -%}
+
+{% endmacro %}
+
+
+
+{% block title %}Fiche Locataire - Outil DSI{% endblock %}
+
+
+
+{% block content %}
+
+{% import _self as locataire %}
+
+<div style="max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px;">
+
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+
+        <h1 style="font-size: 1.6rem; color: #232946; font-weight: 700;">Fiche Locataire</h1>
+
+        <a href="{{ path('admin_locataire') }}" class="btn btn-secondary">← Retour recherche</a>
+
+    </div>
+
+
+
+    {% if error %}
+
+        <div style="background:#fed7d7;color:#c53030;padding:12px 16px;border-radius:8px;">{{ error }}</div>
+
+    {% endif %}
+
+    {% if success %}
+
+        <div style="background:#c6f6d5;color:#22543d;padding:12px 16px;border-radius:8px;">{{ success }}</div>
+
+    {% endif %}
+
+
+
+    {# Locataire + signataires #}
+
+    <div style="background:#fff;border-radius:15px;box-shadow:0 8px 32px rgba(0,0,0,0.08);border:1px solid #eef2f7;padding:24px;">
+
+        <div style="font-size:1.05rem;color:#232946;line-height:1.7;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid #eef2f7;">
+
+            <strong style="font-size:1.2rem;">{{ fiche.nomChq|default('-') }}</strong><br>
+
+            {{ fiche.adresse|default('-')|nl2br }}<br>
+
+            {% if fiche.contrat %}
+
+                Contrat : <strong>{{ fiche.contrat }}</strong><br>
+
+            {% endif %}
+
+            {% if fiche.tiers %}
+
+                Tiers : <strong>{{ fiche.tiers }}</strong><br>
+
+            {% endif %}
+
+            Intitulé : <strong>{{ fiche.intitule|default('-') }}</strong>
+
+            {% if showDette and fiche.dette is not null %}
+
+                <span style="margin-left:12px;color:#c53030;font-weight:600;">[Dette : {{ locataire.montant(fiche.dette) }}]</span>
+
+            {% endif %}
+
+        </div>
+
+
+
+        <h2 style="font-size:1.1rem;color:#232946;font-weight:700;margin-bottom:16px;">Signataires</h2>
+
+        {% if fiche.signataires|length == 0 %}
+
+            <p style="color:#64748b;">Aucun signataire trouvé.</p>
+
+        {% else %}
+
+            <div style="display:grid;gap:12px;">
+
+                {% for s in fiche.signataires %}
+
+                    <form method="post" action="{{ path('admin_locataire_fiche', ficheParams) }}" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px;background:#f8fafc;border-radius:8px;">
+
+                        <input type="hidden" name="_token" value="{{ csrf_token('locataire_fiche') }}">
+
+                        <input type="hidden" name="action" value="update_telephone">
+
+                        <input type="hidden" name="no_tiers" value="{{ s.NO_TIERS }}">
+
+                        {% if fiche.contrat %}<input type="hidden" name="contrat" value="{{ fiche.contrat }}">{% endif %}
+
+                        {% if fiche.tiers %}<input type="hidden" name="tiers" value="{{ fiche.tiers }}">{% endif %}
+
+                        <span style="min-width:200px;font-weight:600;">{{ s.NOM|default('-') }}</span>
+
+                        <input type="text" name="telephone" value="{{ s.TODPP_NUMPOR|default('') }}" placeholder="Téléphone portable"
+
+                               style="padding:8px 12px;border:1.5px solid #e2e8f0;border-radius:8px;min-width:160px;">
+
+                        <button type="submit" class="btn btn-secondary" style="padding:8px 14px;">Mettre à jour</button>
+
+                    </form>
+
+                {% endfor %}
+
+            </div>
+
+        {% endif %}
+
+    </div>
+
+
+
+    {# Derniers encaissements #}
+
+    <div style="background:#fff;border-radius:15px;box-shadow:0 8px 32px rgba(0,0,0,0.08);border:1px solid #eef2f7;padding:24px;">
+
+        <h2 style="font-size:1.1rem;color:#232946;font-weight:700;margin-bottom:16px;">Derniers encaissements saisis</h2>
+
+        {% if fiche.encaissements|length == 0 %}
+
+            <p style="color:#64748b;">Aucun encaissement récent.</p>
+
+        {% else %}
+
+            <div class="table-container" style="box-shadow:none;">
+
+                <table class="admin-table" style="font-size:0.9rem;">
+
+                    <thead>
+
+                        <tr>
+
+                            <th>Type paiement</th>
+
+                            <th style="text-align:right;">Montant réglé</th>
+
+                            <th>Date</th>
+
+                            <th>Saisi par</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {% for enc in fiche.encaissements %}
+
+                            <tr>
+
+                                <td>{{ enc.TYPE_PAIEMENT|default('-') }}</td>
+
+                                <td style="text-align:right;">{{ locataire.montant(enc.MONTANT_REGLE) }}</td>
+
+                                <td>{{ enc.DATE_PREENC|default('-') }}</td>
+
+                                <td>{{ enc.SAISI_PAR|default('-') }}</td>
+
+                            </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        {% endif %}
+
+    </div>
+
+
+
+    {# Factures / prélèvement #}
+
+    <div style="background:#fff;border-radius:15px;box-shadow:0 8px 32px rgba(0,0,0,0.08);border:1px solid #eef2f7;padding:24px;">
+
+        <h2 style="font-size:1.1rem;color:#232946;font-weight:700;margin-bottom:16px;">Factures à encaisser</h2>
+
+        {% if fiche.factures|length > 0 %}
+
+            <div class="table-container" style="box-shadow:none;margin-bottom:12px;">
+
+                <table class="admin-table" style="font-size:0.9rem;">
+
+                    <thead>
+
+                        <tr>
+
+                            <th>Type</th>
+
+                            <th style="text-align:right;">Montant</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {% for fact in fiche.factures %}
+
+                            <tr>
+
+                                <td>{{ fact.TYPE_FACT|default('-') }}</td>
+
+                                <td style="text-align:right;">{{ locataire.montant(fact.MNT_ECH) }}</td>
+
+                            </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+            <p style="font-weight:600;color:#232946;">Total échéance : {{ locataire.montant(fiche.mntEcheance) }}</p>
+
+        {% elseif fiche.prelevementAuto %}
+
+            <p style="color:#2b6cb0;font-weight:600;">Prélèvement automatique actif</p>
+
+        {% else %}
+
+            <p style="color:#64748b;">Aucune facture en attente.</p>
+
+        {% endif %}
+
+    </div>
+
+
+
+    {# Formulaire encaissement #}
+    {% if fiche.intitule %}
+
+        <div style="background:#fff;border-radius:15px;box-shadow:0 8px 32px rgba(0,0,0,0.08);border:1px solid #eef2f7;padding:24px;">
+
+            <h2 style="font-size:1.1rem;color:#232946;font-weight:700;margin-bottom:16px;">Saisie encaissement</h2>
+
+
+
+            {% if fiche.hideEncaissementForm and not forceEncaissementForm %}
+
+                <p style="color:#718096;margin-bottom:12px;">Un encaissement a déjà été saisi ce mois-ci.</p>
+
+                <form method="post" action="{{ path('admin_locataire_fiche', ficheParams) }}">
+
+                    <input type="hidden" name="_token" value="{{ csrf_token('locataire_fiche') }}">
+
+                    <input type="hidden" name="action" value="show_encaissement_form">
+
+                    <button type="submit" class="btn btn-secondary">Afficher le formulaire d'encaissement</button>
+
+                </form>
+
+            {% else %}
+
+                <form method="post" action="{{ path('admin_locataire_fiche', ficheParams) }}" style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;">
+
+                    <input type="hidden" name="_token" value="{{ csrf_token('locataire_fiche') }}">
+
+                    <input type="hidden" name="action" value="prepare_encaissement">
+
+                    {% if fiche.contrat %}<input type="hidden" name="contrat" value="{{ fiche.contrat }}">{% endif %}
+
+                    {% if fiche.tiers %}<input type="hidden" name="tiers" value="{{ fiche.tiers }}">{% endif %}
+
+                    <div>
+
+                        <label style="display:block;font-weight:600;margin-bottom:6px;font-size:0.85rem;">Type de paiement</label>
+
+                        <select name="type_pay" style="padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;min-width:130px;">
+                            <option value="CHQ">Chèque</option>
+                            <option value="TIP">TIP</option>
+                            <option value="TIPCHQ">TIP Chèque</option>
+                        </select>
+
+                    </div>
+
+                    <div>
+
+                        <label style="display:block;font-weight:600;margin-bottom:6px;font-size:0.85rem;">Montant réglé</label>
+
+                        <input type="text" name="mnt_regle" value="{{ fiche.mntEcheance > 0 ? fiche.mntEcheance|number_format(2, ',', '') : '' }}"
+
+                               style="padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;width:110px;">
+
+                    </div>
+
+                    <div>
+
+                        <label style="display:block;font-weight:600;margin-bottom:6px;font-size:0.85rem;">Nom sur chèque</label>
+
+                        <input type="text" name="nom_chq" value="{{ fiche.nomChq|default('') }}"
+
+                               style="padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;min-width:160px;">
+
+                    </div>
+
+                    <div>
+
+                        <label style="display:block;font-weight:600;margin-bottom:6px;font-size:0.85rem;">N° chèque</label>
+
+                        <input type="text" name="num_chq" style="padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;width:120px;">
+
+                    </div>
+
+                    <button type="submit" class="btn" style="padding:10px 18px;">Valider</button>
+
+                </form>
+
+            {% endif %}
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}
+

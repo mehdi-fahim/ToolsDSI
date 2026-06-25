@@ -1,0 +1,136 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Locataire - Outil DSI{% endblock %}
+
+{% block content %}
+<div style="max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <div>
+            <h1 style="font-size: 1.6rem; color: #232946; font-weight: 700; margin-bottom: 6px;">Locataire</h1>
+            <p style="color: #718096; font-size: 0.95rem;">Rechercher un locataire par intitulé, ESI, nom ou contrat.</p>
+        </div>
+        <a href="{{ path('admin_dashboard') }}" class="btn btn-secondary">🏠 Dashboard</a>
+    </div>
+
+    {% if error %}
+        <div style="background:#fed7d7;color:#c53030;padding:12px 16px;border-radius:8px;">{{ error }}</div>
+    {% endif %}
+
+    <div style="background:#fff;border-radius:15px;box-shadow:0 8px 32px rgba(0,0,0,0.08);border:1px solid #eef2f7;padding:24px;">
+        <form method="get" action="{{ path('admin_locataire') }}" style="display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;">
+            <div>
+                <label for="type" style="display:block;font-weight:600;color:#232946;font-size:0.9rem;margin-bottom:6px;">Type de recherche</label>
+                <select id="type" name="type" style="padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;min-width:180px;font-size:0.95rem;">
+                    <option value="intitule" {{ searchType == 'intitule' ? 'selected' : '' }}>Intitulé</option>
+                    <option value="esi" {{ searchType == 'esi' ? 'selected' : '' }}>ESI</option>
+                    <option value="nom" {{ searchType == 'nom' ? 'selected' : '' }}>Nom</option>
+                    <option value="contrat" {{ searchType == 'contrat' ? 'selected' : '' }}>Contrat</option>
+                </select>
+            </div>
+            <div style="flex:1;min-width:220px;">
+                <label for="q" style="display:block;font-weight:600;color:#232946;font-size:0.9rem;margin-bottom:6px;">
+                    {% if searchType == 'intitule' %}N° intitulé
+                    {% elseif searchType == 'esi' %}Code ESI
+                    {% elseif searchType == 'contrat' %}N° contrat
+                    {% else %}Nom du locataire{% endif %}
+                </label>
+                <input type="text" id="q" name="q" value="{{ query|e('html_attr') }}"
+                       placeholder="{% if searchType == 'intitule' %}Ex. 12345{% elseif searchType == 'esi' %}Ex. LC* ou *123*{% elseif searchType == 'contrat' %}Ex. 123456{% else %}Ex. DUPONT*{% endif %}"
+                       style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:0.95rem;"
+                       autocomplete="off">
+            </div>
+            <button type="submit" class="btn" style="padding:10px 20px;">Rechercher</button>
+        </form>
+        {% if searchType in ['esi', 'nom'] %}
+            <p style="margin-top:10px;color:#94a3b8;font-size:0.85rem;">Astuce : utilisez <strong>*</strong> comme joker (ex. <code>LC*</code>, <code>*DUPONT*</code>).</p>
+        {% endif %}
+    </div>
+
+    {% if hasSearched %}
+        <div style="background:#fff;border-radius:15px;box-shadow:0 8px 32px rgba(0,0,0,0.08);border:1px solid #eef2f7;padding:24px;">
+            <h2 style="font-size:1.1rem;color:#232946;font-weight:700;margin-bottom:16px;">
+                Résultats
+                <span style="font-weight:400;color:#718096;font-size:0.9rem;">({{ results|length }} trouvé{{ results|length > 1 ? 's' : '' }})</span>
+            </h2>
+
+            {% if results|length == 0 %}
+                <p style="color:#64748b;">Aucun résultat pour cette recherche.</p>
+            {% elseif searchType == 'intitule' %}
+                <div class="table-container" style="box-shadow:none;">
+                    <table class="admin-table" style="font-size:0.9rem;">
+                        <thead>
+                            <tr>
+                                <th>N° Contrat</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in results %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ path('admin_locataire_fiche', {contrat: row.CACTR_NUM}) }}" style="color:#3182ce;font-weight:600;text-decoration:none;">{{ row.CACTR_NUM }}</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="table-container" style="box-shadow:none;">
+                    <table class="admin-table" style="font-size:0.9rem;">
+                        <thead>
+                            <tr>
+                                <th>Nom locataire</th>
+                                <th>ESI</th>
+                                <th>Tiers</th>
+                                <th>Contrat</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in results %}
+                                {% set ficheUrl = row.CONTRAT ? path('admin_locataire_fiche', {contrat: row.CONTRAT}) : (row.TIERS ? path('admin_locataire_fiche', {tiers: row.TIERS}) : null) %}
+                                <tr>
+                                    <td>
+                                        {% if ficheUrl %}
+                                            <a href="{{ ficheUrl }}" style="color:#3182ce;font-weight:600;text-decoration:none;">{{ row.NOM_LOC|default('-') }}</a>
+                                        {% else %}
+                                            {{ row.NOM_LOC|default('-') }}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if ficheUrl %}
+                                            <a href="{{ ficheUrl }}" style="color:#3182ce;font-weight:600;text-decoration:none;">{{ row.ESI|default('-') }}</a>
+                                        {% else %}
+                                            {{ row.ESI|default('-') }}
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ row.TIERS|default('-') }}</td>
+                                    <td>
+                                        {% if row.CONTRAT %}
+                                            <a href="{{ path('admin_locataire_fiche', {contrat: row.CONTRAT}) }}" style="color:#3182ce;text-decoration:none;">{{ row.CONTRAT }}</a>
+                                        {% else %}
+                                            {{ row.CONTRAT|default('-') }}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+
+<script>
+document.getElementById('type').addEventListener('change', function () {
+    const q = document.getElementById('q');
+    const placeholders = {
+        intitule: 'Ex. 12345',
+        esi: 'Ex. LC* ou *123*',
+        nom: 'Ex. DUPONT*',
+        contrat: 'Ex. 123456'
+    };
+    q.placeholder = placeholders[this.value] || '';
+});
+</script>
+{% endblock %}
