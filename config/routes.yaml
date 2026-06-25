@@ -70,6 +70,23 @@ admin_extraction_query:
     path: /admin/extraction/query
     controller: App\Controller\AdminController::extractionQuery
 
+# Routes pour Extraction Divers
+admin_extraction_prestation:
+    path: /admin/extraction-divers/prestation
+    controller: App\Controller\AdminController::extractionPrestation
+
+admin_extraction_listing:
+    path: /admin/extraction-divers/listing
+    controller: App\Controller\AdminController::extractionListing
+
+admin_extraction_suivi_gestion:
+    path: /admin/extraction-divers/suivi-gestion
+    controller: App\Controller\AdminController::extractionSuiviGestion
+
+admin_extraction_ppl:
+    path: /admin/extraction-divers/ppl
+    controller: App\Controller\AdminController::extractionPpl
+
 # Routes pour l'authentification
 login:
     path: /login

@@ -27,13 +27,17 @@ use App\Service\DetailedUserActionLogger;
 use App\Service\ImportODService;
 use App\Service\ImportODOracleService;
 use App\Service\ListeAffectationOracleService;
-use App\Service\InseeOracleService;
 use App\Service\IntitulesCBOracleService;
 use App\Service\PlansOfficeOracleService;
 use App\Service\BiFieldDescriptionService;
 use App\Service\EnvironmentContext;
 use App\Service\GeranceLocativeOracleService;
 use App\Service\LocataireOracleService;
+use App\Service\ExtractionPrestationOracleService;
+use App\Service\ExtractionListingOracleService;
+use App\Service\ExtractionSuiviGestionOracleService;
+use App\Service\ExtractionFlemmingOracleService;
+use App\Service\ExtractionPplOracleService;
 
 #[Route('/admin')]
 class AdminController extends AbstractController
@@ -56,12 +60,16 @@ class AdminController extends AbstractController
         private ImportODService $importODService,
         private ImportODOracleService $importODOracleService,
         private ListeAffectationOracleService $listeAffectationOracleService,
-        private InseeOracleService $inseeOracleService,
         private IntitulesCBOracleService $intitulesCBOracleService,
         private PlansOfficeOracleService $plansOfficeOracleService,
         private BiFieldDescriptionService $biFieldDescriptionService,
         private EnvironmentContext $environmentContext,
         private LocataireOracleService $locataireOracleService,
+        private ExtractionPrestationOracleService $extractionPrestationOracleService,
+        private ExtractionListingOracleService $extractionListingOracleService,
+        private ExtractionSuiviGestionOracleService $extractionSuiviGestionOracleService,
+        private ExtractionFlemmingOracleService $extractionFlemmingOracleService,
+        private ExtractionPplOracleService $extractionPplOracleService,
         private ?DetailedUserActionLogger $detailedUserActionLogger = null,
         private ?GeranceLocativeOracleService $geranceLocativeOracleService = null
     ) {}
@@ -1270,14 +1278,366 @@ class AdminController extends AbstractController
         ]);
     }
 
-    #[Route('/admin/extraction-divers', name: 'admin_extraction_divers', methods: ['GET'])]
-    public function extractionDivers(SessionInterface $session): Response
+    #[Route('/admin/extraction-divers/prestation', name: 'admin_extraction_prestation', methods: ['GET', 'POST'])]
+    public function extractionPrestation(Request $request, SessionInterface $session): Response
     {
         if (!$this->isAuthenticated($session)) {
             return $this->redirectToRoute('login');
         }
 
-        return $this->render('admin/extraction_divers.html.twig');
+        if (!$this->hasExtractionPrestationAccess($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        $marche = trim((string) $request->request->get('marche', $request->query->get('marche', '')));
+        $lot = trim((string) $request->request->get('lot', $request->query->get('lot', '')));
+        $error = null;
+
+        if ($request->isMethod('POST')) {
+            if ($marche === '' || !ctype_digit($marche)) {
+                $error = 'Veuillez saisir un numéro de marché valide.';
+            } elseif ($lot === '') {
+                $error = 'Veuillez saisir un code lot.';
+            } else {
+                try {
+                    $csv = $this->extractionPrestationOracleService->generateCsv((int) $marche, $lot);
+                    $filename = sprintf(
+                        'prestations_marche_%s_lot_%s_%s.csv',
+                        $marche,
+                        preg_replace('/[^a-zA-Z0-9_-]/', '_', $lot),
+                        (new \DateTimeImmutable())->format('Ymd_His')
+                    );
+
+                    return new Response(
+                        $csv,
+                        200,
+                        [
+                            'Content-Type' => 'text/csv; charset=UTF-8',
+                            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                            'Cache-Control' => 'no-store',
+                        ]
+                    );
+                } catch (\Throwable $e) {
+                    $error = 'Erreur lors de l\'extraction : ' . $e->getMessage();
+                }
+            }
+        }
+
+        return $this->render('admin/extraction_prestation.html.twig', [
+            'marche' => $marche,
+            'lot' => $lot,
+            'error' => $error,
+        ]);
+    }
+
+    #[Route('/admin/extraction-divers/listing', name: 'admin_extraction_listing', methods: ['GET', 'POST'])]
+    public function extractionListing(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        if (!$this->hasExtractionListingAccess($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        $anneeReloges = 2015;
+        $action = (string) $request->request->get('action', '');
+        $nomRue = trim((string) $request->request->get('nom_rue', $request->query->get('nom_rue', '')));
+        $groupe = trim((string) $request->request->get('groupe', $request->query->get('groupe', '')));
+        $inclureLogement = $request->request->getBoolean('inclure_logement');
+        $error = null;
+        $groupResults = null;
+
+        if ($request->isMethod('POST')) {
+            try {
+                if ($action === 'chercher_groupe') {
+                    if ($nomRue === '') {
+                        $error = 'Veuillez saisir un libellé de rue.';
+                    } else {
+                        $groupResults = $this->extractionListingOracleService->searchGroupByStreet($nomRue);
+                    }
+                } elseif ($action === 'export_groupe_rue') {
+                    if ($nomRue === '') {
+                        $error = 'Veuillez saisir un libellé de rue.';
+                    } else {
+                        $this->extendExecutionTimeForExport();
+                        return $this->csvResponse(
+                            $this->extractionListingOracleService->generateGroupSearchCsv($nomRue),
+                            sprintf(
+                                'listing_groupes_rue_%s_%s.csv',
+                                preg_replace('/[^a-zA-Z0-9_-]/', '_', $nomRue),
+                                (new \DateTimeImmutable())->format('Ymd_His')
+                            )
+                        );
+                    }
+                } elseif ($action === 'liste_locataire') {
+                    if ($groupe === '') {
+                        $error = 'Veuillez saisir un groupe.';
+                    } else {
+                        $this->extendExecutionTimeForExport();
+                        return $this->csvResponse(
+                            $this->extractionListingOracleService->generateListeLocataireCsv($groupe, $inclureLogement),
+                            sprintf(
+                                'listing_locataires_%s_%s.csv',
+                                preg_replace('/[^a-zA-Z0-9_-]/', '_', $groupe),
+                                (new \DateTimeImmutable())->format('Ymd_His')
+                            )
+                        );
+                    }
+                } elseif ($action === 'reloges') {
+                    $this->extendExecutionTimeForExport(600);
+                    return $this->csvResponse(
+                        $this->extractionListingOracleService->generateRelogesCsv($anneeReloges),
+                        sprintf('listing_reloges_%d_%s.csv', $anneeReloges, (new \DateTimeImmutable())->format('Ymd_His'))
+                    );
+                }
+            } catch (\Throwable $e) {
+                $error = 'Erreur lors du traitement : ' . $e->getMessage();
+            }
+        }
+
+        return $this->render('admin/extraction_listing.html.twig', [
+            'nomRue' => $nomRue,
+            'groupe' => $groupe,
+            'inclureLogement' => $inclureLogement,
+            'anneeReloges' => $anneeReloges,
+            'groupResults' => $groupResults,
+            'error' => $error,
+        ]);
+    }
+
+    #[Route('/admin/extraction-divers/suivi-gestion', name: 'admin_extraction_suivi_gestion', methods: ['GET', 'POST'])]
+    public function extractionSuiviGestion(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        if (!$this->hasExtractionSuiviGestionAccess($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        $today = (new \DateTimeImmutable())->format('Y-m-d');
+        $agence = trim((string) $request->request->get('agence', $request->query->get('agence', '*')));
+        if ($agence === '') {
+            $agence = '*';
+        }
+        $dateDu = trim((string) $request->request->get('date_du', $request->query->get('date_du', $today)));
+        $dateAu = trim((string) $request->request->get('date_au', $request->query->get('date_au', $today)));
+        $action = (string) $request->request->get('action', '');
+        $error = null;
+        $agences = [];
+
+        try {
+            $agences = $this->extractionSuiviGestionOracleService->getAgences();
+        } catch (\Throwable $e) {
+            $error = 'Impossible de charger la liste des agences : ' . $e->getMessage();
+        }
+
+        if ($request->isMethod('POST') && $error === null) {
+            try {
+                $dateDuObj = $this->parseFormDate($dateDu);
+                $dateAuObj = $this->parseFormDate($dateAu);
+
+                if ($dateDuObj === null || $dateAuObj === null) {
+                    $error = 'Veuillez saisir des dates valides.';
+                } elseif ($dateDuObj > $dateAuObj) {
+                    $error = 'La date de début doit être antérieure ou égale à la date de fin.';
+                } elseif ($action === 'contentieux') {
+                    $this->extendExecutionTimeForExport(600);
+                    return $this->csvResponse(
+                        $this->extractionSuiviGestionOracleService->generateContentieuxCsv($dateDuObj, $dateAuObj, $agence),
+                        sprintf(
+                            'suivi_contentieux_%s_%s.csv',
+                            $dateDuObj->format('Ymd'),
+                            (new \DateTimeImmutable())->format('His')
+                        )
+                    );
+                } elseif ($action === 'pre_enc') {
+                    $this->extendExecutionTimeForExport(600);
+                    return $this->csvResponse(
+                        $this->extractionSuiviGestionOracleService->generatePreEncCsv($dateDuObj, $dateAuObj, $agence),
+                        sprintf(
+                            'suivi_pre_encaissements_%s_%s.csv',
+                            $dateDuObj->format('Ymd'),
+                            (new \DateTimeImmutable())->format('His')
+                        )
+                    );
+                }
+            } catch (\Throwable $e) {
+                $error = 'Erreur lors de l\'extraction : ' . $e->getMessage();
+            }
+        }
+
+        return $this->render('admin/extraction_suivi_gestion.html.twig', [
+            'agence' => $agence,
+            'dateDu' => $dateDu,
+            'dateAu' => $dateAu,
+            'agences' => $agences,
+            'error' => $error,
+        ]);
+    }
+
+    #[Route('/extraction-divers/ppl', name: 'admin_extraction_ppl', methods: ['GET', 'POST'])]
+    public function extractionPpl(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        if (!$this->hasExtractionPplAccess($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        $today = (new \DateTimeImmutable())->format('Y-m-d');
+        $defaultMoisEau = (new \DateTimeImmutable('first day of last month'))->format('Y-m-d');
+        $action = (string) $request->request->get('action', '');
+        $periode = trim((string) $request->request->get('periode', $request->query->get('periode', '')));
+        $dateListeOd = trim((string) $request->request->get('date_liste_od', $request->query->get('date_liste_od', $today)));
+        $moisEau = trim((string) $request->request->get('mois_eau', $request->query->get('mois_eau', $defaultMoisEau)));
+        $error = null;
+
+        if ($request->isMethod('POST')) {
+            try {
+                $this->extendExecutionTimeForExport(600);
+
+                if ($action === 'quote_parts') {
+                    if ($periode === '') {
+                        $error = 'Veuillez saisir une période (GLPER_COD).';
+                    } else {
+                        return $this->csvResponse(
+                            $this->extractionPplOracleService->generateQuotePartsCsv($periode),
+                            sprintf('ppl_quote_parts_%s_%s.csv', preg_replace('/[^a-zA-Z0-9_-]/', '_', $periode), (new \DateTimeImmutable())->format('Ymd_His'))
+                        );
+                    }
+                } elseif ($action === 'liste_od') {
+                    $dateObj = $this->parseFormDate($dateListeOd);
+                    if ($dateObj === null) {
+                        $error = 'Veuillez saisir une date valide.';
+                    } else {
+                        return $this->csvResponse(
+                            $this->extractionPplOracleService->generateListeOdCsv($dateObj),
+                            sprintf('ppl_liste_od_%s_%s.csv', $dateObj->format('Ymd'), (new \DateTimeImmutable())->format('His'))
+                        );
+                    }
+                } elseif ($action === 'topnu_alloc') {
+                    $this->extendExecutionTimeForExport(600, '1024M');
+                    return $this->csvResponse(
+                        $this->extractionPplOracleService->generateTopnuAllocCsv(),
+                        sprintf('ppl_topnu_alloc_%s.csv', (new \DateTimeImmutable())->format('Ymd_His'))
+                    );
+                } elseif ($action === 'topnu_detail') {
+                    $this->extendExecutionTimeForExport(600, '1024M');
+                    return $this->csvResponse(
+                        $this->extractionPplOracleService->generateTopnuDetailCsv(),
+                        sprintf('ppl_topnu_detail_%s.csv', (new \DateTimeImmutable())->format('Ymd_His'))
+                    );
+                } elseif ($action === 'fact_eau') {
+                    $moisObj = $this->parseFormDate($moisEau);
+                    if ($moisObj === null) {
+                        $error = 'Veuillez saisir une date valide.';
+                    } else {
+                        return $this->csvResponse(
+                            $this->extractionPplOracleService->generateFactEauMensuelleCsv($moisObj),
+                            sprintf('ppl_fact_eau_%s_%s.csv', $moisObj->format('Ymd'), (new \DateTimeImmutable())->format('His'))
+                        );
+                    }
+                } elseif ($action === 'cles_repartition') {
+                    return $this->csvResponse(
+                        $this->extractionPplOracleService->generateClesRepartitionCsv(),
+                        sprintf('ppl_cles_repartition_%s.csv', (new \DateTimeImmutable())->format('Ymd_His'))
+                    );
+                }
+            } catch (\Throwable $e) {
+                $error = 'Erreur lors de l\'extraction : ' . $e->getMessage();
+            }
+        }
+
+        return $this->render('admin/extraction_ppl.html.twig', [
+            'periode' => $periode,
+            'dateListeOd' => $dateListeOd,
+            'moisEau' => $moisEau,
+            'error' => $error,
+        ]);
+    }
+
+    #[Route('/import/flemming', name: 'admin_import_flemming', methods: ['GET', 'POST'])]
+    public function extractionFlemming(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        if (!$this->hasImportFlemmingAccess($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        $action = (string) $request->request->get('action', '');
+        $intitules = (string) $request->request->get('intitules', '');
+        $classeur = trim((string) $request->request->get('classeur', ''));
+        $lot = trim((string) $request->request->get('lot', ''));
+        $error = null;
+        $success = null;
+        $intitulesCount = 0;
+        $colibeauCount = 0;
+
+        try {
+            $intitulesCount = $this->extractionFlemmingOracleService->countIntitulesCharges();
+            $colibeauCount = $this->extractionFlemmingOracleService->countColibeauCharges();
+        } catch (\Throwable $e) {
+            $error = 'Impossible de lire l\'état des tables Flemming : ' . $e->getMessage();
+        }
+
+        if ($request->isMethod('POST') && $error === null) {
+            try {
+                if ($action === 'charger_intitules') {
+                    if (trim($intitules) === '') {
+                        $error = 'Veuillez saisir au moins un intitulé.';
+                    } else {
+                        $count = $this->extractionFlemmingOracleService->loadIntitulesFromText($intitules);
+                        $intitulesCount = $count;
+                        $success = sprintf('%d intitulé(s) chargé(s) dans SP_LOC_PARTIS.', $count);
+                    }
+                } elseif ($action === 'generer_flemming') {
+                    $this->extendExecutionTimeForExport(600);
+                    return $this->csvResponse(
+                        $this->extractionFlemmingOracleService->generateFlemmingCsv(),
+                        sprintf('flemming_%s.csv', (new \DateTimeImmutable())->format('Ymd_His'))
+                    );
+                } elseif ($action === 'charger_colibeau') {
+                    $file = $request->files->get('fichier_colibeau');
+                    if (!$file) {
+                        $error = 'Veuillez sélectionner un fichier CSV.';
+                    } else {
+                        $count = $this->extractionFlemmingOracleService->loadColibeauFromCsvFile($file);
+                        $colibeauCount = $count;
+                        $success = sprintf('%d ligne(s) chargée(s) dans flemming_colibeau.', $count);
+                    }
+                } elseif ($action === 'charger_mouvements') {
+                    if ($classeur === '' || !ctype_digit($classeur) || $lot === '' || !ctype_digit($lot)) {
+                        $error = 'Veuillez saisir un classeur et un lot valides.';
+                    } elseif ($colibeauCount === 0) {
+                        $error = 'Veuillez d\'abord charger un fichier dans flemming_colibeau.';
+                    } else {
+                        $inserted = $this->extractionFlemmingOracleService->chargerMouvements((int) $classeur, (int) $lot);
+                        $success = sprintf('%d mouvement(s) intégré(s) dans camov.', $inserted);
+                    }
+                }
+            } catch (\Throwable $e) {
+                $error = 'Erreur lors du traitement : ' . $e->getMessage();
+            }
+        }
+
+        return $this->render('admin/extraction_flemming.html.twig', [
+            'intitules' => $intitules,
+            'classeur' => $classeur,
+            'lot' => $lot,
+            'intitulesCount' => $intitulesCount,
+            'colibeauCount' => $colibeauCount,
+            'error' => $error,
+            'success' => $success,
+        ]);
     }
 
     #[Route('/admin/extraction/query', name: 'admin_extraction_query', methods: ['POST'])]
@@ -1342,7 +1702,10 @@ class AdminController extends AbstractController
             'admin_entity_view' => 'Document BI',
             'admin_users' => 'Utilisateurs',
             'admin_extraction' => 'Extraction CSV',
-            'admin_extraction_divers' => 'Extraction Divers',
+            'admin_extraction_prestation' => 'Extraction prestation',
+            'admin_extraction_listing' => 'Listing',
+            'admin_extraction_suivi_gestion' => 'Suivi de gestion',
+            'admin_extraction_ppl' => 'Extraction PPL',
             'admin_engagement' => 'Engagements',
             'admin_logement' => 'Logement',
             'admin_user_unlock' => 'Débloquer MDP',
@@ -1359,6 +1722,7 @@ class AdminController extends AbstractController
             'admin_traitement_gl' => 'Traitement GL',
             'admin_gerance_locative' => 'Gérance Locative',
             'admin_import_paiement_cb' => 'Import Paiement CB',
+            'admin_import_flemming' => 'Flemming',
             'admin_locataire' => 'Locataire',
         ];
 
@@ -1888,35 +2252,6 @@ class AdminController extends AbstractController
         return $this->redirectToRoute('admin_gerance_locative', [
             'contrat_diag' => $contratDiag,
         ]);
-    }
-
-    #[Route('/admin/traitement-gl/insee', name: 'admin_traitement_gl_insee', methods: ['GET'])]
-    public function traitementGlInsee(Request $request, SessionInterface $session): Response
-    {
-        if (!$this->isAuthenticated($session)) {
-            return $this->redirectToRoute('login');
-        }
-
-        // Année figée à 2022 comme dans l'ancienne application
-        $annee = 2022;
-        try {
-            $csv = $this->inseeOracleService->generateCsv($annee);
-        } catch (\Throwable $e) {
-            $this->addFlash('error', 'Erreur lors de l\'export INSEE : ' . $e->getMessage());
-            return $this->redirectToRoute('admin_traitement_gl');
-        }
-
-        $filename = sprintf('insee_%d_%s.csv', $annee, (new \DateTimeImmutable())->format('Ymd_His'));
-
-        return new Response(
-            $csv,
-            200,
-            [
-                'Content-Type' => 'text/csv; charset=UTF-8',
-                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-                'Cache-Control' => 'no-store',
-            ]
-        );
     }
 
     #[Route('/admin/traitement-gl/plans/generer', name: 'admin_traitement_gl_plans_generer', methods: ['GET'])]
@@ -2681,4 +3016,105 @@ class AdminController extends AbstractController
         $access = (array) $session->get('page_access', []);
         return in_array('admin_extraction', $access, true);
     }
-} 
+
+    private function hasExtractionPrestationAccess(SessionInterface $session): bool
+    {
+        if (!$this->isAuthenticated($session)) {
+            return false;
+        }
+        if ($this->isAdmin($session) || $this->isSuperAdmin($session)) {
+            return true;
+        }
+
+        $access = (array) $session->get('page_access', []);
+        return in_array('admin_extraction_prestation', $access, true)
+            || in_array('admin_extraction_divers', $access, true);
+    }
+
+    private function hasExtractionListingAccess(SessionInterface $session): bool
+    {
+        if (!$this->isAuthenticated($session)) {
+            return false;
+        }
+        if ($this->isAdmin($session) || $this->isSuperAdmin($session)) {
+            return true;
+        }
+
+        $access = (array) $session->get('page_access', []);
+        return in_array('admin_extraction_listing', $access, true);
+    }
+
+    private function hasExtractionSuiviGestionAccess(SessionInterface $session): bool
+    {
+        if (!$this->isAuthenticated($session)) {
+            return false;
+        }
+        if ($this->isAdmin($session) || $this->isSuperAdmin($session)) {
+            return true;
+        }
+
+        $access = (array) $session->get('page_access', []);
+        return in_array('admin_extraction_suivi_gestion', $access, true);
+    }
+
+    private function hasImportFlemmingAccess(SessionInterface $session): bool
+    {
+        if (!$this->isAuthenticated($session)) {
+            return false;
+        }
+        if ($this->isAdmin($session) || $this->isSuperAdmin($session)) {
+            return true;
+        }
+
+        $access = (array) $session->get('page_access', []);
+        return in_array('admin_import_flemming', $access, true)
+            || in_array('admin_extraction_flemming', $access, true);
+    }
+
+    private function hasExtractionPplAccess(SessionInterface $session): bool
+    {
+        if (!$this->isAuthenticated($session)) {
+            return false;
+        }
+        if ($this->isAdmin($session) || $this->isSuperAdmin($session)) {
+            return true;
+        }
+
+        $access = (array) $session->get('page_access', []);
+        return in_array('admin_extraction_ppl', $access, true);
+    }
+
+    private function parseFormDate(string $value): ?\DateTimeImmutable
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return null;
+        }
+
+        $date = \DateTimeImmutable::createFromFormat('Y-m-d', $value);
+
+        return $date ?: null;
+    }
+
+    private function csvResponse(string $csv, string $filename): Response
+    {
+        return new Response(
+            $csv,
+            200,
+            [
+                'Content-Type' => 'text/csv; charset=UTF-8',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                'Cache-Control' => 'no-store',
+            ]
+        );
+    }
+
+    private function extendExecutionTimeForExport(int $seconds = 300, string $memoryLimit = '512M'): void
+    {
+        if (function_exists('set_time_limit')) {
+            @set_time_limit($seconds);
+        }
+        @ini_set('max_execution_time', (string) $seconds);
+        @ini_set('memory_limit', $memoryLimit);
+    }
+}

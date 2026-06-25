@@ -467,7 +467,7 @@
                 {% endif %}
 
                 {# Menu déroulant Import #}
-                {% set hasImportAccess = ('admin_import_od' in access) or ('admin_import_paiement_cb' in access) %}
+                {% set hasImportAccess = ('admin_import_od' in access) or ('admin_import_paiement_cb' in access) or ('admin_import_flemming' in access) or ('admin_extraction_flemming' in access) %}
                 {% if hasImportAccess %}
                 <li class="sidebar-dropdown">
                     <div class="dropdown-toggle" onclick="toggleDropdown(this)">
@@ -485,6 +485,11 @@
                             <span>Paiement CB</span>
                         </a>
                         {% endif %}
+                        {% if 'admin_import_flemming' in access or 'admin_extraction_flemming' in access %}
+                        <a data-turbo-prefetch href="{{ path('admin_import_flemming') }}">
+                            <span>Flemming</span>
+                        </a>
+                        {% endif %}
                     </div>
                 </li>
                 {% endif %}
@@ -494,8 +499,36 @@
                     <li><a data-turbo-prefetch href="{{ path('admin_user_unlock') }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">🔒 <span>Débloquer MDP</span></a></li>
                 {% endif %}
 
-                {% if 'admin_extraction_divers' in access %}
-                    <li><a data-turbo-prefetch href="{{ path('admin_extraction_divers') }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">🧩 <span>Extraction Divers</span></a></li>
+                {% set hasExtractionDiversAccess = ('admin_extraction_prestation' in access) or ('admin_extraction_divers' in access) or ('admin_extraction_listing' in access) or ('admin_extraction_suivi_gestion' in access) or ('admin_extraction_ppl' in access) %}
+                {% if hasExtractionDiversAccess %}
+                <li class="sidebar-dropdown">
+                    <div class="dropdown-toggle" onclick="toggleDropdown(this)">
+                        <span style="display: flex; align-items: center; gap: 12px;">🧩 <span>Extraction Divers</span></span>
+                        <span class="dropdown-arrow">▼</span>
+                    </div>
+                    <div class="dropdown-menu">
+                        {% if 'admin_extraction_prestation' in access or 'admin_extraction_divers' in access %}
+                        <a data-turbo-prefetch href="{{ path('admin_extraction_prestation') }}">
+                            <span>Extraction prestation</span>
+                        </a>
+                        {% endif %}
+                        {% if 'admin_extraction_listing' in access %}
+                        <a data-turbo-prefetch href="{{ path('admin_extraction_listing') }}">
+                            <span>Listing</span>
+                        </a>
+                        {% endif %}
+                        {% if 'admin_extraction_suivi_gestion' in access %}
+                        <a data-turbo-prefetch href="{{ path('admin_extraction_suivi_gestion') }}">
+                            <span>Suivi de gestion</span>
+                        </a>
+                        {% endif %}
+                        {% if 'admin_extraction_ppl' in access %}
+                        <a data-turbo-prefetch href="{{ path('admin_extraction_ppl') }}">
+                            <span>Extraction PPL</span>
+                        </a>
+                        {% endif %}
+                    </div>
+                </li>
                 {% endif %}
                 
                 {# Système #}

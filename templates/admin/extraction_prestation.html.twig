@@ -1,0 +1,59 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Extraction prestation{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="admin-header">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+            <div>
+                <h1>📋 Extraction prestation</h1>
+                <p>Extraction des prestations rattachées à un marché.</p>
+            </div>
+            <a href="{{ path('admin_dashboard') }}" class="btn btn-secondary">← Retour</a>
+        </div>
+    </div>
+
+    <div class="admin-content">
+        {% if error %}
+            <div style="background:#fed7d7;color:#c53030;padding:12px 16px;border-radius:8px;margin-bottom:20px;">
+                {{ error }}
+            </div>
+        {% endif %}
+
+        <form method="POST" action="{{ path('admin_extraction_prestation') }}" data-turbo="false" style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;">
+            <div>
+                <label for="marche" style="display:block;font-weight:600;color:#4a5568;margin-bottom:6px;">Marché</label>
+                <input
+                    type="text"
+                    id="marche"
+                    name="marche"
+                    class="search-input"
+                    style="min-width:180px;"
+                    value="{{ marche }}"
+                    required
+                    inputmode="numeric"
+                    pattern="[0-9]+"
+                    placeholder="Numéro de marché"
+                >
+            </div>
+
+            <div>
+                <label for="lot" style="display:block;font-weight:600;color:#4a5568;margin-bottom:6px;">Lot</label>
+                <input
+                    type="text"
+                    id="lot"
+                    name="lot"
+                    class="search-input"
+                    style="min-width:180px;"
+                    value="{{ lot }}"
+                    required
+                    placeholder="Code lot"
+                >
+            </div>
+
+            <button type="submit" class="btn btn-success">⬇️ Extraire</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

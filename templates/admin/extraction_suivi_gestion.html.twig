@@ -1,0 +1,64 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Suivi de gestion{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="admin-header">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+            <div>
+                <h1>📊 Suivi de gestion</h1>
+                <p>Extractions du suivi contentieux et des pré-encaissements.</p>
+            </div>
+            <a href="{{ path('admin_dashboard') }}" class="btn btn-secondary">← Retour</a>
+        </div>
+    </div>
+
+    <div class="admin-content" style="display:flex;flex-direction:column;gap:24px;">
+        {% if error %}
+            <div style="background:#fed7d7;color:#c53030;padding:12px 16px;border-radius:8px;">
+                {{ error }}
+            </div>
+        {% endif %}
+
+        <form method="POST" action="{{ path('admin_extraction_suivi_gestion') }}" data-turbo="false">
+            <section style="background:#f7fafc;border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin-bottom:24px;">
+                <h2 style="font-size:1.1rem;color:#2d3748;margin-bottom:16px;">Mes paramètres de recherche</h2>
+                <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;">
+                    <div>
+                        <label for="agence" style="display:block;font-weight:600;color:#4a5568;margin-bottom:6px;">Agence</label>
+                        <select id="agence" name="agence" class="search-input" style="min-width:220px;">
+                            <option value="*" {{ agence == '*' ? 'selected' : '' }}>*</option>
+                            {% for agenceItem in agences %}
+                                <option value="{{ agenceItem }}" {{ agence == agenceItem ? 'selected' : '' }}>{{ agenceItem }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label for="date_du" style="display:block;font-weight:600;color:#4a5568;margin-bottom:6px;">Période du</label>
+                        <input type="date" id="date_du" name="date_du" class="search-input" value="{{ dateDu }}" required>
+                    </div>
+                    <div>
+                        <label for="date_au" style="display:block;font-weight:600;color:#4a5568;margin-bottom:6px;">au</label>
+                        <input type="date" id="date_au" name="date_au" class="search-input" value="{{ dateAu }}" required>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h2 style="font-size:1.1rem;color:#2d3748;margin-bottom:16px;">Mes extractions</h2>
+                <div style="display:flex;flex-direction:column;gap:14px;">
+                    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;">
+                        <span style="color:#4a5568;">Extraction du suivi Contentieux</span>
+                        <button type="submit" name="action" value="contentieux" class="btn btn-success">⬇️ Obtenir le fichier</button>
+                    </div>
+                    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px;">
+                        <span style="color:#4a5568;">Extraction du suivi des pré-encaissements</span>
+                        <button type="submit" name="action" value="pre_enc" class="btn btn-success">⬇️ Obtenir le fichier</button>
+                    </div>
+                </div>
+            </section>
+        </form>
+    </div>
+</div>
+{% endblock %}

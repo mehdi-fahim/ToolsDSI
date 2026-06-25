@@ -112,11 +112,6 @@ services:
             $projectDir: '%kernel.project_dir%'
             $oracleService: '@App\Service\ImportODOracleService'
 
-    # Service INSEE (connexion selon environnement session)
-    App\Service\InseeOracleService:
-        arguments:
-            $connectionResolver: '@App\Service\DatabaseConnectionResolver'
-
     # Service Intitulés CB (connexion selon environnement session)
     App\Service\IntitulesCBOracleService:
         arguments:
@@ -156,6 +151,26 @@ services:
             $connectionResolver: '@App\Service\DatabaseConnectionResolver'
 
     App\Service\LocataireOracleService:
+        arguments:
+            $connectionResolver: '@App\Service\DatabaseConnectionResolver'
+
+    App\Service\ExtractionPrestationOracleService:
+        arguments:
+            $connectionResolver: '@App\Service\DatabaseConnectionResolver'
+
+    App\Service\ExtractionListingOracleService:
+        arguments:
+            $connectionResolver: '@App\Service\DatabaseConnectionResolver'
+
+    App\Service\ExtractionSuiviGestionOracleService:
+        arguments:
+            $connectionResolver: '@App\Service\DatabaseConnectionResolver'
+
+    App\Service\ExtractionFlemmingOracleService:
+        arguments:
+            $connectionResolver: '@App\Service\DatabaseConnectionResolver'
+
+    App\Service\ExtractionPplOracleService:
         arguments:
             $connectionResolver: '@App\Service\DatabaseConnectionResolver'
 

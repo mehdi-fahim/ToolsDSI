@@ -1,0 +1,83 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Flemming{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="admin-header">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+            <div>
+                <h1>📁 Flemming</h1>
+                <p>Intégration des intitulés et des mouvements Flemming.</p>
+            </div>
+            <a href="{{ path('admin_dashboard') }}" class="btn btn-secondary">← Retour</a>
+        </div>
+    </div>
+
+    <div class="admin-content" style="display:flex;flex-direction:column;gap:24px;">
+        {% if error %}
+            <div style="background:#fed7d7;color:#c53030;padding:12px 16px;border-radius:8px;">
+                {{ error }}
+            </div>
+        {% endif %}
+        {% if success %}
+            <div style="background:#c6f6d5;color:#22543d;padding:12px 16px;border-radius:8px;">
+                {{ success }}
+            </div>
+        {% endif %}
+
+        <section style="padding-bottom:24px;border-bottom:1px solid #e2e8f0;">
+            <h2 style="font-size:1.1rem;color:#2d3748;margin-bottom:12px;">Intégrer la liste des intitulés (1 seule colonne)</h2>
+            <form method="POST" action="{{ path('admin_import_flemming') }}" data-turbo="false">
+                <input type="hidden" name="action" value="charger_intitules">
+                <textarea
+                    name="intitules"
+                    class="search-input"
+                    style="width:100%;min-height:160px;margin-bottom:12px;font-family:monospace;"
+                    placeholder="Saisir un numéro d'intitulé par ligne"
+                >{{ intitules }}</textarea>
+                <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
+                    <button type="submit" class="btn">Charger les intitulés</button>
+                    {% if intitulesCount > 0 %}
+                        <span style="color:#38a169;">✓ {{ intitulesCount }} intitulé(s) chargé(s)</span>
+                    {% endif %}
+                </div>
+            </form>
+
+            {% if intitulesCount > 0 or colibeauCount > 0 %}
+                <form method="POST" action="{{ path('admin_import_flemming') }}" data-turbo="false" style="margin-top:16px;">
+                    <input type="hidden" name="action" value="generer_flemming">
+                    <button type="submit" class="btn btn-success">⬇️ Générer le fichier Excel</button>
+                </form>
+            {% endif %}
+        </section>
+
+        <section>
+            <h2 style="font-size:1.1rem;color:#2d3748;margin-bottom:12px;">Intégrer les mouvements Flemming dans un lot (FCOLIBEAU)</h2>
+            <form method="POST" action="{{ path('admin_import_flemming') }}" enctype="multipart/form-data" data-turbo="false" style="display:flex;flex-direction:column;gap:16px;">
+                <input type="hidden" name="action" value="charger_colibeau">
+                <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
+                    <input type="file" name="fichier_colibeau" accept=".csv,.txt" required>
+                    <button type="submit" class="btn">Charger le fichier</button>
+                    {% if colibeauCount > 0 %}
+                        <span style="color:#38a169;">✓ {{ colibeauCount }} ligne(s) chargée(s)</span>
+                    {% endif %}
+                </div>
+            </form>
+
+            <form method="POST" action="{{ path('admin_import_flemming') }}" data-turbo="false" style="margin-top:16px;display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;">
+                <input type="hidden" name="action" value="charger_mouvements">
+                <div>
+                    <label for="classeur" style="display:block;font-weight:600;color:#4a5568;margin-bottom:6px;">Classeur</label>
+                    <input type="text" id="classeur" name="classeur" class="search-input" style="min-width:120px;" value="{{ classeur }}" required inputmode="numeric" pattern="[0-9]+">
+                </div>
+                <div>
+                    <label for="lot" style="display:block;font-weight:600;color:#4a5568;margin-bottom:6px;">Lot</label>
+                    <input type="text" id="lot" name="lot" class="search-input" style="min-width:180px;" value="{{ lot }}" required inputmode="numeric" pattern="[0-9]+">
+                </div>
+                <button type="submit" class="btn btn-success">Charger les mouvements</button>
+            </form>
+        </section>
+    </div>
+</div>
+{% endblock %}
