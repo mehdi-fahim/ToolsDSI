@@ -164,7 +164,7 @@ class ExtractionOracleService
     private function addLocataireFields(string &$clauseSelect, string &$clauseFrom, array $selectedFields): void
     {
         // Vérifier si on a besoin des informations locataire
-        $locataireFields = ['contrat', 'intitule', 'tiers', 'libelle_intitule', 'telephone', 'age', 'assurance_jour', 'prelevement', 'date_debut_contrat', 'date_fin_contrat', 'adresse_regroupement', 'immatriculation', 'marque_vehicule'];
+        $locataireFields = ['contrat', 'intitule', 'tiers', 'libelle_intitule', 'telephone', 'email', 'age', 'assurance_jour', 'prelevement', 'date_debut_contrat', 'date_fin_contrat', 'adresse_regroupement', 'immatriculation', 'marque_vehicule'];
         
         if (array_intersect($locataireFields, $selectedFields)) {
             $clauseFrom .= " LEFT JOIN GLELC c ON c.paesi_num = a.paesi_num AND (SELECT GLCON_TEMCA FROM GLCON WHERE glcon_num = c.glcon_num AND glcon_numver = c.glcon_numver) = 'F' AND c.GLELC_DTF IS NULL";
@@ -182,10 +182,13 @@ class ExtractionOracleService
                 $clauseSelect .= ", d.CAINT_NUM as Intitule";
             }
             
-            // Tiers
+            // Tiers (jointure CAICL requise aussi pour téléphone, email et age)
+            if (in_array('tiers', $selectedFields) || in_array('telephone', $selectedFields) || in_array('email', $selectedFields) || in_array('age', $selectedFields)) {
+                $clauseFrom .= " LEFT JOIN CAICL e ON e.caint_num = d.caint_num AND e.CAICL_TEMP = 'T' AND e.CAICL_DTF IS NULL";
+            }
+
             if (in_array('tiers', $selectedFields)) {
                 $clauseSelect .= ", e.Totie_COD as Tiers";
-                $clauseFrom .= " LEFT JOIN CAICL e ON e.caint_num = d.caint_num AND e.CAICL_TEMP = 'T' AND e.CAICL_DTF IS NULL";
             }
             
             // Libellé intitulé
@@ -196,6 +199,11 @@ class ExtractionOracleService
             // Téléphone
             if (in_array('telephone', $selectedFields)) {
                 $clauseSelect .= ", GET_PORTABLE(e.Totie_COD) as Tel_Portable";
+            }
+
+            // Email
+            if (in_array('email', $selectedFields)) {
+                $clauseSelect .= ", GET_EMAIL(e.Totie_COD) as Email";
             }
             
             // Age
@@ -371,6 +379,7 @@ class ExtractionOracleService
             'tiers' => 'TIERS',
             'libelle_intitule' => 'LIBELLE_INTITULE',
             'telephone' => 'TEL_PORTABLE',
+            'email' => 'EMAIL',
             'age' => 'AGE',
             'assurance_jour' => 'ASSURANCE_A_JOUR',
             'prelevement' => 'PRELEVEMENT',
@@ -425,6 +434,7 @@ class ExtractionOracleService
             'tiers' => 'Tiers',
             'libelle_intitule' => 'Libellé Intitulé',
             'telephone' => 'Téléphone',
+            'email' => 'Email',
             'age' => 'Age',
             'assurance_jour' => 'Assurance à jour',
             'prelevement' => 'Prélèvement',

@@ -74,7 +74,7 @@
     <div style="background: #e6fffa; border: 1px solid #38b2ac; border-radius: 8px; padding: 20px; margin-bottom: 30px;">
         <h3 style="color: #2c7a7b; margin-bottom: 15px;">ℹ️ Règles de sélection automatique</h3>
         <div style="color: #2c7a7b; font-size: 0.9rem; line-height: 1.6;">
-            <p><strong>Locataire :</strong> Si vous sélectionnez Libellé Intitulé, Téléphone, Age ou Adresse de regroupement, le champ Tiers sera automatiquement coché.</p>
+            <p><strong>Locataire :</strong> Si vous sélectionnez Libellé Intitulé, Téléphone, Email, Age ou Adresse de regroupement, le champ Tiers sera automatiquement coché.</p>
             <p><strong>Locataire/Ménage/Loyer :</strong> Si vous sélectionnez certains champs spécifiques, les champs Contrat et Intitulé seront automatiquement cochés (champs obligatoires).</p>
             <p style="margin-top: 10px; font-style: italic;">Les champs cochés automatiquement sont désactivés pour éviter les erreurs de sélection.</p>
         </div>
@@ -243,6 +243,10 @@
                     <input type="checkbox" name="fields[]" value="marque_vehicule" {{ 'marque_vehicule' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
                     <span>Marque Véhicule</span>
                 </label>
+                <label class="checkbox-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" name="fields[]" value="email" {{ 'email' in selectedFields ? 'checked' : '' }} style="width: 16px; height: 16px;">
+                    <span>Email</span>
+                </label>
             </div>
         </div>
 
@@ -343,16 +347,18 @@
         // Récupérer tous les checkboxes
         const checkboxes = document.querySelectorAll('input[name="fields[]"]');
         
-        // Règle 1: Locataire - Si Libellé Intitulé (3) OU Téléphone (4) OU Age (5) OU Adresse de regroupement (10) est coché
-        // ⇒ coche Tiers (2)
+        // Règle 1: Locataire - Si Libellé Intitulé OU Téléphone OU Email OU Age OU Adresse de regroupement est coché
+        // ⇒ coche Tiers
         const libelleIntitule = document.querySelector('input[value="libelle_intitule"]');
         const telephone = document.querySelector('input[value="telephone"]');
+        const email = document.querySelector('input[value="email"]');
         const age = document.querySelector('input[value="age"]');
         const adresseRegroupement = document.querySelector('input[value="adresse_regroupement"]');
         const tiers = document.querySelector('input[value="tiers"]');
         
         if ((libelleIntitule && libelleIntitule.checked) || 
             (telephone && telephone.checked) || 
+            (email && email.checked) ||
             (age && age.checked) || 
             (adresseRegroupement && adresseRegroupement.checked)) {
             if (tiers) {
@@ -376,6 +382,7 @@
         if ((tiers && tiers.checked) || 
             (libelleIntitule && libelleIntitule.checked) || 
             (telephone && telephone.checked) || 
+            (email && email.checked) ||
             (age && age.checked) || 
             (assuranceJour && assuranceJour.checked) || 
             (prelevement && prelevement.checked) || 
