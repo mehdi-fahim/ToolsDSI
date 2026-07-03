@@ -12,6 +12,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
@@ -2848,43 +2849,14 @@ class AdminController extends AbstractController
             return $this->redirectToRoute('login');
         }
 
+        $session->save();
+
         $datetime = (new \DateTimeImmutable())->format('Ymd_His');
-        $filename = "liste_affectations_{$datetime}.csv";
 
-        $headers = [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-        ];
-
-        $response = new \Symfony\Component\HttpFoundation\StreamedResponse(function () {
-            set_time_limit(0);
-            $out = fopen('php://output', 'w');
-            // BOM UTF-8 pour Excel
-            fwrite($out, "\xEF\xBB\xBF");
-            fputcsv($out, [
-                'AGENCE','GROUPE','ESO_GROUPE','BATIMENT','ESO_BATIMENT','ESCALIER','ESO_ESC','LOT','NATURE_LOT',
-                'RGT_GPE','RGTL_GPE','CGLS_GPE','INLOG_GPE','TEDL_GPE','TPROX_GPE','RVQ_GPE','GARDIEN_GPE',
-                'RGT_BAT','RGTL_BAT','CGLS_BAT','INLOG_BAT','TEDL_BAT','TPROX_BAT','RVQ_BAT','GARDIEN_BAT',
-                'RGT_ESC','RGTL_ESC','CGLS_ESC','INLOG_ESC','TEDL_ESC','TPROX_ESC','RVQ_ESC','GARDIEN_ESC',
-                'RGT_LOT','RGTL_LOT','CGLS_LOT','INLOG_LOT','TEDL_LOT','TPROX_LOT','RVQ_LOT','GARDIEN_LOT',
-                'ESO_GARDIEN','GARD_TEL','GARD_MAIL'
-            ], ';');
-
-            foreach ($this->listeAffectationOracleService->getAllAffectationsForExport() as $row) {
-                fputcsv($out, [
-                    $row['AGENCE'] ?? '', $row['GROUPE'] ?? '', $row['ESO_GROUPE'] ?? '', $row['BATIMENT'] ?? '', $row['ESO_BATIMENT'] ?? '', $row['ESCALIER'] ?? '', $row['ESO_ESC'] ?? '', $row['LOT'] ?? '', $row['NATURE_LOT'] ?? '',
-                    $row['RGT_GPE'] ?? '', $row['RGTL_GPE'] ?? '', $row['CGLS_GPE'] ?? '', $row['INLOG_GPE'] ?? '', $row['TEDL_GPE'] ?? '', $row['TPROX_GPE'] ?? '', $row['RVQ_GPE'] ?? '', $row['GARDIEN_GPE'] ?? '',
-                    $row['RGT_BAT'] ?? '', $row['RGTL_BAT'] ?? '', $row['CGLS_BAT'] ?? '', $row['INLOG_BAT'] ?? '', $row['TEDL_BAT'] ?? '', $row['TPROX_BAT'] ?? '', $row['RVQ_BAT'] ?? '', $row['GARDIEN_BAT'] ?? '',
-                    $row['RGT_ESC'] ?? '', $row['RGTL_ESC'] ?? '', $row['CGLS_ESC'] ?? '', $row['INLOG_ESC'] ?? '', $row['TEDL_ESC'] ?? '', $row['TPROX_ESC'] ?? '', $row['RVQ_ESC'] ?? '', $row['GARDIEN_ESC'] ?? '',
-                    $row['RGT_LOT'] ?? '', $row['RGTL_LOT'] ?? '', $row['CGLS_LOT'] ?? '', $row['INLOG_LOT'] ?? '', $row['TEDL_LOT'] ?? '', $row['TPROX_LOT'] ?? '', $row['RVQ_LOT'] ?? '', $row['GARDIEN_LOT'] ?? '',
-                    $row['ESO_GARDIEN'] ?? '', $row['GARD_TEL'] ?? '', $row['GARD_MAIL'] ?? '',
-                ], ';');
-            }
-
-            fclose($out);
-        });
-        $response->headers->add($headers);
-        return $response;
+        return $this->streamListeAffectationCsvResponse(
+            "liste_affectations_{$datetime}.csv",
+            $this->listeAffectationOracleService->getAllAffectationsForExport()
+        );
     }
 
     #[Route('/liste-affectation/export-current', name: 'admin_liste_affectation_export_current', methods: ['GET'])]
@@ -2908,6 +2880,8 @@ class AdminController extends AbstractController
             return $this->redirectToRoute('admin_liste_affectation');
         }
 
+        $session->save();
+
         $datetime = (new \DateTimeImmutable())->format('Ymd_His');
         $filterTokens = array_filter([$criterion, $search], static fn ($v): bool => $v !== '');
         $filterTokens = array_map(
@@ -2918,41 +2892,13 @@ class AdminController extends AbstractController
             $filterTokens
         );
         $filterLabel = $filterTokens !== [] ? implode('-', $filterTokens) : 'filtre';
-        $filename = "liste_affectations_{$filterLabel}_{$datetime}.csv";
 
-        $headers = [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-        ];
-
-        $response = new \Symfony\Component\HttpFoundation\StreamedResponse(function () use ($search, $criterion) {
-            set_time_limit(0);
-            $out = fopen('php://output', 'w');
-            fwrite($out, "\xEF\xBB\xBF");
-            fputcsv($out, [
-                'AGENCE','GROUPE','ESO_GROUPE','BATIMENT','ESO_BATIMENT','ESCALIER','ESO_ESC','LOT','NATURE_LOT',
-                'RGT_GPE','RGTL_GPE','CGLS_GPE','INLOG_GPE','TEDL_GPE','TPROX_GPE','RVQ_GPE','GARDIEN_GPE',
-                'RGT_BAT','RGTL_BAT','CGLS_BAT','INLOG_BAT','TEDL_BAT','TPROX_BAT','RVQ_BAT','GARDIEN_BAT',
-                'RGT_ESC','RGTL_ESC','CGLS_ESC','INLOG_ESC','TEDL_ESC','TPROX_ESC','RVQ_ESC','GARDIEN_ESC',
-                'RGT_LOT','RGTL_LOT','CGLS_LOT','INLOG_LOT','TEDL_LOT','TPROX_LOT','RVQ_LOT','GARDIEN_LOT',
-                'ESO_GARDIEN','GARD_TEL','GARD_MAIL'
-            ], ';');
-
-            foreach ($this->listeAffectationOracleService->getAffectationsForExportBySearch($search, $criterion) as $row) {
-                fputcsv($out, [
-                    $row['AGENCE'] ?? '', $row['GROUPE'] ?? '', $row['ESO_GROUPE'] ?? '', $row['BATIMENT'] ?? '', $row['ESO_BATIMENT'] ?? '', $row['ESCALIER'] ?? '', $row['ESO_ESC'] ?? '', $row['LOT'] ?? '', $row['NATURE_LOT'] ?? '',
-                    $row['RGT_GPE'] ?? '', $row['RGTL_GPE'] ?? '', $row['CGLS_GPE'] ?? '', $row['INLOG_GPE'] ?? '', $row['TEDL_GPE'] ?? '', $row['TPROX_GPE'] ?? '', $row['RVQ_GPE'] ?? '', $row['GARDIEN_GPE'] ?? '',
-                    $row['RGT_BAT'] ?? '', $row['RGTL_BAT'] ?? '', $row['CGLS_BAT'] ?? '', $row['INLOG_BAT'] ?? '', $row['TEDL_BAT'] ?? '', $row['TPROX_BAT'] ?? '', $row['RVQ_BAT'] ?? '', $row['GARDIEN_BAT'] ?? '',
-                    $row['RGT_ESC'] ?? '', $row['RGTL_ESC'] ?? '', $row['CGLS_ESC'] ?? '', $row['INLOG_ESC'] ?? '', $row['TEDL_ESC'] ?? '', $row['TPROX_ESC'] ?? '', $row['RVQ_ESC'] ?? '', $row['GARDIEN_ESC'] ?? '',
-                    $row['RGT_LOT'] ?? '', $row['RGTL_LOT'] ?? '', $row['CGLS_LOT'] ?? '', $row['INLOG_LOT'] ?? '', $row['TEDL_LOT'] ?? '', $row['TPROX_LOT'] ?? '', $row['RVQ_LOT'] ?? '', $row['GARDIEN_LOT'] ?? '',
-                    $row['ESO_GARDIEN'] ?? '', $row['GARD_TEL'] ?? '', $row['GARD_MAIL'] ?? '',
-                ], ';');
-            }
-            fclose($out);
-        });
-        $response->headers->add($headers);
-        return $response;
+        return $this->streamListeAffectationCsvResponse(
+            "liste_affectations_{$filterLabel}_{$datetime}.csv",
+            $this->listeAffectationOracleService->getAffectationsForExportBySearch($search, $criterion)
+        );
     }
+
     #[Route(
         '/liste-affectation/detail/{lot}',
         name: 'admin_liste_affectation_detail',
@@ -3116,5 +3062,47 @@ class AdminController extends AbstractController
         }
         @ini_set('max_execution_time', (string) $seconds);
         @ini_set('memory_limit', $memoryLimit);
+    }
+
+    /**
+     * @param iterable<int, array<string, mixed>> $rows
+     */
+    private function streamListeAffectationCsvResponse(string $filename, iterable $rows): StreamedResponse
+    {
+        $this->extendExecutionTimeForExport(900, '1024M');
+
+        $response = new StreamedResponse(function () use ($rows): void {
+            @ini_set('zlib.output_compression', '0');
+            @ini_set('implicit_flush', '1');
+            if (function_exists('apache_setenv')) {
+                @apache_setenv('no-gzip', '1');
+            }
+            ignore_user_abort(true);
+
+            $out = fopen('php://output', 'w');
+            fwrite($out, "\xEF\xBB\xBF");
+            fputcsv($out, ListeAffectationOracleService::EXPORT_CSV_HEADERS, ';');
+
+            $count = 0;
+            foreach ($rows as $row) {
+                fputcsv($out, ListeAffectationOracleService::formatExportCsvRow($row), ';');
+                if (++$count % 100 === 0) {
+                    fflush($out);
+                    if (ob_get_level() > 0) {
+                        @ob_flush();
+                    }
+                    flush();
+                }
+            }
+
+            fclose($out);
+        });
+
+        $response->headers->set('Content-Type', 'text/csv; charset=UTF-8');
+        $response->headers->set('Content-Disposition', 'attachment; filename="' . $filename . '"');
+        $response->headers->set('Cache-Control', 'no-store');
+        $response->headers->set('X-Accel-Buffering', 'no');
+
+        return $response;
     }
 }

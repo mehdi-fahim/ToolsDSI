@@ -16,6 +16,66 @@ class ListeAffectationOracleService
         return $this->connectionResolver->getConnection();
     }
 
+    /** Colonnes exportées dans le CSV */
+    public const EXPORT_CSV_HEADERS = [
+        'AGENCE', 'GROUPE', 'ESO_GROUPE', 'BATIMENT', 'ESO_BATIMENT', 'ESCALIER', 'ESO_ESC', 'LOT', 'NATURE_LOT',
+        'RGT_GPE', 'RGTL_GPE', 'CGLS_GPE', 'INLOG_GPE', 'TEDL_GPE', 'TPROX_GPE', 'RVQ_GPE', 'GARDIEN_GPE',
+        'RGT_BAT', 'RGTL_BAT', 'CGLS_BAT', 'INLOG_BAT', 'TEDL_BAT', 'TPROX_BAT', 'RVQ_BAT', 'GARDIEN_BAT',
+        'RGT_ESC', 'RGTL_ESC', 'CGLS_ESC', 'INLOG_ESC', 'TEDL_ESC', 'TPROX_ESC', 'RVQ_ESC', 'GARDIEN_ESC',
+        'RGT_LOT', 'RGTL_LOT', 'CGLS_LOT', 'INLOG_LOT', 'TEDL_LOT', 'TPROX_LOT', 'RVQ_LOT', 'GARDIEN_LOT',
+        'ESO_GARDIEN', 'GARD_TEL', 'GARD_MAIL',
+    ];
+
+    private const EXPORT_BATCH_SIZE = 500;
+
+    private const EXPORT_SELECT_SQL = <<<SQL
+        SELECT
+            AGENCE,
+            GROUPE,
+            ESO_GROUPE,
+            BATIMENT,
+            ESO_BATIMENT,
+            ESCALIER,
+            ESO_ESC,
+            LOT,
+            NATURE_LOT,
+            RGT_GPE,
+            RGTL_GPE,
+            CGLS_GPE,
+            INLOG_GPE,
+            TEDL_GPE,
+            TPROX_GPE,
+            RVQ_GPE,
+            GARDIEN_GPE,
+            RGT_BAT,
+            RGTL_BAT,
+            CGLS_BAT,
+            INLOG_BAT,
+            TEDL_BAT,
+            TPROX_BAT,
+            RVQ_BAT,
+            GARDIEN_BAT,
+            RGT_ESC,
+            RGTL_ESC,
+            CGLS_ESC,
+            INLOG_ESC,
+            TEDL_ESC,
+            TPROX_ESC,
+            RVQ_ESC,
+            GARDIEN_ESC,
+            RGT_LOT,
+            RGTL_LOT,
+            CGLS_LOT,
+            INLOG_LOT,
+            TEDL_LOT,
+            TPROX_LOT,
+            RVQ_LOT,
+            GARDIEN_LOT,
+            ESO_GARDIEN,
+            GARD_TEL,
+            GARD_MAIL
+        SQL;
+
     /** Critères de recherche autorisés => colonne SQL (dans LISTE_V_AFFECTATIONS) */
     public const CRITERIA_COLUMNS = [
         // ESI : code complet (groupe / bâtiment / escalier / lot), stocké dans LOT
@@ -31,6 +91,20 @@ class ListeAffectationOracleService
         // RS : responsable de secteur du lot
         'RS' => 'RVQ_LOT',
     ];
+
+    /**
+     * @param array<string, mixed> $row
+     * @return list<string>
+     */
+    public static function formatExportCsvRow(array $row): array
+    {
+        $line = [];
+        foreach (self::EXPORT_CSV_HEADERS as $column) {
+            $line[] = (string) ($row[$column] ?? $row[strtolower($column)] ?? '');
+        }
+
+        return $line;
+    }
 
     /**
      * Récupère la liste des affectations avec pagination et recherche
@@ -121,116 +195,22 @@ class ListeAffectationOracleService
     }
 
     /**
-     * Récupère toutes les affectations (pour export)
+     * Récupère toutes les affectations (pour export, par lots)
+     *
+     * @return \Generator<int, array<string, mixed>>
      */
-    public function getAllAffectationsForExport(): iterable
+    public function getAllAffectationsForExport(): \Generator
     {
-        $sql = <<<SQL
-        SELECT 
-            AGENCE,
-            GROUPE,
-            ESO_GROUPE,
-            BATIMENT,
-            ESO_BATIMENT,
-            ESCALIER,
-            ESO_ESC,
-            LOT,
-            NATURE_LOT,
-            RGT_GPE,
-            RGTL_GPE,
-            CGLS_GPE,
-            INLOG_GPE,
-            TEDL_GPE,
-            TPROX_GPE,
-            RVQ_GPE,
-            GARDIEN_GPE,
-            RGT_BAT,
-            RGTL_BAT,
-            CGLS_BAT,
-            INLOG_BAT,
-            TEDL_BAT,
-            TPROX_BAT,
-            RVQ_BAT,
-            GARDIEN_BAT,
-            RGT_ESC,
-            RGTL_ESC,
-            CGLS_ESC,
-            INLOG_ESC,
-            TEDL_ESC,
-            TPROX_ESC,
-            RVQ_ESC,
-            GARDIEN_ESC,
-            RGT_LOT,
-            RGTL_LOT,
-            CGLS_LOT,
-            INLOG_LOT,
-            TEDL_LOT,
-            TPROX_LOT,
-            RVQ_LOT,
-            GARDIEN_LOT,
-            ESO_GARDIEN,
-            GARD_TEL,
-            GARD_MAIL
-        FROM LISTE_V_AFFECTATIONS
-        ORDER BY AGENCE, GROUPE, LOT
-        SQL;
-
-        return $this->getConnection()->executeQuery($sql)->iterateAssociative();
+        yield from $this->iterateAffectationsExport('FROM LISTE_V_AFFECTATIONS', []);
     }
 
     /**
-     * Récupère les affectations correspondant à une recherche (pour export courant)
+     * Récupère les affectations correspondant à une recherche (pour export courant, par lots)
+     *
+     * @return \Generator<int, array<string, mixed>>
      */
-    public function getAffectationsForExportBySearch(string $searchValue = '', string $criterion = 'ESO'): iterable
+    public function getAffectationsForExportBySearch(string $searchValue = '', string $criterion = 'ESO'): \Generator
     {
-        $selectSql = <<<SQL
-        SELECT 
-            AGENCE,
-            GROUPE,
-            ESO_GROUPE,
-            BATIMENT,
-            ESO_BATIMENT,
-            ESCALIER,
-            ESO_ESC,
-            LOT,
-            NATURE_LOT,
-            RGT_GPE,
-            RGTL_GPE,
-            CGLS_GPE,
-            INLOG_GPE,
-            TEDL_GPE,
-            TPROX_GPE,
-            RVQ_GPE,
-            GARDIEN_GPE,
-            RGT_BAT,
-            RGTL_BAT,
-            CGLS_BAT,
-            INLOG_BAT,
-            TEDL_BAT,
-            TPROX_BAT,
-            RVQ_BAT,
-            GARDIEN_BAT,
-            RGT_ESC,
-            RGTL_ESC,
-            CGLS_ESC,
-            INLOG_ESC,
-            TEDL_ESC,
-            TPROX_ESC,
-            RVQ_ESC,
-            GARDIEN_ESC,
-            RGT_LOT,
-            RGTL_LOT,
-            CGLS_LOT,
-            INLOG_LOT,
-            TEDL_LOT,
-            TPROX_LOT,
-            RVQ_LOT,
-            GARDIEN_LOT,
-            ESO_GARDIEN,
-            GARD_TEL,
-            GARD_MAIL
-        SQL;
-
         $baseSql = 'FROM LISTE_V_AFFECTATIONS';
         $whereConditions = [];
         $params = [];
@@ -242,13 +222,47 @@ class ListeAffectationOracleService
             $params['criterionSearch'] = '%' . strtoupper($searchTrim) . '%';
         }
 
-        if (!empty($whereConditions)) {
+        if ($whereConditions !== []) {
             $baseSql .= ' WHERE ' . implode(' AND ', $whereConditions);
         }
 
-        $sql = $selectSql . ' ' . $baseSql . ' ORDER BY AGENCE, GROUPE, LOT';
+        yield from $this->iterateAffectationsExport($baseSql, $params);
+    }
 
-        return $this->getConnection()->executeQuery($sql, $params)->iterateAssociative();
+    /**
+     * @param array<string, mixed> $params
+     *
+     * @return \Generator<int, array<string, mixed>>
+     */
+    private function iterateAffectationsExport(string $fromSql, array $params): \Generator
+    {
+        $offset = 0;
+
+        while (true) {
+            $sql = self::EXPORT_SELECT_SQL . ' ' . $fromSql . ' ORDER BY AGENCE, GROUPE, LOT OFFSET :batchOffset ROWS FETCH NEXT :batchLimit ROWS ONLY';
+            $batchParams = array_merge($params, [
+                'batchOffset' => $offset,
+                'batchLimit' => self::EXPORT_BATCH_SIZE,
+            ]);
+
+            $rows = $this->getConnection()
+                ->executeQuery($sql, $batchParams)
+                ->fetchAllAssociative();
+
+            if ($rows === []) {
+                break;
+            }
+
+            foreach ($rows as $row) {
+                yield $row;
+            }
+
+            if (count($rows) < self::EXPORT_BATCH_SIZE) {
+                break;
+            }
+
+            $offset += self::EXPORT_BATCH_SIZE;
+        }
     }
 
     /**

@@ -10,14 +10,14 @@
             <p>Gestion des affectations par agence et lot</p>
         </div>
         <div style="display:flex; gap: 10px; flex-wrap: wrap;">
-            <a class="btn" href="{{ path('admin_liste_affectation_export') }}" title="Exporter tout (CSV pour Excel)" style="white-space: nowrap;">
+            <a class="btn" href="{{ path('admin_liste_affectation_export') }}" data-turbo="false" title="Exporter tout (CSV pour Excel)" style="white-space: nowrap;">
                 ⬇️ Export total
             </a>
             {% if hasSearch|default(false) %}
             <a class="btn btn-secondary" href="{{ path('admin_liste_affectation_export_current', {
                 search: search,
                 criterion: criterion|default('ESO')
-            }) }}" title="Exporter le résultat courant" style="white-space: nowrap;">
+            }) }}" data-turbo="false" title="Exporter le résultat courant" style="white-space: nowrap;">
                 ⬇️ Export résultat courant
             </a>
             <a class="btn btn-secondary" href="{{ path('admin_liste_affectation_missing', {
