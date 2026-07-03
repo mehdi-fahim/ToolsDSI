@@ -3087,6 +3087,7 @@ class AdminController extends AbstractController
             foreach ($rows as $row) {
                 fputcsv($out, ListeAffectationOracleService::formatExportCsvRow($row), ';');
                 if (++$count % 100 === 0) {
+                    $this->extendExecutionTimeForExport(900, '1024M');
                     fflush($out);
                     if (ob_get_level() > 0) {
                         @ob_flush();

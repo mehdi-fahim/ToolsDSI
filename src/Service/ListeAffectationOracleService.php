@@ -237,16 +237,39 @@ class ListeAffectationOracleService
     private function iterateAffectationsExport(string $fromSql, array $params): \Generator
     {
         $offset = 0;
+        $columns = implode(', ', self::EXPORT_CSV_HEADERS);
 
         while (true) {
-            $sql = self::EXPORT_SELECT_SQL . ' ' . $fromSql . ' ORDER BY AGENCE, GROUPE, LOT OFFSET :batchOffset ROWS FETCH NEXT :batchLimit ROWS ONLY';
+            $minRow = $offset;
+            $maxRow = $offset + self::EXPORT_BATCH_SIZE;
+
+            // Pagination Oracle via ROWNUM (plus fiable que OFFSET/FETCH avec paramètres liés)
+            $sql = sprintf(
+                'SELECT %s FROM (
+                    SELECT paginated.*, ROWNUM AS rnum FROM (
+                        %s %s ORDER BY AGENCE, GROUPE, LOT
+                    ) paginated WHERE ROWNUM <= :maxRow
+                ) WHERE rnum > :minRow',
+                $columns,
+                self::EXPORT_SELECT_SQL,
+                $fromSql
+            );
+
             $batchParams = array_merge($params, [
-                'batchOffset' => $offset,
-                'batchLimit' => self::EXPORT_BATCH_SIZE,
+                'minRow' => $minRow,
+                'maxRow' => $maxRow,
             ]);
 
+            $types = [
+                'minRow' => ParameterType::INTEGER,
+                'maxRow' => ParameterType::INTEGER,
+            ];
+            if (isset($batchParams['criterionSearch'])) {
+                $types['criterionSearch'] = ParameterType::STRING;
+            }
+
             $rows = $this->getConnection()
-                ->executeQuery($sql, $batchParams)
+                ->executeQuery($sql, $batchParams, $types)
                 ->fetchAllAssociative();
 
             if ($rows === []) {
