@@ -1,0 +1,189 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Trésorerie{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="admin-header">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+            <div>
+                <h1>🏦 Trésorerie</h1>
+                <p>Intégration des fichiers de virement bancaire et extraction clients douteux.</p>
+            </div>
+            <a href="{{ path('admin_dashboard') }}" class="btn btn-secondary">← Retour</a>
+        </div>
+    </div>
+
+    <div class="admin-content" style="display:flex;flex-direction:column;gap:20px;">
+        {% if error %}
+            <div style="background:#fed7d7;color:#c53030;padding:12px 16px;border-radius:8px;">{{ error }}</div>
+        {% endif %}
+        {% if success %}
+            <div style="background:#c6f6d5;color:#22543d;padding:12px 16px;border-radius:8px;">{{ success }}</div>
+        {% endif %}
+
+        <section style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:20px;">
+            <h2 style="font-size:1.05rem;color:#2d3748;margin-bottom:14px;">Type d'intégration</h2>
+            <form method="GET" action="{{ path('admin_import_tresorerie') }}" style="display:flex;flex-wrap:wrap;gap:16px;">
+                <label><input type="radio" name="integration_type" value="payement_fournisseur" {{ integrationType == 'payement_fournisseur' ? 'checked' : '' }} onchange="this.form.submit()"> Payement Fournisseur</label>
+                <label><input type="radio" name="integration_type" value="saisi_oppo" {{ integrationType == 'saisi_oppo' ? 'checked' : '' }} onchange="this.form.submit()"> SAISI-OPPO</label>
+                <label><input type="radio" name="integration_type" value="indem" {{ integrationType == 'indem' ? 'checked' : '' }} onchange="this.form.submit()"> INDEM</label>
+                <label><input type="radio" name="integration_type" value="virement_loyer" {{ integrationType == 'virement_loyer' ? 'checked' : '' }} onchange="this.form.submit()"> Virement Loyer</label>
+            </form>
+        </section>
+
+        <section style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:20px;">
+            <h2 style="font-size:1.05rem;color:#2d3748;margin-bottom:14px;">Informations sur le fichier</h2>
+
+            {% if integrationType in ['payement_fournisseur', 'virement_loyer'] and classeurs|length > 0 %}
+                <form method="GET" action="{{ path('admin_import_tresorerie') }}" style="display:flex;gap:12px;align-items:flex-end;margin-bottom:16px;">
+                    <input type="hidden" name="integration_type" value="{{ integrationType }}">
+                    <div>
+                        <label style="display:block;font-weight:600;margin-bottom:6px;">Classeur</label>
+                        <select name="classeur" class="search-input" onchange="this.form.submit()">
+                            {% for option in classeurs %}
+                                <option value="{{ option.value }}" {{ classeur == option.value ? 'selected' : '' }}>{{ option.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
+            {% endif %}
+
+            <form method="POST" action="{{ path('admin_import_tresorerie') }}" enctype="multipart/form-data" data-turbo="false">
+                <input type="hidden" name="action" value="charger_csv">
+                <input type="hidden" name="integration_type" value="{{ integrationType }}">
+
+                {% if integrationType in ['payement_fournisseur', 'virement_loyer'] %}
+                    <div style="display:flex;flex-wrap:wrap;gap:16px;margin-bottom:18px;">
+                        <div>
+                            <label style="display:block;font-weight:600;margin-bottom:6px;">Exercice</label>
+                            <input type="number" name="exercice" class="search-input" value="{{ exercice }}" required>
+                        </div>
+                        <div>
+                            <label style="display:block;font-weight:600;margin-bottom:6px;">Société</label>
+                            <input type="text" name="societe" class="search-input" value="{{ societe }}" required>
+                        </div>
+                        <div>
+                            <label style="display:block;font-weight:600;margin-bottom:6px;">Classeur</label>
+                            {% if classeurs|length > 0 %}
+                                <input type="text" class="search-input" value="{{ classeur }}" disabled>
+                                <input type="hidden" name="classeur" value="{{ classeur }}">
+                            {% else %}
+                                <input type="text" name="classeur" class="search-input" value="{{ classeur }}" required>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <label style="display:block;font-weight:600;margin-bottom:6px;">Type Mouvement</label>
+                            {% if typesMouvement|length > 0 %}
+                                <select name="type_mouvement" class="search-input" required>
+                                    {% for option in typesMouvement %}
+                                        <option value="{{ option.value }}" {{ typeMouvement == option.value ? 'selected' : '' }}>{{ option.label }}</option>
+                                    {% endfor %}
+                                </select>
+                            {% else %}
+                                <input type="text" name="type_mouvement" class="search-input" value="{{ typeMouvement }}" required>
+                            {% endif %}
+                        </div>
+                        {% if integrationType == 'payement_fournisseur' %}
+                            <div>
+                                <label style="display:block;font-weight:600;margin-bottom:6px;">Mode de Paiement</label>
+                                <input type="text" name="mode_paiement" class="search-input" value="{{ modePaiement }}" required>
+                            </div>
+                            <div>
+                                <label style="display:block;font-weight:600;margin-bottom:6px;">Activité</label>
+                                {% if activites|length > 0 %}
+                                    <select name="activite" class="search-input" required>
+                                        {% for option in activites %}
+                                            <option value="{{ option.value }}" {{ activite == option.value ? 'selected' : '' }}>{{ option.label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                {% else %}
+                                    <input type="text" name="activite" class="search-input" value="{{ activite }}" required>
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            <input type="hidden" name="mode_paiement" value="">
+                            <input type="hidden" name="activite" value="">
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div style="display:flex;flex-wrap:wrap;gap:16px;margin-bottom:18px;">
+                        <div>
+                            <label style="display:block;font-weight:600;margin-bottom:6px;">Société</label>
+                            <input type="text" name="societe_oppo" class="search-input" value="{{ societeOppo }}" required>
+                        </div>
+                        <div>
+                            <label style="display:block;font-weight:600;margin-bottom:6px;">N° lot</label>
+                            <input type="text" name="numero_lot" class="search-input" value="{{ numeroLot }}" required>
+                        </div>
+                    </div>
+                    <input type="hidden" name="exercice" value="{{ exercice }}">
+                    <input type="hidden" name="societe" value="{{ societe }}">
+                    <input type="hidden" name="classeur" value="{{ classeur }}">
+                    <input type="hidden" name="type_mouvement" value="{{ typeMouvement }}">
+                    <input type="hidden" name="mode_paiement" value="{{ modePaiement }}">
+                    <input type="hidden" name="activite" value="{{ activite }}">
+                {% endif %}
+
+                <h3 style="font-size:1rem;color:#2d3748;margin:18px 0 10px;">Intégration des fichiers de virement bancaire (fichier csv)</h3>
+                <input type="file" name="fichier_csv" accept=".csv,.txt" required style="margin-bottom:12px;">
+                <div>
+                    <button type="submit" class="btn btn-primary">Charger le fichier</button>
+                </div>
+            </form>
+        </section>
+
+        {% if previewRows|length > 0 %}
+            <section style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:20px;">
+                <h2 style="font-size:1.05rem;color:#2d3748;margin-bottom:14px;">Contenu chargé</h2>
+                <div class="table-container">
+                    <table class="admin-table" style="font-size:0.9rem;">
+                        <thead>
+                            <tr>
+                                {% for column in previewRows[0]|keys %}
+                                    <th>{{ column }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in previewRows %}
+                                <tr>
+                                    {% for value in row %}
+                                        <td>{{ value }}</td>
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        {% endif %}
+
+        {% if showCacosPanel %}
+            <section style="background:#fff;border:2px solid #2d3748;border-radius:12px;padding:20px;">
+                <h2 style="font-size:1.05rem;color:#2d3748;margin-bottom:14px;">Extraction Clients douteux (CACOS048)</h2>
+
+                <form method="POST" action="{{ path('admin_import_tresorerie') }}" enctype="multipart/form-data" data-turbo="false" style="margin-bottom:18px;">
+                    <input type="hidden" name="action" value="cacos_upload">
+                    <label style="display:block;font-weight:600;margin-bottom:6px;">Upload du fichier csv transmis (dans CACOS048_0)</label>
+                    <input type="file" name="fichier_cacos" accept=".csv,.txt" required style="margin-bottom:10px;">
+                    <button type="submit" class="btn btn-secondary">Charger</button>
+                </form>
+
+                <form method="POST" action="{{ path('admin_import_tresorerie') }}" data-turbo="false" style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;">
+                    <input type="hidden" name="action" value="cacos_export">
+                    <div>
+                        <label style="display:block;font-weight:600;margin-bottom:6px;">Numéro du traitement</label>
+                        <input type="text" name="numero_traitement" class="search-input" value="{{ numeroTraitement }}" required>
+                    </div>
+                    <div>
+                        <label style="display:block;font-weight:600;margin-bottom:6px;">Année de traitement</label>
+                        <input type="number" name="annee_traitement" class="search-input" value="{{ anneeTraitement }}" required>
+                    </div>
+                    <button type="submit" class="btn btn-success">⬇️ Extraire le résultat</button>
+                </form>
+            </section>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

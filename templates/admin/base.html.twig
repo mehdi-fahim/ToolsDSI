@@ -420,7 +420,7 @@
                 {% endif %}
 
                 {# Menu déroulant Gestion #}
-                {% if 'admin_engagement' in access or 'admin_proposition' in access or 'admin_mode_operatoire' in access or 'admin_logement' in access or 'admin_reouv_exemptes' in access or 'admin_traitement_gl' in access or 'admin_gerance_locative' in access %}
+                {% if 'admin_engagement' in access or 'admin_budget_engagement' in access or 'admin_facture_regul' in access or 'admin_proposition' in access or 'admin_mode_operatoire' in access or 'admin_logement' in access or 'admin_reouv_exemptes' in access or 'admin_traitement_gl' in access or 'admin_gerance_locative' in access %}
                 <li class="sidebar-dropdown">
                     <div class="dropdown-toggle" onclick="toggleDropdown(this)">
                         <span style="display: flex; align-items: center; gap: 12px;">🗂️ <span>Gestion</span></span>
@@ -435,6 +435,16 @@
                         {% if 'admin_engagement' in access %}
                         <a data-turbo-prefetch href="{{ path('admin_engagement') }}">
                             <span>Engagements</span>
+                        </a>
+                        {% endif %}
+                        {% if 'admin_budget_engagement' in access %}
+                        <a data-turbo-prefetch href="{{ path('admin_budget_engagement') }}">
+                            <span>Budget et engagement</span>
+                        </a>
+                        {% endif %}
+                        {% if 'admin_facture_regul' in access %}
+                        <a data-turbo-prefetch href="{{ path('admin_facture_regul') }}">
+                            <span>Facture régul</span>
                         </a>
                         {% endif %}
                         {% if 'admin_proposition' in access %}
@@ -467,7 +477,7 @@
                 {% endif %}
 
                 {# Menu déroulant Import #}
-                {% set hasImportAccess = ('admin_import_od' in access) or ('admin_import_paiement_cb' in access) or ('admin_import_flemming' in access) or ('admin_extraction_flemming' in access) %}
+                {% set hasImportAccess = ('admin_import_od' in access) or ('admin_import_paiement_cb' in access) or ('admin_import_flemming' in access) or ('admin_extraction_flemming' in access) or ('admin_import_tresorerie' in access) %}
                 {% if hasImportAccess %}
                 <li class="sidebar-dropdown">
                     <div class="dropdown-toggle" onclick="toggleDropdown(this)">
@@ -490,6 +500,11 @@
                             <span>Flemming</span>
                         </a>
                         {% endif %}
+                        {% if 'admin_import_tresorerie' in access %}
+                        <a data-turbo-prefetch href="{{ path('admin_import_tresorerie') }}">
+                            <span>Trésorerie</span>
+                        </a>
+                        {% endif %}
                     </div>
                 </li>
                 {% endif %}
@@ -499,7 +514,7 @@
                     <li><a data-turbo-prefetch href="{{ path('admin_user_unlock') }}" style="display: flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; padding: 14px 32px; font-size: 1.1rem; transition: background 0.2s;">🔒 <span>Débloquer MDP</span></a></li>
                 {% endif %}
 
-                {% set hasExtractionDiversAccess = ('admin_extraction_prestation' in access) or ('admin_extraction_divers' in access) or ('admin_extraction_listing' in access) or ('admin_extraction_suivi_gestion' in access) or ('admin_extraction_ppl' in access) %}
+                {% set hasExtractionDiversAccess = ('admin_extraction_prestation' in access) or ('admin_extraction_divers' in access) or ('admin_extraction_listing' in access) or ('admin_extraction_suivi_gestion' in access) or ('admin_extraction_ppl' in access) or ('admin_extraction_dcf' in access) %}
                 {% if hasExtractionDiversAccess %}
                 <li class="sidebar-dropdown">
                     <div class="dropdown-toggle" onclick="toggleDropdown(this)">
@@ -525,6 +540,11 @@
                         {% if 'admin_extraction_ppl' in access %}
                         <a data-turbo-prefetch href="{{ path('admin_extraction_ppl') }}">
                             <span>Extraction PPL</span>
+                        </a>
+                        {% endif %}
+                        {% if 'admin_extraction_dcf' in access %}
+                        <a data-turbo-prefetch href="{{ path('admin_extraction_dcf') }}">
+                            <span>Extraction DCF</span>
                         </a>
                         {% endif %}
                     </div>

@@ -39,6 +39,10 @@ use App\Service\ExtractionListingOracleService;
 use App\Service\ExtractionSuiviGestionOracleService;
 use App\Service\ExtractionFlemmingOracleService;
 use App\Service\ExtractionPplOracleService;
+use App\Service\ExtractionDcfOracleService;
+use App\Service\ImportTresorerieOracleService;
+use App\Service\BudgetEngagementOracleService;
+use App\Service\FactureRegulOracleService;
 
 #[Route('/admin')]
 class AdminController extends AbstractController
@@ -71,6 +75,10 @@ class AdminController extends AbstractController
         private ExtractionSuiviGestionOracleService $extractionSuiviGestionOracleService,
         private ExtractionFlemmingOracleService $extractionFlemmingOracleService,
         private ExtractionPplOracleService $extractionPplOracleService,
+        private ExtractionDcfOracleService $extractionDcfOracleService,
+        private ImportTresorerieOracleService $importTresorerieOracleService,
+        private BudgetEngagementOracleService $budgetEngagementOracleService,
+        private FactureRegulOracleService $factureRegulOracleService,
         private ?DetailedUserActionLogger $detailedUserActionLogger = null,
         private ?GeranceLocativeOracleService $geranceLocativeOracleService = null
     ) {}
@@ -1563,6 +1571,419 @@ class AdminController extends AbstractController
         ]);
     }
 
+    #[Route('/extraction-divers/dcf', name: 'admin_extraction_dcf', methods: ['GET', 'POST'])]
+    public function extractionDcf(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        if (!$this->hasExtractionDcfAccess($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        $now = new \DateTimeImmutable();
+        $annee = trim((string) $request->request->get('annee', $request->query->get('annee', $now->format('Y'))));
+        $mois = trim((string) $request->request->get('mois', $request->query->get('mois', $now->format('n'))));
+        $esi = strtoupper(trim((string) $request->request->get('esi', $request->query->get('esi', ''))));
+        $action = (string) $request->request->get('action', '');
+        $error = null;
+        $success = null;
+        $detailResult = null;
+        $userId = strtoupper((string) $session->get('user_id', ''));
+
+        if ($request->isMethod('POST')) {
+            if ($annee === '' || !ctype_digit($annee) || (int) $annee < 2000 || (int) $annee > 2100) {
+                $error = 'Veuillez saisir une année valide.';
+            } elseif ($mois === '' || !ctype_digit($mois) || (int) $mois < 1 || (int) $mois > 12) {
+                $error = 'Veuillez saisir un mois valide.';
+            } else {
+                try {
+                    $anneeInt = (int) $annee;
+                    $moisInt = (int) $mois;
+                    $this->extendExecutionTimeForExport(600, '1024M');
+
+                    if ($action === 'ruban_generate') {
+                        $this->extractionDcfOracleService->runRubanAlim($anneeInt, $moisInt, $userId);
+                        $success = 'Génération des rubriques terminée.';
+                    } elseif ($action === 'ruban_export') {
+                        return $this->csvResponse(
+                            $this->extractionDcfOracleService->exportRubanCsv(),
+                            sprintf('dcf_rubriques_%04d_%02d_%s.csv', $anneeInt, $moisInt, $now->format('His'))
+                        );
+                    } elseif ($action === 'detail_esi') {
+                        $detailResult = 'Groupe de prix Loyer : ' . $this->extractionDcfOracleService->getLoyerPriceGroupLabel($anneeInt, $moisInt, $esi);
+                    } elseif ($action === 'encaissement_generate') {
+                        $this->extractionDcfOracleService->runEncaissementAlim($anneeInt, $moisInt, $userId);
+                        $success = 'Génération DCF encaissement terminée.';
+                    } elseif ($action === 'encaissement_export') {
+                        return $this->csvResponse(
+                            $this->extractionDcfOracleService->exportDcfTableCsv('encaissement'),
+                            sprintf('dcf_encaissement_%04d_%02d_%s.csv', $anneeInt, $moisInt, $now->format('His'))
+                        );
+                    } elseif ($action === 'facturation_generate') {
+                        $this->extractionDcfOracleService->runFacturationAlim($anneeInt, $moisInt, $userId);
+                        $success = 'Génération DCF facturation terminée.';
+                    } elseif ($action === 'facturation_export') {
+                        return $this->csvResponse(
+                            $this->extractionDcfOracleService->exportDcfTableCsv('facturation'),
+                            sprintf('dcf_facturation_%04d_%02d_%s.csv', $anneeInt, $moisInt, $now->format('His'))
+                        );
+                    } elseif ($action === 'dettes_generate') {
+                        $this->extractionDcfOracleService->runDettesAlim($anneeInt, $moisInt, $userId);
+                        $success = 'Génération DCF dettes terminée.';
+                    } elseif ($action === 'dettes_export') {
+                        return $this->csvResponse(
+                            $this->extractionDcfOracleService->exportDcfTableCsv('dettes'),
+                            sprintf('dcf_dettes_%04d_%02d_%s.csv', $anneeInt, $moisInt, $now->format('His'))
+                        );
+                    } elseif ($action === 'loyers_export') {
+                        return $this->csvResponse(
+                            $this->extractionDcfOracleService->exportLoyersCsv($anneeInt),
+                            sprintf('dcf_loyers_%04d_%s.csv', $anneeInt, $now->format('His'))
+                        );
+                    }
+                } catch (\Throwable $e) {
+                    $error = 'Erreur lors du traitement : ' . $e->getMessage();
+                }
+            }
+        }
+
+        return $this->render('admin/extraction_dcf.html.twig', [
+            'annee' => $annee,
+            'mois' => $mois,
+            'esi' => $esi,
+            'userId' => $userId,
+            'detailResult' => $detailResult,
+            'success' => $success,
+            'error' => $error,
+        ]);
+    }
+
+    #[Route('/gestion/facture-regul', name: 'admin_facture_regul', methods: ['GET', 'POST'])]
+    public function factureRegul(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        if (!$this->hasFactureRegulAccess($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        $now = new \DateTimeImmutable();
+        $exercice = trim((string) $request->request->get('exercice', $request->query->get('exercice', $now->format('Y'))));
+        $numeroFacture = trim((string) $request->request->get('numero_facture', $request->query->get('numero_facture', '')));
+        $action = (string) $request->request->get('action', '');
+        $error = null;
+        $success = null;
+        $searched = (bool) $session->get('facture_regul_searched', false);
+        $factureFound = false;
+        $factureRegularisee = false;
+        $periodeActuelle = '';
+        $ventilations = [];
+
+        if ($request->isMethod('POST')) {
+            try {
+                if ($exercice === '' || $numeroFacture === '') {
+                    throw new \InvalidArgumentException('L\'exercice et le numéro de facture sont obligatoires.');
+                }
+
+                $exerciceInt = (int) $exercice;
+                $userId = (string) $session->get('user_id', 'UNKNOWN');
+
+                if ($action === 'search') {
+                    $result = $this->factureRegulOracleService->search($exerciceInt, $numeroFacture);
+                    $searched = true;
+                    $factureFound = $result['found'];
+                    $factureRegularisee = $result['facture_regularisee'];
+                    $periodeActuelle = (string) ($result['periode_actuelle'] ?? '');
+                    $ventilations = $result['ventilations'];
+
+                    $session->set('facture_regul_searched', true);
+                    $session->set('facture_regul_exercice', $exercice);
+                    $session->set('facture_regul_numero', $numeroFacture);
+                    $session->set('facture_regul_result', $result);
+                } elseif ($action === 'modifier_facture') {
+                    $periodeActuelle = trim((string) $request->request->get('periode_actuelle', ''));
+                    $this->factureRegulOracleService->updateFacturePeriode($exerciceInt, $numeroFacture, $periodeActuelle, $userId);
+                    $success = 'Période de la facture mise à jour.';
+                    $result = $this->factureRegulOracleService->search($exerciceInt, $numeroFacture);
+                    $searched = true;
+                    $factureFound = $result['found'];
+                    $factureRegularisee = $result['facture_regularisee'];
+                    $periodeActuelle = (string) ($result['periode_actuelle'] ?? '');
+                    $ventilations = $result['ventilations'];
+                    $session->set('facture_regul_result', $result);
+
+                    $this->userActionLogger->logDataModification('FACTURE_REGUL', 'UPDATE', [
+                        'exercice' => $exerciceInt,
+                        'numero_facture' => $numeroFacture,
+                        'periode' => $periodeActuelle,
+                    ], $userId);
+                } elseif ($action === 'modifier_ventilation') {
+                    $mgnadCod = trim((string) $request->request->get('mgnad_cod', ''));
+                    $glperCod = trim((string) $request->request->get('glper_cod', ''));
+                    $this->factureRegulOracleService->updateVentilationPeriode($exerciceInt, $numeroFacture, $mgnadCod, $glperCod, $userId);
+                    $success = sprintf('Période de la ventilation %s mise à jour.', $mgnadCod);
+                    $result = $this->factureRegulOracleService->search($exerciceInt, $numeroFacture);
+                    $searched = true;
+                    $factureFound = $result['found'];
+                    $factureRegularisee = $result['facture_regularisee'];
+                    $periodeActuelle = (string) ($result['periode_actuelle'] ?? '');
+                    $ventilations = $result['ventilations'];
+                    $session->set('facture_regul_result', $result);
+
+                    $this->userActionLogger->logDataModification('FACTURE_REGUL', 'UPDATE_VENTIL', [
+                        'exercice' => $exerciceInt,
+                        'numero_facture' => $numeroFacture,
+                        'mgnad_cod' => $mgnadCod,
+                        'periode' => $glperCod,
+                    ], $userId);
+                }
+            } catch (\Throwable $e) {
+                $error = $e->getMessage();
+                $result = (array) $session->get('facture_regul_result', []);
+                if ($result !== []) {
+                    $searched = true;
+                    $factureFound = (bool) ($result['found'] ?? false);
+                    $factureRegularisee = (bool) ($result['facture_regularisee'] ?? false);
+                    $periodeActuelle = (string) ($result['periode_actuelle'] ?? '');
+                    $ventilations = (array) ($result['ventilations'] ?? []);
+                }
+            }
+        } else {
+            $exercice = (string) $session->get('facture_regul_exercice', $exercice);
+            $numeroFacture = (string) $session->get('facture_regul_numero', $numeroFacture);
+            $result = (array) $session->get('facture_regul_result', []);
+            $searched = (bool) $session->get('facture_regul_searched', false);
+            if ($result !== []) {
+                $factureFound = (bool) ($result['found'] ?? false);
+                $factureRegularisee = (bool) ($result['facture_regularisee'] ?? false);
+                $periodeActuelle = (string) ($result['periode_actuelle'] ?? '');
+                $ventilations = (array) ($result['ventilations'] ?? []);
+            }
+        }
+
+        return $this->render('admin/facture_regul.html.twig', [
+            'exercice' => $exercice,
+            'numero_facture' => $numeroFacture,
+            'searched' => $searched,
+            'facture_found' => $factureFound,
+            'facture_regularisee' => $factureRegularisee,
+            'periode_actuelle' => $periodeActuelle,
+            'ventilations' => $ventilations,
+            'error' => $error,
+            'success' => $success,
+        ]);
+    }
+
+    #[Route('/gestion/budget-engagement', name: 'admin_budget_engagement', methods: ['GET', 'POST'])]
+    public function budgetEngagement(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        if (!$this->hasBudgetEngagementAccess($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        $now = new \DateTimeImmutable();
+        $societe = trim((string) $request->request->get('societe', $request->query->get('societe', '1')));
+        $exercice = trim((string) $request->request->get('exercice', $request->query->get('exercice', $now->format('Y'))));
+        $action = (string) $request->request->get('action', '');
+        $error = null;
+        $success = null;
+
+        if ($request->isMethod('POST')) {
+            $rows = (array) $session->get('budget_engagement_rows', []);
+            $showQuittButton = (bool) $session->get('budget_engagement_show_quitt', false);
+
+            try {
+                $societeInt = (int) $societe;
+                $exerciceInt = (int) $exercice;
+
+                if ($societe === '' || $exercice === '') {
+                    throw new \InvalidArgumentException('La société et l\'exercice sont obligatoires.');
+                }
+
+                if ($action === 'visualiser') {
+                    $rows = $this->budgetEngagementOracleService->getConsommationsRejetees($societeInt, $exerciceInt);
+                    $session->set('budget_engagement_rows', $rows);
+                    $session->set('budget_engagement_societe', $societe);
+                    $session->set('budget_engagement_exercice', $exercice);
+                    $showQuittButton = $rows !== [];
+                    $session->set('budget_engagement_show_quitt', $showQuittButton);
+                } elseif ($action === 'basculer_quitt') {
+                    $updated = $this->budgetEngagementOracleService->basculerEsoQuitt($societeInt, $exerciceInt);
+                    $rows = $this->budgetEngagementOracleService->getConsommationsRejetees($societeInt, $exerciceInt);
+                    $session->set('budget_engagement_rows', $rows);
+                    $showQuittButton = false;
+                    $session->set('budget_engagement_show_quitt', false);
+                    $success = sprintf('%d ligne(s) basculée(s) vers QUITT.', $updated);
+
+                    $this->userActionLogger->logDataModification('BUDGET_ENGAGEMENT', 'UPDATE', [
+                        'societe' => $societeInt,
+                        'exercice' => $exerciceInt,
+                        'rows_updated' => $updated,
+                    ], $session->get('user_id'));
+                } elseif ($action === 'export_budget') {
+                    return $this->csvResponse(
+                        $this->budgetEngagementOracleService->exportConsommationsRejeteesCsv($societeInt, $exerciceInt),
+                        sprintf('consommations_rejetees_%s_%s.csv', $societe, $exercice)
+                    );
+                } elseif ($action === 'export_engagements') {
+                    return $this->csvResponse(
+                        $this->budgetEngagementOracleService->exportListeEngagementsCsv($exerciceInt),
+                        sprintf('engagements_marche_%s.csv', $exercice)
+                    );
+                }
+            } catch (\Throwable $e) {
+                $error = $e->getMessage();
+            }
+        } else {
+            $societe = (string) $session->get('budget_engagement_societe', $societe);
+            $exercice = (string) $session->get('budget_engagement_exercice', $exercice);
+            $rows = (array) $session->get('budget_engagement_rows', []);
+            $showQuittButton = (bool) $session->get('budget_engagement_show_quitt', false);
+        }
+
+        return $this->render('admin/budget_engagement.html.twig', [
+            'societe' => $societe,
+            'exercice' => $exercice,
+            'rows' => $rows,
+            'showQuittButton' => $showQuittButton,
+            'error' => $error,
+            'success' => $success,
+        ]);
+    }
+
+    #[Route('/import/tresorerie', name: 'admin_import_tresorerie', methods: ['GET', 'POST'])]
+    public function importTresorerie(Request $request, SessionInterface $session): Response
+    {
+        if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        if (!$this->hasImportTresorerieAccess($session)) {
+            return $this->redirectToRoute('login');
+        }
+
+        $now = new \DateTimeImmutable();
+        $integrationType = (string) $request->query->get('integration_type', $request->request->get('integration_type', 'payement_fournisseur'));
+        $allowedTypes = ['payement_fournisseur', 'saisi_oppo', 'indem', 'virement_loyer'];
+        if (!in_array($integrationType, $allowedTypes, true)) {
+            $integrationType = 'payement_fournisseur';
+        }
+
+        $exercice = trim((string) $request->query->get('exercice', $request->request->get('exercice', $now->format('Y'))));
+        $societe = trim((string) $request->request->get('societe', '1'));
+        $classeur = trim((string) $request->query->get('classeur', $request->request->get('classeur', '8')));
+        $typeMouvement = trim((string) $request->request->get('type_mouvement', ''));
+        $modePaiement = trim((string) $request->request->get('mode_paiement', 'PRLCB'));
+        $activite = trim((string) $request->request->get('activite', 'FRSBS'));
+        $societeOppo = trim((string) $request->request->get('societe_oppo', '1'));
+        $numeroLot = trim((string) $request->request->get('numero_lot', ''));
+        $numeroTraitement = trim((string) $request->request->get('numero_traitement', ''));
+        $anneeTraitement = trim((string) $request->request->get('annee_traitement', (string) ((int) $now->format('Y') - 1)));
+        $action = (string) $request->request->get('action', '');
+        $error = null;
+        $success = null;
+        $previewRows = [];
+        $classeurs = [];
+        $typesMouvement = [];
+        $activites = [];
+
+        try {
+            $classeurs = $this->importTresorerieOracleService->getClasseurs();
+            $typesMouvement = $this->importTresorerieOracleService->getTypesMouvement($classeur);
+            $activites = $this->importTresorerieOracleService->getActivites();
+            if ($typeMouvement === '' && $typesMouvement !== []) {
+                $typeMouvement = $typesMouvement[0]['value'];
+            }
+        } catch (\Throwable $e) {
+            $error = 'Impossible de charger les listes : ' . $e->getMessage();
+        }
+
+        if ($request->isMethod('POST') && $error === null) {
+            try {
+                if ($action === 'charger_csv') {
+                    $file = $request->files->get('fichier_csv');
+                    if (!$file) {
+                        $error = 'Veuillez sélectionner un fichier CSV.';
+                    } else {
+                        $this->extendExecutionTimeForExport(600, '1024M');
+                        $result = $this->importTresorerieOracleService->chargerFichierIntegration(
+                            $file,
+                            $integrationType,
+                            (string) $session->get('user_id', '')
+                        );
+
+                        $this->importTresorerieOracleService->integrerFichier(
+                            $integrationType,
+                            (string) $session->get('user_id', ''),
+                            (int) $exercice,
+                            $classeur,
+                            $societe,
+                            $modePaiement,
+                            $typeMouvement,
+                            $activite,
+                            $societeOppo,
+                            $numeroLot
+                        );
+
+                        $previewRows = $result['preview'];
+                        $success = sprintf('%d enregistrement(s) chargé(s) et intégré(s).', $result['count']);
+                    }
+                } elseif ($action === 'cacos_upload') {
+                    $file = $request->files->get('fichier_cacos');
+                    if (!$file) {
+                        $error = 'Veuillez sélectionner un fichier CACOS.';
+                    } else {
+                        $cacosResult = $this->importTresorerieOracleService->chargerFichierCacos($file);
+                        $anneeTraitement = (string) $cacosResult['annee'];
+                        $numeroTraitement = $cacosResult['numeroTraitement'];
+                        $success = 'Fichier CACOS chargé avec succès.';
+                    }
+                } elseif ($action === 'cacos_export') {
+                    if ($numeroTraitement === '' || $anneeTraitement === '') {
+                        $error = 'Veuillez renseigner le numéro et l\'année de traitement.';
+                    } else {
+                        $this->extendExecutionTimeForExport(600, '1024M');
+                        return $this->csvResponse(
+                            $this->importTresorerieOracleService->exportCacosCsv((int) $anneeTraitement, $numeroTraitement),
+                            sprintf('cacos048_%s_%s.csv', $anneeTraitement, preg_replace('/[^a-zA-Z0-9_-]/', '_', $numeroTraitement))
+                        );
+                    }
+                }
+            } catch (\Throwable $e) {
+                $error = 'Erreur lors du traitement : ' . $e->getMessage();
+            }
+        }
+
+        return $this->render('admin/import_tresorerie.html.twig', [
+            'integrationType' => $integrationType,
+            'exercice' => $exercice,
+            'societe' => $societe,
+            'classeur' => $classeur,
+            'typeMouvement' => $typeMouvement,
+            'modePaiement' => $modePaiement,
+            'activite' => $activite,
+            'societeOppo' => $societeOppo,
+            'numeroLot' => $numeroLot,
+            'numeroTraitement' => $numeroTraitement,
+            'anneeTraitement' => $anneeTraitement,
+            'classeurs' => $classeurs,
+            'typesMouvement' => $typesMouvement,
+            'activites' => $activites,
+            'previewRows' => $previewRows,
+            'showCacosPanel' => $this->isAdmin($session) || $this->isSuperAdmin($session),
+            'error' => $error,
+            'success' => $success,
+        ]);
+    }
+
     #[Route('/import/flemming', name: 'admin_import_flemming', methods: ['GET', 'POST'])]
     public function extractionFlemming(Request $request, SessionInterface $session): Response
     {
@@ -1707,7 +2128,10 @@ class AdminController extends AbstractController
             'admin_extraction_listing' => 'Listing',
             'admin_extraction_suivi_gestion' => 'Suivi de gestion',
             'admin_extraction_ppl' => 'Extraction PPL',
+            'admin_extraction_dcf' => 'Extraction DCF',
             'admin_engagement' => 'Engagements',
+            'admin_budget_engagement' => 'Budget et engagement',
+            'admin_facture_regul' => 'Facture régul',
             'admin_logement' => 'Logement',
             'admin_user_unlock' => 'Débloquer MDP',
             'admin_system' => 'Système',
@@ -1724,6 +2148,7 @@ class AdminController extends AbstractController
             'admin_gerance_locative' => 'Gérance Locative',
             'admin_import_paiement_cb' => 'Import Paiement CB',
             'admin_import_flemming' => 'Flemming',
+            'admin_import_tresorerie' => 'Trésorerie',
             'admin_locataire' => 'Locataire',
         ];
 
@@ -3028,6 +3453,58 @@ class AdminController extends AbstractController
 
         $access = (array) $session->get('page_access', []);
         return in_array('admin_extraction_ppl', $access, true);
+    }
+
+    private function hasImportTresorerieAccess(SessionInterface $session): bool
+    {
+        if (!$this->isAuthenticated($session)) {
+            return false;
+        }
+        if ($this->isAdmin($session) || $this->isSuperAdmin($session)) {
+            return true;
+        }
+
+        $access = (array) $session->get('page_access', []);
+        return in_array('admin_import_tresorerie', $access, true);
+    }
+
+    private function hasExtractionDcfAccess(SessionInterface $session): bool
+    {
+        if (!$this->isAuthenticated($session)) {
+            return false;
+        }
+        if ($this->isAdmin($session) || $this->isSuperAdmin($session)) {
+            return true;
+        }
+
+        $access = (array) $session->get('page_access', []);
+        return in_array('admin_extraction_dcf', $access, true);
+    }
+
+    private function hasBudgetEngagementAccess(SessionInterface $session): bool
+    {
+        if (!$this->isAuthenticated($session)) {
+            return false;
+        }
+        if ($this->isAdmin($session) || $this->isSuperAdmin($session)) {
+            return true;
+        }
+
+        $access = (array) $session->get('page_access', []);
+        return in_array('admin_budget_engagement', $access, true);
+    }
+
+    private function hasFactureRegulAccess(SessionInterface $session): bool
+    {
+        if (!$this->isAuthenticated($session)) {
+            return false;
+        }
+        if ($this->isAdmin($session) || $this->isSuperAdmin($session)) {
+            return true;
+        }
+
+        $access = (array) $session->get('page_access', []);
+        return in_array('admin_facture_regul', $access, true);
     }
 
     private function parseFormDate(string $value): ?\DateTimeImmutable

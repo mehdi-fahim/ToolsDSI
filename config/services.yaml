@@ -174,5 +174,21 @@ services:
         arguments:
             $connectionResolver: '@App\Service\DatabaseConnectionResolver'
 
+    App\Service\ExtractionDcfOracleService:
+        arguments:
+            $connectionResolver: '@App\Service\DatabaseConnectionResolver'
+
+    App\Service\ImportTresorerieOracleService:
+        arguments:
+            $connectionResolver: '@App\Service\DatabaseConnectionResolver'
+
+    App\Service\BudgetEngagementOracleService:
+        arguments:
+            $connectionResolver: '@App\Service\DatabaseConnectionResolver'
+
+    App\Service\FactureRegulOracleService:
+        arguments:
+            $connectionResolver: '@App\Service\DatabaseConnectionResolver'
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

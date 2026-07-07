@@ -1,0 +1,99 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Budget et engagement{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="admin-header">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+            <div>
+                <h1>📊 Budget et engagement</h1>
+                <p>Consommations budgétaires rejetées et liste des engagements par marché.</p>
+            </div>
+            <a href="{{ path('admin_dashboard') }}" class="btn btn-secondary">← Retour</a>
+        </div>
+    </div>
+
+    <div class="admin-content" style="display:flex;flex-direction:column;gap:20px;">
+        {% if error %}
+            <div style="background:#fed7d7;color:#c53030;padding:12px 16px;border-radius:8px;">{{ error }}</div>
+        {% endif %}
+        {% if success %}
+            <div style="background:#c6f6d5;color:#22543d;padding:12px 16px;border-radius:8px;">{{ success }}</div>
+        {% endif %}
+
+        <section style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:20px;">
+            <h2 style="font-size:1.05rem;color:#2d3748;margin-bottom:14px;">Changer l'ESO des consommations budgétaires rejetées</h2>
+            <form method="POST" action="{{ path('admin_budget_engagement') }}" data-turbo="false" style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;">
+                <input type="hidden" name="action" value="visualiser">
+                <div>
+                    <label for="societe" style="display:block;font-weight:600;margin-bottom:6px;">Société</label>
+                    <input type="text" id="societe" name="societe" class="search-input" value="{{ societe }}" required>
+                </div>
+                <div>
+                    <label for="exercice" style="display:block;font-weight:600;margin-bottom:6px;">Exercice</label>
+                    <input type="number" id="exercice" name="exercice" class="search-input" min="2000" max="2100" value="{{ exercice }}" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Visualiser la liste</button>
+            </form>
+        </section>
+
+        {% if rows|length > 0 %}
+            <section style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:20px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+                    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+                        {% if showQuittButton %}
+                            <form method="POST" action="{{ path('admin_budget_engagement') }}" data-turbo="false">
+                                <input type="hidden" name="action" value="basculer_quitt">
+                                <input type="hidden" name="societe" value="{{ societe }}">
+                                <input type="hidden" name="exercice" value="{{ exercice }}">
+                                <button type="submit" class="btn btn-secondary" onclick="return confirm('Basculer l\'ESO à QUITT pour toutes les lignes affichées ?')">
+                                    Basculer l'ESO à QUITT
+                                </button>
+                            </form>
+                        {% endif %}
+                        <form method="POST" action="{{ path('admin_budget_engagement') }}" data-turbo="false">
+                            <input type="hidden" name="action" value="export_budget">
+                            <input type="hidden" name="societe" value="{{ societe }}">
+                            <input type="hidden" name="exercice" value="{{ exercice }}">
+                            <button type="submit" class="btn btn-success">⬇️ Export Excel</button>
+                        </form>
+                    </div>
+                    <span style="color:#718096;font-size:0.9rem;">{{ rows|length }} ligne(s)</span>
+                </div>
+
+                <div class="table-container">
+                    <table class="admin-table" style="font-size:0.85rem;">
+                        <thead>
+                            <tr>
+                                {% for column in rows[0]|keys %}
+                                    <th>{{ column }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in rows %}
+                                <tr>
+                                    {% for value in row %}
+                                        <td>{{ value is not null ? value : '' }}</td>
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        {% endif %}
+
+        <section style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:20px;">
+            <h2 style="font-size:1.05rem;color:#2d3748;margin-bottom:14px;">Engagements</h2>
+            <form method="POST" action="{{ path('admin_budget_engagement') }}" data-turbo="false" style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;">
+                <input type="hidden" name="action" value="export_engagements">
+                <input type="hidden" name="societe" value="{{ societe }}">
+                <input type="hidden" name="exercice" value="{{ exercice }}">
+                <button type="submit" class="btn btn-success">⬇️ Obtenir la liste des engagements par marché</button>
+            </form>
+        </section>
+    </div>
+</div>
+{% endblock %}

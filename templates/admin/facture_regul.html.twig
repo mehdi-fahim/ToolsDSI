@@ -1,0 +1,119 @@
+{% extends 'admin/base.html.twig' %}
+
+{% block title %}Facture régul{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div class="admin-header">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+            <div>
+                <h1>🧾 Facture régul</h1>
+                <p>Modifier les périodes de régul sur facture et ventilations.</p>
+            </div>
+            <a href="{{ path('admin_dashboard') }}" class="btn btn-secondary">← Retour</a>
+        </div>
+    </div>
+
+    <div class="admin-content" style="display:flex;flex-direction:column;gap:20px;">
+        {% if error %}
+            <div style="background:#fed7d7;color:#c53030;padding:12px 16px;border-radius:8px;">{{ error }}</div>
+        {% endif %}
+        {% if success %}
+            <div style="background:#c6f6d5;color:#22543d;padding:12px 16px;border-radius:8px;">{{ success }}</div>
+        {% endif %}
+
+        <section style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:20px;">
+            <h2 style="font-size:1.05rem;color:#2d3748;margin-bottom:14px;">Modifier les périodes de régul sur facture et ventilations</h2>
+            <form method="POST" action="{{ path('admin_facture_regul') }}" data-turbo="false" style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;">
+                <input type="hidden" name="action" value="search">
+                <div>
+                    <label for="exercice" style="display:block;font-weight:600;margin-bottom:6px;">Exercice</label>
+                    <input type="number" id="exercice" name="exercice" class="search-input" min="2000" max="2100" value="{{ exercice }}" required>
+                </div>
+                <div>
+                    <label for="numero_facture" style="display:block;font-weight:600;margin-bottom:6px;">Numéro de facture</label>
+                    <input type="text" id="numero_facture" name="numero_facture" class="search-input" value="{{ numero_facture }}" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Rechercher</button>
+            </form>
+        </section>
+
+        {% if searched %}
+            {% if not facture_found %}
+                <div style="background:#fefcbf;color:#744210;padding:12px 16px;border-radius:8px;">
+                    Aucune facture trouvée pour cet exercice et ce numéro.
+                </div>
+            {% else %}
+                <section style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:20px;">
+                    <form method="POST" action="{{ path('admin_facture_regul') }}" data-turbo="false" style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;">
+                        <input type="hidden" name="action" value="modifier_facture">
+                        <input type="hidden" name="exercice" value="{{ exercice }}">
+                        <input type="hidden" name="numero_facture" value="{{ numero_facture }}">
+                        <div>
+                            <label for="periode_actuelle" style="display:block;font-weight:600;margin-bottom:6px;">Période de régul actuelle</label>
+                            <input
+                                type="text"
+                                id="periode_actuelle"
+                                name="periode_actuelle"
+                                class="search-input"
+                                value="{{ periode_actuelle }}"
+                                {% if facture_regularisee %}readonly style="background:#f7fafc;"{% endif %}
+                                required
+                            >
+                        </div>
+                        {% if facture_regularisee %}
+                            <span style="color:#c53030;font-weight:600;">Facture régularisée — modification impossible</span>
+                        {% else %}
+                            <button type="submit" class="btn btn-secondary">Modifier</button>
+                        {% endif %}
+                    </form>
+                </section>
+
+                <section style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:20px;">
+                    <h2 style="font-size:1.05rem;color:#2d3748;margin-bottom:14px;">Ventilations</h2>
+
+                    {% if ventilations|length == 0 %}
+                        <p style="color:#718096;">Aucune ventilation trouvée pour cette facture.</p>
+                    {% else %}
+                        <div style="display:flex;flex-direction:column;gap:14px;">
+                            {% for ventilation in ventilations %}
+                                <div style="border:1px solid #e2e8f0;border-radius:8px;padding:14px;">
+                                    {% if ventilation.can_modify %}
+                                        <form method="POST" action="{{ path('admin_facture_regul') }}" data-turbo="false" style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;">
+                                            <input type="hidden" name="action" value="modifier_ventilation">
+                                            <input type="hidden" name="exercice" value="{{ exercice }}">
+                                            <input type="hidden" name="numero_facture" value="{{ numero_facture }}">
+                                            <input type="hidden" name="mgnad_cod" value="{{ ventilation.mgnad_cod }}">
+                                            <div>
+                                                <label style="display:block;font-weight:600;margin-bottom:6px;">MGNAD</label>
+                                                <span>{{ ventilation.mgnad_cod }}</span>
+                                            </div>
+                                            <div>
+                                                <label for="glper_{{ loop.index }}" style="display:block;font-weight:600;margin-bottom:6px;">Période</label>
+                                                <input type="text" id="glper_{{ loop.index }}" name="glper_cod" class="search-input" value="{{ ventilation.glper_cod }}" required>
+                                            </div>
+                                            <button type="submit" class="btn btn-secondary">Modifier</button>
+                                        </form>
+                                    {% else %}
+                                        <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;">
+                                            <div>
+                                                <strong>MGNAD :</strong> {{ ventilation.mgnad_cod }}
+                                            </div>
+                                            <div>
+                                                <strong>Période :</strong> {{ ventilation.glper_cod }}
+                                            </div>
+                                            <div style="color:#2d3748;">
+                                                {{ ventilation.info_regul }}
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </section>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

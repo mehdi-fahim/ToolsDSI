@@ -87,6 +87,22 @@ admin_extraction_ppl:
     path: /admin/extraction-divers/ppl
     controller: App\Controller\AdminController::extractionPpl
 
+admin_extraction_dcf:
+    path: /admin/extraction-divers/dcf
+    controller: App\Controller\AdminController::extractionDcf
+
+admin_import_tresorerie:
+    path: /admin/import/tresorerie
+    controller: App\Controller\AdminController::importTresorerie
+
+admin_budget_engagement:
+    path: /admin/gestion/budget-engagement
+    controller: App\Controller\AdminController::budgetEngagement
+
+admin_facture_regul:
+    path: /admin/gestion/facture-regul
+    controller: App\Controller\AdminController::factureRegul
+
 # Routes pour l'authentification
 login:
     path: /login
