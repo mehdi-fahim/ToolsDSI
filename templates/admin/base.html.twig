@@ -361,14 +361,14 @@
                 {% set access = app.session and app.session.get('page_access') ? app.session.get('page_access') : [] %}
                 
                 {# Menu déroulant Utilisateurs #}
-                {% if ('admin_users' in access and app.session.get('is_admin')) or 'admin_beckrel_users' in access or 'admin_sowell_users' in access %}
+                {% if 'admin_users' in access or 'admin_beckrel_users' in access or 'admin_sowell_users' in access or 'admin_liste_affectation' in access %}
                 <li class="sidebar-dropdown">
                     <div class="dropdown-toggle" onclick="toggleDropdown(this)">
                         <span style="display: flex; align-items: center; gap: 12px;">👥 <span>Utilisateurs</span></span>
                         <span class="dropdown-arrow">▼</span>
                     </div>
                     <div class="dropdown-menu">
-                        {% if 'admin_users' in access and app.session.get('is_admin') %}
+                        {% if 'admin_users' in access %}
                         <a data-turbo-prefetch href="{{ path('admin_entity_view', {entityName: 'Utilisateur'}) }}">
                             <span>Utilisateurs</span>
                         </a>

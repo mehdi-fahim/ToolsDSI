@@ -126,8 +126,18 @@ class AdminController extends AbstractController
         if (!$this->isAuthenticated($session)) {
             return $this->redirectToRoute('login');
         }
+
+        $normalizedEntityName = strtolower($entityName);
+        if (in_array($normalizedEntityName, ['editionbureautique', 'edition-bureautique'], true)
+            && !$this->hasPageAccess($session, 'admin_entity_view')) {
+            return $this->redirectToRoute('login');
+        }
+        if (in_array($normalizedEntityName, ['utilisateur', 'utilisateurs'], true)
+            && !$this->hasPageAccess($session, 'admin_users')) {
+            return $this->redirectToRoute('login');
+        }
         
-        if (strtolower($entityName) === 'editionbureautique' || strtolower($entityName) === 'edition-bureautique') {
+        if ($normalizedEntityName === 'editionbureautique' || $normalizedEntityName === 'edition-bureautique') {
             // Récupérer les paramètres de pagination, recherche et tri
             $page = (int) $request->query->get('page', 1);
             $search = $request->query->get('search', '');
@@ -172,7 +182,7 @@ class AdminController extends AbstractController
             ]);
         }
 
-        if (strtolower($entityName) === 'utilisateur' || strtolower($entityName) === 'utilisateurs') {
+        if ($normalizedEntityName === 'utilisateur' || $normalizedEntityName === 'utilisateurs') {
             // Récupérer les paramètres de pagination et recherche
             $page = (int) $request->query->get('page', 1);
             $search = $request->query->get('search', '');
@@ -288,6 +298,9 @@ class AdminController extends AbstractController
         if (!$this->isAuthenticated($session)) {
             return $this->redirectToRoute('login');
         }
+        if (!$this->hasPageAccess($session, 'admin_liste_affectation')) {
+            return $this->redirectToRoute('login');
+        }
 
         $page = (int) $request->query->get('page', 1);
         $search = trim((string) $request->query->get('search', ''));
@@ -338,6 +351,9 @@ class AdminController extends AbstractController
     public function logement(Request $request, SessionInterface $session): Response
     {
         if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+        if (!$this->hasPageAccess($session, 'admin_logement')) {
             return $this->redirectToRoute('login');
         }
 
@@ -594,6 +610,9 @@ class AdminController extends AbstractController
     public function engagement(Request $request, SessionInterface $session): Response
     {
         if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+        if (!$this->hasPageAccess($session, 'admin_engagement')) {
             return $this->redirectToRoute('login');
         }
 
@@ -1068,6 +1087,9 @@ class AdminController extends AbstractController
         if (!$this->isAuthenticated($session)) {
             return $this->redirectToRoute('login');
         }
+        if (!$this->hasPageAccess($session, 'admin_import_paiement_cb')) {
+            return $this->redirectToRoute('login');
+        }
 
         $existingSearch = trim((string) $request->query->get('existing_search', ''));
         $missingSearch = trim((string) $request->query->get('missing_search', ''));
@@ -1243,6 +1265,9 @@ class AdminController extends AbstractController
     public function extraction(Request $request, SessionInterface $session): Response
     {
         if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+        if (!$this->hasPageAccess($session, 'admin_extraction')) {
             return $this->redirectToRoute('login');
         }
 
@@ -2210,6 +2235,9 @@ class AdminController extends AbstractController
         if (!$this->isAuthenticated($session)) {
             return $this->redirectToRoute('login');
         }
+        if (!$this->hasPageAccess($session, 'admin_proposition')) {
+            return $this->redirectToRoute('login');
+        }
 
         $numero = (int) $request->request->get('numero_proposition', 0);
         $error = null;
@@ -2282,6 +2310,9 @@ class AdminController extends AbstractController
         if (!$this->isAuthenticated($session)) {
             return $this->redirectToRoute('login');
         }
+        if (!$this->hasPageAccess($session, 'admin_reouv_exemptes')) {
+            return $this->redirectToRoute('login');
+        }
 
         $numeroProposition = (int) $request->request->get('numero_proposition', 0);
         $error = null;
@@ -2338,6 +2369,9 @@ class AdminController extends AbstractController
         if (!$this->isAuthenticated($session)) {
             return $this->redirectToRoute('login');
         }
+        if (!$this->hasPageAccess($session, 'admin_traitement_gl')) {
+            return $this->redirectToRoute('login');
+        }
 
         return $this->render('admin/traitement_gl.html.twig');
     }
@@ -2345,6 +2379,9 @@ class AdminController extends AbstractController
     public function locataire(Request $request, SessionInterface $session): Response
     {
         if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+        if (!$this->hasPageAccess($session, 'admin_locataire')) {
             return $this->redirectToRoute('login');
         }
 
@@ -2387,6 +2424,9 @@ class AdminController extends AbstractController
         if (!$this->isAuthenticated($session)) {
             return $this->redirectToRoute('login');
         }
+        if (!$this->hasPageAccess($session, 'admin_locataire')) {
+            return $this->redirectToRoute('login');
+        }
 
         return $this->redirectToRoute('admin_locataire_fiche', [
             'contrat' => $esi,
@@ -2396,6 +2436,9 @@ class AdminController extends AbstractController
     public function locataireFiche(Request $request, SessionInterface $session): Response
     {
         if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+        if (!$this->hasPageAccess($session, 'admin_locataire')) {
             return $this->redirectToRoute('login');
         }
 
@@ -2479,6 +2522,9 @@ class AdminController extends AbstractController
         if (!$this->isAuthenticated($session)) {
             return $this->redirectToRoute('login');
         }
+        if (!$this->hasPageAccess($session, 'admin_locataire')) {
+            return $this->redirectToRoute('login');
+        }
 
         $intitule = trim((string) $request->query->get('intitule', ''));
         $typePay = $this->locataireOracleService->normalizeTypePaiement(
@@ -2535,6 +2581,9 @@ class AdminController extends AbstractController
     public function geranceLocative(Request $request, SessionInterface $session): Response
     {
         if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+        if (!$this->hasPageAccess($session, 'admin_gerance_locative')) {
             return $this->redirectToRoute('login');
         }
 
@@ -2730,6 +2779,9 @@ class AdminController extends AbstractController
         if (!$this->isAuthenticated($session)) {
             return $this->redirectToRoute('login');
         }
+        if (!$this->hasPageAccess($session, 'admin_beckrel_users')) {
+            return $this->redirectToRoute('login');
+        }
 
         $error = null;
         $success = null;
@@ -2797,6 +2849,9 @@ class AdminController extends AbstractController
     public function sowellUsers(Request $request, SessionInterface $session): Response
     {
         if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+        if (!$this->hasPageAccess($session, 'admin_sowell_users')) {
             return $this->redirectToRoute('login');
         }
 
@@ -2994,6 +3049,9 @@ class AdminController extends AbstractController
         if (!$this->isAuthenticated($session)) {
             return $this->redirectToRoute('login');
         }
+        if (!$this->hasPageAccess($session, 'admin_import_od')) {
+            return $this->redirectToRoute('login');
+        }
 
         $csvData = $this->importODService->getCsvData();
         
@@ -3182,6 +3240,9 @@ class AdminController extends AbstractController
         if (!$this->isAuthenticated($session)) {
             return $this->redirectToRoute('login');
         }
+        if (!$this->hasPageAccess($session, 'admin_liste_affectation')) {
+            return $this->redirectToRoute('login');
+        }
 
         $page = (int) $request->query->get('page', 1);
         $search = trim((string) $request->query->get('search', ''));
@@ -3273,6 +3334,9 @@ class AdminController extends AbstractController
         if (!$this->isAuthenticated($session)) {
             return $this->redirectToRoute('login');
         }
+        if (!$this->hasPageAccess($session, 'admin_liste_affectation')) {
+            return $this->redirectToRoute('login');
+        }
 
         $session->save();
 
@@ -3288,6 +3352,9 @@ class AdminController extends AbstractController
     public function exportListeAffectationCurrent(Request $request, SessionInterface $session): Response
     {
         if (!$this->isAuthenticated($session)) {
+            return $this->redirectToRoute('login');
+        }
+        if (!$this->hasPageAccess($session, 'admin_liste_affectation')) {
             return $this->redirectToRoute('login');
         }
 
@@ -3340,6 +3407,9 @@ class AdminController extends AbstractController
         if (!$this->isAuthenticated($session)) {
             return $this->redirectToRoute('login');
         }
+        if (!$this->hasPageAccess($session, 'admin_liste_affectation')) {
+            return $this->redirectToRoute('login');
+        }
 
         if ($lot === null || $lot === '') {
             $lot = (string) $request->query->get('lot', '');
@@ -3390,111 +3460,52 @@ class AdminController extends AbstractController
 
     private function hasExtractionPrestationAccess(SessionInterface $session): bool
     {
-        if (!$this->isAuthenticated($session)) {
-            return false;
-        }
-        if ($this->isAdmin($session) || $this->isSuperAdmin($session)) {
-            return true;
-        }
-
-        $access = (array) $session->get('page_access', []);
-        return in_array('admin_extraction_prestation', $access, true)
-            || in_array('admin_extraction_divers', $access, true);
+        return $this->hasPageAccess($session, 'admin_extraction_prestation')
+            || $this->hasPageAccess($session, 'admin_extraction_divers');
     }
 
     private function hasExtractionListingAccess(SessionInterface $session): bool
     {
-        if (!$this->isAuthenticated($session)) {
-            return false;
-        }
-        if ($this->isAdmin($session) || $this->isSuperAdmin($session)) {
-            return true;
-        }
-
-        $access = (array) $session->get('page_access', []);
-        return in_array('admin_extraction_listing', $access, true);
+        return $this->hasPageAccess($session, 'admin_extraction_listing');
     }
 
     private function hasExtractionSuiviGestionAccess(SessionInterface $session): bool
     {
-        if (!$this->isAuthenticated($session)) {
-            return false;
-        }
-        if ($this->isAdmin($session) || $this->isSuperAdmin($session)) {
-            return true;
-        }
-
-        $access = (array) $session->get('page_access', []);
-        return in_array('admin_extraction_suivi_gestion', $access, true);
+        return $this->hasPageAccess($session, 'admin_extraction_suivi_gestion');
     }
 
     private function hasImportFlemmingAccess(SessionInterface $session): bool
     {
-        if (!$this->isAuthenticated($session)) {
-            return false;
-        }
-        if ($this->isAdmin($session) || $this->isSuperAdmin($session)) {
-            return true;
-        }
-
-        $access = (array) $session->get('page_access', []);
-        return in_array('admin_import_flemming', $access, true)
-            || in_array('admin_extraction_flemming', $access, true);
+        return $this->hasPageAccess($session, 'admin_import_flemming')
+            || $this->hasPageAccess($session, 'admin_extraction_flemming');
     }
 
     private function hasExtractionPplAccess(SessionInterface $session): bool
     {
-        if (!$this->isAuthenticated($session)) {
-            return false;
-        }
-        if ($this->isAdmin($session) || $this->isSuperAdmin($session)) {
-            return true;
-        }
-
-        $access = (array) $session->get('page_access', []);
-        return in_array('admin_extraction_ppl', $access, true);
+        return $this->hasPageAccess($session, 'admin_extraction_ppl');
     }
 
     private function hasImportTresorerieAccess(SessionInterface $session): bool
     {
-        if (!$this->isAuthenticated($session)) {
-            return false;
-        }
-        if ($this->isAdmin($session) || $this->isSuperAdmin($session)) {
-            return true;
-        }
-
-        $access = (array) $session->get('page_access', []);
-        return in_array('admin_import_tresorerie', $access, true);
+        return $this->hasPageAccess($session, 'admin_import_tresorerie');
     }
 
     private function hasExtractionDcfAccess(SessionInterface $session): bool
     {
-        if (!$this->isAuthenticated($session)) {
-            return false;
-        }
-        if ($this->isAdmin($session) || $this->isSuperAdmin($session)) {
-            return true;
-        }
-
-        $access = (array) $session->get('page_access', []);
-        return in_array('admin_extraction_dcf', $access, true);
+        return $this->hasPageAccess($session, 'admin_extraction_dcf');
     }
 
     private function hasBudgetEngagementAccess(SessionInterface $session): bool
     {
-        if (!$this->isAuthenticated($session)) {
-            return false;
-        }
-        if ($this->isAdmin($session) || $this->isSuperAdmin($session)) {
-            return true;
-        }
-
-        $access = (array) $session->get('page_access', []);
-        return in_array('admin_budget_engagement', $access, true);
+        return $this->hasPageAccess($session, 'admin_budget_engagement');
     }
 
     private function hasFactureRegulAccess(SessionInterface $session): bool
+    {
+        return $this->hasPageAccess($session, 'admin_facture_regul');
+    }
+
+    private function hasPageAccess(SessionInterface $session, string $pageCode): bool
     {
         if (!$this->isAuthenticated($session)) {
             return false;
@@ -3504,7 +3515,7 @@ class AdminController extends AbstractController
         }
 
         $access = (array) $session->get('page_access', []);
-        return in_array('admin_facture_regul', $access, true);
+        return in_array($pageCode, $access, true);
     }
 
     private function parseFormDate(string $value): ?\DateTimeImmutable
