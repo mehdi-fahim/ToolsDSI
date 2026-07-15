@@ -26,7 +26,7 @@ class ListeAffectationOracleService
         'ESO_GARDIEN', 'GARD_TEL', 'GARD_MAIL',
     ];
 
-    private const EXPORT_BATCH_SIZE = 500;
+    private const EXPORT_BATCH_SIZE = 1000;
 
     private const EXPORT_SELECT_SQL = <<<SQL
         SELECT
@@ -205,11 +205,9 @@ class ListeAffectationOracleService
     }
 
     /**
-     * Récupère les affectations correspondant à une recherche (pour export courant, par lots)
-     *
-     * @return \Generator<int, array<string, mixed>>
+     * @return array{0: string, 1: array<string, mixed>}
      */
-    public function getAffectationsForExportBySearch(string $searchValue = '', string $criterion = 'ESO'): \Generator
+    public function buildExportFromSql(string $searchValue = '', string $criterion = 'ESO'): array
     {
         $baseSql = 'FROM LISTE_V_AFFECTATIONS';
         $whereConditions = [];
@@ -226,7 +224,67 @@ class ListeAffectationOracleService
             $baseSql .= ' WHERE ' . implode(' AND ', $whereConditions);
         }
 
-        yield from $this->iterateAffectationsExport($baseSql, $params);
+        return [$baseSql, $params];
+    }
+
+    public function countRowsForExport(string $fromSql = 'FROM LISTE_V_AFFECTATIONS', array $params = []): int
+    {
+        $countSql = 'SELECT COUNT(*) AS total ' . $fromSql;
+        $types = isset($params['criterionSearch'])
+            ? ['criterionSearch' => ParameterType::STRING]
+            : [];
+
+        return (int) $this->getConnection()
+            ->executeQuery($countSql, $params, $types)
+            ->fetchOne();
+    }
+
+    /**
+     * @param array<string, mixed> $params
+     */
+    public function writeAffectationsExportToCsv(string $filePath, string $fromSql, array $params = []): int
+    {
+        $handle = fopen($filePath, 'w');
+        if ($handle === false) {
+            throw new \RuntimeException('Impossible de créer le fichier d\'export.');
+        }
+
+        fwrite($handle, "\xEF\xBB\xBF");
+        fputcsv($handle, self::EXPORT_CSV_HEADERS, ';');
+
+        $count = 0;
+        foreach ($this->iterateAffectationsExport($fromSql, $params) as $row) {
+            fputcsv($handle, self::formatExportCsvRow($row), ';');
+            ++$count;
+
+            if ($count % 200 === 0) {
+                fflush($handle);
+                if (function_exists('set_time_limit')) {
+                    @set_time_limit(900);
+                }
+            }
+        }
+
+        fclose($handle);
+
+        return $count;
+    }
+
+    public function writeAllAffectationsExportToCsv(string $filePath): int
+    {
+        return $this->writeAffectationsExportToCsv($filePath, 'FROM LISTE_V_AFFECTATIONS', []);
+    }
+
+    /**
+     * Récupère les affectations correspondant à une recherche (pour export courant, par lots)
+     *
+     * @return \Generator<int, array<string, mixed>>
+     */
+    public function getAffectationsForExportBySearch(string $searchValue = '', string $criterion = 'ESO'): \Generator
+    {
+        [$fromSql, $params] = $this->buildExportFromSql($searchValue, $criterion);
+
+        yield from $this->iterateAffectationsExport($fromSql, $params);
     }
 
     /**
@@ -238,38 +296,30 @@ class ListeAffectationOracleService
     {
         $offset = 0;
         $columns = implode(', ', self::EXPORT_CSV_HEADERS);
+        $types = isset($params['criterionSearch'])
+            ? ['criterionSearch' => ParameterType::STRING]
+            : [];
 
         while (true) {
             $minRow = $offset;
             $maxRow = $offset + self::EXPORT_BATCH_SIZE;
 
-            // Pagination Oracle via ROWNUM (plus fiable que OFFSET/FETCH avec paramètres liés)
+            // Pagination Oracle via ROWNUM ; bornes en littéraux (plus fiable que paramètres liés sous OCI8/IIS)
             $sql = sprintf(
                 'SELECT %s FROM (
                     SELECT paginated.*, ROWNUM AS rnum FROM (
                         %s %s ORDER BY AGENCE, GROUPE, LOT
-                    ) paginated WHERE ROWNUM <= :maxRow
-                ) WHERE rnum > :minRow',
+                    ) paginated WHERE ROWNUM <= %d
+                ) WHERE rnum > %d',
                 $columns,
                 self::EXPORT_SELECT_SQL,
-                $fromSql
+                $fromSql,
+                $maxRow,
+                $minRow
             );
 
-            $batchParams = array_merge($params, [
-                'minRow' => $minRow,
-                'maxRow' => $maxRow,
-            ]);
-
-            $types = [
-                'minRow' => ParameterType::INTEGER,
-                'maxRow' => ParameterType::INTEGER,
-            ];
-            if (isset($batchParams['criterionSearch'])) {
-                $types['criterionSearch'] = ParameterType::STRING;
-            }
-
             $rows = $this->getConnection()
-                ->executeQuery($sql, $batchParams, $types)
+                ->executeQuery($sql, $params, $types)
                 ->fetchAllAssociative();
 
             if ($rows === []) {

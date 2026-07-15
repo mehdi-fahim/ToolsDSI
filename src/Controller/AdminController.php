@@ -3343,9 +3343,10 @@ class AdminController extends AbstractController
 
         $datetime = (new \DateTimeImmutable())->format('Ymd_His');
 
-        return $this->streamListeAffectationCsvResponse(
+        return $this->buildListeAffectationCsvFileResponse(
             "liste_affectations_{$datetime}.csv",
-            $this->listeAffectationOracleService->getAllAffectationsForExport()
+            'FROM LISTE_V_AFFECTATIONS',
+            []
         );
     }
 
@@ -3386,9 +3387,12 @@ class AdminController extends AbstractController
         );
         $filterLabel = $filterTokens !== [] ? implode('-', $filterTokens) : 'filtre';
 
-        return $this->streamListeAffectationCsvResponse(
+        [$fromSql, $params] = $this->listeAffectationOracleService->buildExportFromSql($search, $criterion);
+
+        return $this->buildListeAffectationCsvFileResponse(
             "liste_affectations_{$filterLabel}_{$datetime}.csv",
-            $this->listeAffectationOracleService->getAffectationsForExportBySearch($search, $criterion)
+            $fromSql,
+            $params
         );
     }
 
@@ -3542,6 +3546,45 @@ class AdminController extends AbstractController
                 'Cache-Control' => 'no-store',
             ]
         );
+    }
+
+    /**
+     * @param array<string, mixed> $params
+     */
+    private function buildListeAffectationCsvFileResponse(string $filename, string $fromSql, array $params): Response
+    {
+        $this->extendExecutionTimeForExport(900, '1024M');
+
+        $tmpFile = tempnam(sys_get_temp_dir(), 'liste_affectation_export_');
+        if ($tmpFile === false) {
+            $this->addFlash('error', 'Erreur lors de l\'export : impossible de créer le fichier temporaire.');
+            return $this->redirectToRoute('admin_liste_affectation');
+        }
+
+        try {
+            $expectedTotal = $this->listeAffectationOracleService->countRowsForExport($fromSql, $params);
+            $exportedTotal = $this->listeAffectationOracleService->writeAffectationsExportToCsv($tmpFile, $fromSql, $params);
+
+            if ($expectedTotal > 0 && $exportedTotal < $expectedTotal) {
+                throw new \RuntimeException(sprintf(
+                    'Export incomplet (%d lignes exportées sur %d attendues). Vérifiez le timeout IIS/FastCGI ou l\'environnement Oracle sélectionné.',
+                    $exportedTotal,
+                    $expectedTotal
+                ));
+            }
+
+            $response = $this->file($tmpFile, $filename, ResponseHeaderBag::DISPOSITION_ATTACHMENT);
+            $response->headers->set('Content-Type', 'text/csv; charset=UTF-8');
+            $response->headers->set('Cache-Control', 'no-store');
+            $response->deleteFileAfterSend(true);
+
+            return $response;
+        } catch (\Throwable $e) {
+            @unlink($tmpFile);
+            $this->addFlash('error', 'Erreur lors de l\'export : ' . $e->getMessage());
+
+            return $this->redirectToRoute('admin_liste_affectation');
+        }
     }
 
     private function extendExecutionTimeForExport(int $seconds = 300, string $memoryLimit = '512M'): void

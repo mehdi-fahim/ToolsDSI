@@ -36,6 +36,14 @@
         </div>
     {% endif %}
 
+    {% for label, messages in app.flashes %}
+        {% for message in messages %}
+            <div style="background: {{ label == 'error' ? '#fed7d7' : '#c6f6d5' }}; color: {{ label == 'error' ? '#c53030' : '#22543d' }}; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endfor %}
+
     <div class="admin-content">
         {# Statistiques #}
         {% if stats and hasSearch|default(false) %}
