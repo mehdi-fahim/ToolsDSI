@@ -267,6 +267,7 @@ class AdminController extends AbstractController
 
         return $this->render('admin/mode_operatoire.html.twig', [
             'basePath' => $this->modeOperatoireService->getBasePath(),
+            'diagnostics' => $this->modeOperatoireService->getDiagnostics(),
             'path' => $rel,
             'items' => $items,
             'q' => $q,

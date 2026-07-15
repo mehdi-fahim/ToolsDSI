@@ -9,16 +9,38 @@ class ModeOperatoireService
 
     public function __construct(ParameterBagInterface $params)
     {
-        $this->basePath = rtrim((string)($params->get('mode_operatoire_path') ?? ''), DIRECTORY_SEPARATOR);
+        $configured = rtrim((string) ($params->get('mode_operatoire_path') ?? ''), "\\/");
+        $this->basePath = $this->normalizePath($configured);
         if ($this->basePath === '') {
-            // Fallback vers un dossier local par défaut si non configuré
-            $this->basePath = rtrim(getcwd(), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'var' . DIRECTORY_SEPARATOR . 'mode_operatoire';
+            $this->basePath = $this->normalizePath(
+                rtrim((string) getcwd(), "\\/") . DIRECTORY_SEPARATOR . 'var' . DIRECTORY_SEPARATOR . 'mode_operatoire'
+            );
         }
     }
 
     public function getBasePath(): string
     {
         return $this->basePath;
+    }
+
+    /**
+     * @return array{configuredPath: string, resolvedPath: string, isDir: bool, isReadable: bool, itemCount: int|null, phpUser: string, lastError: string|null}
+     */
+    public function getDiagnostics(): array
+    {
+        $resolved = realpath($this->basePath) ?: $this->basePath;
+        $items = @scandir($resolved);
+        $lastError = error_get_last();
+
+        return [
+            'configuredPath' => $this->basePath,
+            'resolvedPath' => $resolved,
+            'isDir' => is_dir($resolved),
+            'isReadable' => is_readable($resolved),
+            'itemCount' => $items === false ? null : max(0, count($items) - 2),
+            'phpUser' => (string) get_current_user(),
+            'lastError' => ($items === false && is_array($lastError)) ? ($lastError['message'] ?? null) : null,
+        ];
     }
 
     public function listTree(string $relativePath = ''): array
@@ -28,12 +50,18 @@ class ModeOperatoireService
             return [];
         }
 
-        $items = scandir($root) ?: [];
+        $items = @scandir($root);
+        if ($items === false) {
+            return [];
+        }
+
         $result = [];
         foreach ($items as $item) {
-            if ($item === '.' || $item === '..') { continue; }
+            if ($item === '.' || $item === '..') {
+                continue;
+            }
             $fullPath = $root . DIRECTORY_SEPARATOR . $item;
-            $rel = ltrim(($relativePath ? $relativePath . DIRECTORY_SEPARATOR : '') . $item, DIRECTORY_SEPARATOR);
+            $rel = ltrim(($relativePath ? $relativePath . DIRECTORY_SEPARATOR : '') . $item, "\\/");
             if (is_dir($fullPath)) {
                 $result[] = [
                     'type' => 'dir',
@@ -50,7 +78,6 @@ class ModeOperatoireService
             }
         }
 
-        // Dossiers d'abord puis fichiers, tri alphabétique
         usort($result, function ($a, $b) {
             if ($a['type'] !== $b['type']) {
                 return $a['type'] === 'dir' ? -1 : 1;
@@ -64,43 +91,57 @@ class ModeOperatoireService
     public function search(string $query, int $maxResults = 200): array
     {
         $query = trim($query);
-        if ($query === '') { return []; }
+        if ($query === '' || !is_dir($this->basePath)) {
+            return [];
+        }
 
         $results = [];
 
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($this->basePath, \FilesystemIterator::SKIP_DOTS)
-        );
+        try {
+            $iterator = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator(
+                    $this->basePath,
+                    \FilesystemIterator::SKIP_DOTS | \FilesystemIterator::CURRENT_AS_FILEINFO
+                ),
+                \RecursiveIteratorIterator::SELF_FIRST,
+                \RecursiveIteratorIterator::CATCH_GET_CHILD
+            );
 
-        foreach ($iterator as $fileInfo) {
-            if (!($fileInfo instanceof \SplFileInfo)) { continue; }
-            if ($fileInfo->isDir()) { continue; }
+            foreach ($iterator as $fileInfo) {
+                if (!($fileInfo instanceof \SplFileInfo)) {
+                    continue;
+                }
+                if (!$fileInfo->isFile()) {
+                    continue;
+                }
 
-            $relative = ltrim(str_replace($this->basePath, '', $fileInfo->getPathname()), DIRECTORY_SEPARATOR);
-            // Match sur le nom de fichier
-            if (stripos($fileInfo->getFilename(), $query) !== false) {
-                $results[] = [
-                    'path' => $relative,
-                    'name' => $fileInfo->getFilename(),
-                    'match' => 'filename',
-                ];
-            } else {
-                // Match basique du contenu (limite la taille lue)
-                $ext = strtolower(pathinfo($fileInfo->getFilename(), PATHINFO_EXTENSION));
-                // Ne tenter que sur des fichiers texte simples
-                if (in_array($ext, ['txt','md','csv','tsv','json','xml','ini','conf','log','sql','yaml','yml'])) {
-                    $content = @file_get_contents($fileInfo->getPathname(), false, null, 0, 200000); // 200KB max
-                    if ($content !== false && stripos($content, $query) !== false) {
-                        $results[] = [
-                            'path' => $relative,
-                            'name' => $fileInfo->getFilename(),
-                            'match' => 'content',
-                        ];
+                $relative = ltrim(str_replace($this->basePath, '', $fileInfo->getPathname()), "\\/");
+                if (stripos($fileInfo->getFilename(), $query) !== false) {
+                    $results[] = [
+                        'path' => $relative,
+                        'name' => $fileInfo->getFilename(),
+                        'match' => 'filename',
+                    ];
+                } else {
+                    $ext = strtolower(pathinfo($fileInfo->getFilename(), PATHINFO_EXTENSION));
+                    if (in_array($ext, ['txt', 'md', 'csv', 'tsv', 'json', 'xml', 'ini', 'conf', 'log', 'sql', 'yaml', 'yml'], true)) {
+                        $content = @file_get_contents($fileInfo->getPathname(), false, null, 0, 200000);
+                        if ($content !== false && stripos($content, $query) !== false) {
+                            $results[] = [
+                                'path' => $relative,
+                                'name' => $fileInfo->getFilename(),
+                                'match' => 'content',
+                            ];
+                        }
                     }
                 }
-            }
 
-            if (count($results) >= $maxResults) { break; }
+                if (count($results) >= $maxResults) {
+                    break;
+                }
+            }
+        } catch (\Throwable) {
+            return $results;
         }
 
         return $results;
@@ -108,16 +149,38 @@ class ModeOperatoireService
 
     public function resolvePath(string $relativePath): string
     {
-        $relativePath = str_replace(['..', '\\'], ['','/'], $relativePath);
-        $full = $this->basePath . DIRECTORY_SEPARATOR . ltrim($relativePath, DIRECTORY_SEPARATOR);
-        $realBase = realpath($this->basePath) ?: $this->basePath;
-        $realFull = realpath($full) ?: $full;
-        // Sécurité: rester dans la base
-        if (strpos($realFull, $realBase) !== 0) {
-            return $realBase;
+        $relativePath = str_replace(['..', '\\'], ['', '/'], $relativePath);
+        $relativePath = trim($relativePath, '/');
+        $full = $relativePath === ''
+            ? $this->basePath
+            : $this->basePath . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
+
+        if (!$this->isPathInsideBase($full)) {
+            return $this->basePath;
         }
-        return $realFull;
+
+        return realpath($full) ?: $full;
+    }
+
+    private function isPathInsideBase(string $candidatePath): bool
+    {
+        $base = strtolower($this->normalizePath(realpath($this->basePath) ?: $this->basePath));
+        $candidate = strtolower($this->normalizePath(realpath($candidatePath) ?: $candidatePath));
+
+        return $candidate === $base || str_starts_with($candidate, $base . DIRECTORY_SEPARATOR);
+    }
+
+    private function normalizePath(string $path): string
+    {
+        $path = trim(str_replace('/', DIRECTORY_SEPARATOR, $path));
+        if ($path === '') {
+            return '';
+        }
+
+        if (str_starts_with($path, '\\\\')) {
+            return rtrim($path, "\\/");
+        }
+
+        return rtrim($path, "\\/");
     }
 }
-
-

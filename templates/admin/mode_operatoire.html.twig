@@ -6,6 +6,19 @@
 <div style="max-width: 1200px; margin: 0 auto;">
     <h1 style="font-size: 1.8rem; margin-bottom: 16px;">Mode opératoire</h1>
 
+    {% if not diagnostics.isDir %}
+    <div style="margin-bottom: 16px; padding: 12px 14px; border: 1px solid #f6ad55; background: #fffaf0; border-radius: 8px; color: #7b341e;">
+        <strong>Le dossier configuré n'est pas accessible par PHP.</strong><br>
+        Chemin configuré : <code>{{ diagnostics.configuredPath }}</code><br>
+        Chemin résolu : <code>{{ diagnostics.resolvedPath }}</code><br>
+        Compte PHP : <code>{{ diagnostics.phpUser }}</code><br>
+        {% if diagnostics.lastError %}
+        Dernière erreur : <code>{{ diagnostics.lastError }}</code><br>
+        {% endif %}
+        En production, le site web tourne souvent sous un compte de service (IIS AppPool) qui n'a pas accès au partage réseau, même si vous y accédez depuis l'Explorateur Windows.
+    </div>
+    {% endif %}
+
     <form method="get" class="search-container" style="margin-bottom: 16px; display:flex; gap:10px;">
         <input type="text" name="q" value="{{ q }}" placeholder="Rechercher dans les noms de fichiers et contenus (txt, md, ...)" class="search-input" />
         <button class="btn">Rechercher</button>
